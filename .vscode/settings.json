@@ -1,0 +1,25 @@
+{
+	"[typescript]": {
+		"editor.defaultFormatter": "dbaeumer.vscode-eslint",
+		"editor.formatOnSave": true
+	},
+	"[typescriptreact]": {
+		"editor.defaultFormatter": "dbaeumer.vscode-eslint",
+		"editor.formatOnSave": true
+	},
+	"eslint.run": "onType",
+	"eslint.format.enable": true,
+	"editor.formatOnSave": true,
+	"editor.formatOnPaste": true,
+	"editor.inlineSuggest.enabled": true,
+	"typescript.tsdk": "node_modules/typescript/lib",
+	"editor.codeActionsOnSave": {
+		"source.organizeImports": true
+	},
+	"cSpell.words": [
+		"Flamework",
+		"rbxts",
+		"Roact"
+	],
+	"editor.experimental.stickyScroll.enabled": true
+}
