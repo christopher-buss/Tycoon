@@ -5,7 +5,7 @@ const DefaultPlayerData = {
 	inGroup: false,
 	rebirths: 0,
 	moneySpent: 0,
-	purchased: [],
+	// purchased: [],
 	obbyLastCompleted: os.clock(),
 
 	gamePasses: {
