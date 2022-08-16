@@ -24,6 +24,7 @@
 		"rbxts",
 		"Roact",
 		"Roblox",
+		"Rodux",
 		"traceback"
 	],
 	"editor.experimental.stickyScroll.enabled": true,
