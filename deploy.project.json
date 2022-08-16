@@ -1,5 +1,5 @@
 {
-	"name": "Tabletop Island",
+	"name": "Tycoon-Deployment",
 	"globIgnorePaths": [
 		"**/package.json",
 		"**/tsconfig.json"
