@@ -23,7 +23,13 @@
 		"typestrict"
 	],
 	"rules": {
-		"prettier/prettier": "warn",
+		"prettier/prettier": [
+			"warn",
+			"error",
+			{
+				"endOfLine": "auto"
+			}
+		],
 		"no-param-reassign": "error",
 		"prefer-const": [
 			"error",
