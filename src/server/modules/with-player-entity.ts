@@ -1,7 +1,8 @@
 import { Dependency } from "@flamework/core";
 import Log from "@rbxts/log";
+import { Result } from "@rbxts/rust-classes";
 import { PlayerService } from "server/services/player/player-service";
-import { IServerResponse } from "types/interfaces/network-types";
+import { ServerError } from "types/interfaces/network-types";
 import PlayerEntity from "./classes/player-entity";
 
 let playerService: PlayerService;
@@ -15,8 +16,8 @@ export default function withPlayerEntity<T extends Array<unknown>, R = void>(
 
 	return (player: Player, ...args: T) => {
 		const entity = playerService.getEntity(player);
-		if (!entity) {
-			return callback(entity, ...args);
+		if (entity.isSome()) {
+			return callback(entity.unwrap(), ...args);
 		}
 
 		Log.Error(
@@ -25,9 +26,6 @@ export default function withPlayerEntity<T extends Array<unknown>, R = void>(
 			debug.traceback(),
 		);
 
-		return identity<IServerResponse>({
-			success: false,
-			error: "Internal error",
-		});
+		return Result.err(ServerError.NoPlayerEntity);
 	};
 }

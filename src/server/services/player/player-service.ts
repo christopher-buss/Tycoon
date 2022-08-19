@@ -1,6 +1,5 @@
-import { Flamework, OnInit, Reflect, Service } from "@flamework/core";
+import { Flamework, OnInit, OnStart, Reflect, Service } from "@flamework/core";
 import { Signal } from "@rbxts/beacon";
-import { OnStart } from "@rbxts/flamework";
 import { Janitor } from "@rbxts/janitor";
 import Log from "@rbxts/log";
 import { Option } from "@rbxts/rust-classes";
@@ -8,9 +7,10 @@ import { Players } from "@rbxts/services";
 import PlayerEntity from "server/modules/classes/player-entity";
 import { Functions } from "server/network";
 import { IPlayerData, PlayerDataProfile } from "shared/meta/default-player-data";
-import { isFlameworkService } from "shared/util/flamework-utils";
+import { FlameworkUtil } from "shared/util/flamework-utils";
+import { NetResult, PlayerDataRequested } from "shared/util/networking";
 import KickCode from "types/enum/kick-reason";
-import { IServerResponse } from "types/interfaces/network-types";
+import { ServerError } from "types/interfaces/network-types";
 import PlayerDataService from "./player-data-service";
 import PlayerRemovalService from "./player-removal-service";
 
@@ -28,7 +28,7 @@ export interface OnPlayerJoin {
 export class PlayerService implements OnInit, OnStart {
 	private playerJoinEvents = new Map<string, OnPlayerJoin>();
 	private playerEntities = new Map<Player, PlayerEntity>();
-	private onEntityRemoving = new Signal<void>(); // Signal<T>
+	private onEntityRemoving = new Signal<void>();
 
 	constructor(private playerDataService: PlayerDataService, private playerRemovalService: PlayerRemovalService) {}
 
@@ -50,14 +50,12 @@ export class PlayerService implements OnInit, OnStart {
 		});
 	}
 
+	/** @hidden */
 	public onStart(): void {
-		// Functions.requestPlayerData.setCallback((p) => this.onPlayerRequestedData(p));
-		Functions.requestPlayerData.setCallback((player) => {
-			return this.onPlayerRequestedData(player);
-		});
+		Functions.requestPlayerData.setCallback((player) => this.onPlayerRequestedData(player));
 
 		for (const [object, id] of Reflect.objToId) {
-			if (!isFlameworkService(object)) {
+			if (!FlameworkUtil.isService(object)) {
 				continue;
 			}
 
@@ -70,24 +68,13 @@ export class PlayerService implements OnInit, OnStart {
 
 	/**
 	 * Called by the client to request their initial player data.
-	 *
-	 * TODO: Retry if their profile hasn't loaded yet, this will error if player data
-	 * is requested too early.
 	 */
-	private async onPlayerRequestedData(player: Player): Promise<IServerResponse<IPlayerData>> {
+	private async onPlayerRequestedData(player: Player): Promise<PlayerDataRequested> {
 		const entity_opt = this.getEntity(player);
-		if (entity_opt.isNone()) {
-			return {
-				success: false,
-				error: "No player entity",
-			};
-		}
-
-		const entity = entity_opt.unwrap();
-		return {
-			success: true,
-			data: entity.data,
-		};
+		return entity_opt.match<PlayerDataRequested>(
+			(playerEntity: PlayerEntity) => NetResult.ok<IPlayerData>(playerEntity.data),
+			() => NetResult.err<ServerError>(ServerError.NoPlayerEntity),
+		);
 	}
 
 	private async onPlayerJoin(player: Player): Promise<void> {
@@ -97,7 +84,7 @@ export class PlayerService implements OnInit, OnStart {
 			return;
 		}
 
-		const janitor = new Janitor();
+		const janitor = new Janitor<void>();
 		janitor.Add(() => {
 			Log.Info(`Player {@Player} leaving game, cleaning up Janitor`, player);
 

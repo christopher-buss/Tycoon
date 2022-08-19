@@ -4,8 +4,8 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "build": "rbxtsc",
-    "watch": "rbxtsc -w"
+    "build": "rbxtsc --rojo ./develop.project.json",
+    "watch": "rbxtsc -w --rojo ./develop.project.json"
   },
   "keywords": [],
   "author": "",
@@ -37,6 +37,7 @@
     "@rbxts/services": "^1.5.1",
     "rbxts-transform-debug": "^1.1.0-ts4.5",
     "rbxts-transform-env": "^1.1.0-ts4.5",
-    "rbxts-transformer-t": "^1.1.5"
+    "rbxts-transformer-t": "^1.1.5",
+    "typestrict": "^1.0.2"
   }
 }

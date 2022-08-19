@@ -1,6 +1,6 @@
 import { Networking } from "@flamework/networking";
-import { IServerResponse } from "types/interfaces/network-types";
 import { IPlayerData } from "./meta/default-player-data";
+import { PlayerDataRequested } from "./util/networking";
 
 interface ServerEvents {}
 
@@ -10,7 +10,7 @@ interface ClientEvents {
 }
 
 interface ServerFunctions {
-	requestPlayerData(): IServerResponse<IPlayerData>;
+	requestPlayerData(): PlayerDataRequested;
 }
 
 interface ClientFunctions {}

@@ -5,6 +5,9 @@ declare const enum KickCode {
 	// Player data related
 	PlayerProfileUndefined,
 	PlayerProfileReleased,
+
+	// Player game related
+	PlayerFullServer,
 }
 
 export default KickCode;

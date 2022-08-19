@@ -1,11 +1,3 @@
-interface IServerResponseOk<T> {
-	success: true;
-	data?: T;
+export const enum ServerError {
+	NoPlayerEntity = 1,
 }
-
-interface IServerResponseBad {
-	success: false;
-	error: string;
-}
-
-export type IServerResponse<T = void> = IServerResponseOk<T> | IServerResponseBad;

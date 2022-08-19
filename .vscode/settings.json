@@ -25,7 +25,8 @@
 		"Roact",
 		"Roblox",
 		"Rodux",
-		"traceback"
+		"traceback",
+		"Unassigning"
 	],
 	"editor.experimental.stickyScroll.enabled": true,
 	"files.eol": "\n"
