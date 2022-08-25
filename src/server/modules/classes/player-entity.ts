@@ -4,7 +4,14 @@ import { Events } from "server/network";
 import { IPlayerData, PlayerDataProfile } from "shared/meta/default-player-data";
 import { DeepReadonly } from "types/util/readonly";
 
+/**
+ * A Player Entity class that is attached to all players in the game.
+ *
+ * This is used to manage player data, and to attach events that should occur
+ * once a player has left the game.
+ */
 export default class PlayerEntity {
+	/** Username of the player. */
 	public readonly name: string;
 
 	/**
@@ -21,6 +28,7 @@ export default class PlayerEntity {
 		/** Reference to the actual Player instance. */
 		public readonly player: Player,
 		public readonly janitor: Janitor,
+		public readonly playerRemoving: Janitor,
 		private dataProfile: PlayerDataProfile,
 	) {
 		this.name = player.Name;

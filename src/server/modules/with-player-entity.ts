@@ -7,6 +7,10 @@ import PlayerEntity from "./classes/player-entity";
 
 let playerService: PlayerService;
 
+/**
+ * This method wraps a callback and replaces the first argument (that must be
+ * of type `Player`) with that players `PlayerEntity` class.
+ */
 export default function withPlayerEntity<T extends Array<unknown>, R = void>(
 	callback: (playerEntity: PlayerEntity, ...args: T) => R,
 ) {

@@ -1,19 +1,11 @@
 import { Result } from "@rbxts/rust-classes";
-import { IPlayerData } from "shared/meta/default-player-data";
-import { ServerError } from "types/interfaces/network-types";
-
-export interface NetOk<T extends defined> {
-	readonly type: "Ok";
-	readonly value: T;
-}
-
-export interface NetErr<E extends defined> {
-	readonly type: "Err";
-	readonly err: E;
-}
+import { NetErr, NetOk } from "types/interfaces/network-types";
 
 export type NetResult<T extends defined, E extends defined> = NetOk<T> | NetErr<E>;
 
+/**
+ * Utility functions for sending rust-style Result's over the network.
+ */
 export namespace NetResult {
 	export function deserialize(serialized: NetResult<defined, defined>) {
 		if (serialized.type === "Ok") {
@@ -37,5 +29,3 @@ export namespace NetResult {
 		});
 	}
 }
-
-export type PlayerDataRequested = NetResult<IPlayerData, ServerError>;

@@ -1,16 +1,17 @@
 import { Networking } from "@flamework/networking";
+import { NetPlayerData } from "types/interfaces/network-types";
 import { IPlayerData } from "./meta/default-player-data";
-import { PlayerDataRequested } from "./util/networking";
 
 interface ServerEvents {}
 
 interface ClientEvents {
-	/** Fired by the server when the players data changes */
+	/** Fired by the server when the players data changes. */
 	playerDataChanged(newPlayerData: Partial<IPlayerData>): void;
 }
 
 interface ServerFunctions {
-	requestPlayerData(): PlayerDataRequested;
+	/** Called by the client to request their game data. */
+	requestPlayerData(): NetPlayerData;
 }
 
 interface ClientFunctions {}

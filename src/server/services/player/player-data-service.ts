@@ -1,25 +1,29 @@
 import { Dependency, Service } from "@flamework/core";
 import ProfileService from "@rbxts/profileservice";
+import { Option } from "@rbxts/rust-classes";
 import { Players } from "@rbxts/services";
 import DefaultPlayerData, { IPlayerData, PlayerDataProfile } from "shared/meta/default-player-data";
 import KickCode from "types/enum/kick-reason";
 import PlayerRemovalService from "./player-removal-service";
 
 /**
- * This service handles everything to do with interfacing with Roblox datastores
- * and ProfileService for players. It should *not* be used directly and is consumed
- * by the `PlayerEntity` class.
+ * This service handles everything to do with interfacing with Roblox
+ * datastores and ProfileService for players.
+ *
+ * @note It should *not* be used directly and is consumed by the `PlayerEntity`
+ * class.
  */
 @Service({})
 export default class PlayerDataService {
 	private removalService = Dependency<PlayerRemovalService>();
 	private gameProfileStore = ProfileService.GetProfileStore<IPlayerData>("PlayerData", DefaultPlayerData);
 
-	public async loadPlayerProfile(player: Player): Promise<PlayerDataProfile | void> {
+	public async loadPlayerProfile(player: Player): Promise<Option<PlayerDataProfile>> {
 		const dataKey = tostring(player.UserId);
 		const profile = this.gameProfileStore.LoadProfileAsync(dataKey, "ForceLoad");
 		if (profile === undefined) {
-			return this.removalService.removeForBug(player, KickCode.PlayerProfileUndefined);
+			this.removalService.removeForBug(player, KickCode.PlayerProfileUndefined);
+			return Option.none<PlayerDataProfile>();
 		}
 
 		if (!player.IsDescendantOf(Players)) {
@@ -30,12 +34,12 @@ export default class PlayerDataService {
 
 		profile.ListenToRelease(() => {
 			if (!player.IsDescendantOf(game)) {
-				return;
+				return Option.none<PlayerDataProfile>();
 			}
 
 			this.removalService.removeForBug(player, KickCode.PlayerProfileReleased);
 		});
 
-		return profile;
+		return Option.some<PlayerDataProfile>(profile);
 	}
 }
