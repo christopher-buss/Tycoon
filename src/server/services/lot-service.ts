@@ -115,7 +115,7 @@ export class LotService implements OnInit, OnStart, OnPlayerJoin {
 	 * have serious issues.
 	 * @hidden
 	 */
-	public fireOnLotOwned(lot: Lot) {
+	public fireOnLotOwned(lot: Lot): void {
 		const owner = lot.getOwner().expect(`[${lot.attributes.ComponentId!}]: Expected owner in lot`);
 		for (const [, obj] of this.lotOwnedObjs) {
 			task.spawn(() => {
@@ -143,7 +143,6 @@ export class LotService implements OnInit, OnStart, OnPlayerJoin {
 	/**
 	 * Called internally when a player leaves the game.
 	 * @param player
-	 * @returns
 	 */
 	private onPlayerRemoving(player: Player): void {
 		const lot_opt = this.getLotFromPlayer(player);

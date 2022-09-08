@@ -1,4 +1,4 @@
-import { Flamework } from "@flamework/core";
+import { Flamework, Modding } from "@flamework/core";
 import Log, { Logger, LogLevel } from "@rbxts/log";
 import { RunService } from "@rbxts/services";
 
@@ -9,6 +9,10 @@ Log.SetLogger(
 		.WriteTo(Log.RobloxOutput({ TagFormat: "full" }))
 		.Create(),
 );
+
+Modding.registerDependency<Logger>((ctor) => {
+	return Log.ForContext(ctor);
+});
 
 Flamework.addPaths("src/client/components");
 Flamework.addPaths("src/client/controllers");

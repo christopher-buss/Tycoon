@@ -1,4 +1,5 @@
-import { Controller, Flamework, Reflect, Service } from "@flamework/core";
+import { BaseComponent, Components } from "@flamework/components";
+import { Controller, Dependency, Flamework, Modding, Reflect, Service } from "@flamework/core";
 import { Constructor } from "@flamework/core/out/types";
 
 // https://github.com/memolemo-studios/SoftwareTycoon/blob/2ca3edf6dd73579b1bdc8a3af6dd3997a8cf261e/src/shared/utils/flamework.ts
@@ -51,5 +52,27 @@ export namespace FlameworkUtil {
 	 */
 	export function isSingleton(obj: object) {
 		return isController(obj) || isService(obj);
+	}
+
+	/**
+	 * Waits until a Flamework `component` exists on a given entity.
+	 *
+	 * @metadata macro */
+	export async function waitForComponentOnInstance<T extends BaseComponent>(
+		instance: Instance,
+		specifier?: Modding.Generic<T, "id">,
+	): Promise<T> {
+		assert(specifier, "[waitForComponentOnInstance] Specifier is required");
+
+		let component = Dependency<Components>().getComponent<T>(instance, specifier.id);
+
+		if (component === undefined) {
+			do {
+				component = Dependency<Components>().getComponent<T>(instance, specifier.id);
+				task.wait();
+			} while (component === undefined);
+		}
+
+		return component;
 	}
 }

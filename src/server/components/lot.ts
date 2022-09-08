@@ -11,7 +11,7 @@ import { ILotAttributes, ILotModel, LotErrors } from "types/interfaces/lots";
  */
 @Component({ tag: "Lot" })
 export class Lot extends BaseComponent<ILotAttributes, ILotModel> implements OnStart {
-	public constructor(private readonly logger: Logger, private lotService: LotService) {
+	public constructor(private readonly logger: Logger, private readonly lotService: LotService) {
 		super();
 	}
 

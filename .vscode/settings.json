@@ -17,17 +17,28 @@
 		"source.organizeImports": true
 	},
 	"cSpell.words": [
+		"adornee",
+		"billboardgui",
 		"Flamework",
+		"lerp",
+		"Lerps",
 		"obby",
 		"profilebegin",
 		"profileservice",
+		"rbxassetid",
 		"rbxts",
 		"Roact",
 		"Roblox",
 		"Rodux",
+		"screengui",
+		"streamable",
+		"surfacegui",
+		"textlabel",
+		"topbar",
 		"traceback",
+		"uicorner",
 		"Unassigning"
 	],
-	"editor.experimental.stickyScroll.enabled": true,
-	"files.eol": "\n"
+	"files.eol": "\n",
+	"editor.stickyScroll.enabled": true
 }

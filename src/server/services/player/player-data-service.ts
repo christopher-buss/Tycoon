@@ -30,6 +30,9 @@ export default class PlayerDataService {
 			profile.Release();
 		}
 
+		// GDPR compliance
+		profile.AddUserId(player.UserId);
+
 		profile.Reconcile();
 
 		profile.ListenToRelease(() => {
