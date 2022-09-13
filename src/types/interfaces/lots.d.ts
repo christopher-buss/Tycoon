@@ -1,5 +1,5 @@
 export interface ILotModel extends Model {
-	Primary: BasePart;
+	// Primary: BasePart;
 	Spawn: SpawnLocation;
 	Buttons: Folder;
 }

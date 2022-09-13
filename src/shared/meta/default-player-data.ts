@@ -1,7 +1,7 @@
 import { Profile } from "@rbxts/profileservice/globals";
 
 const DefaultPlayerData = {
-	cash: 0,
+	cash: 10,
 	inGroup: false,
 	rebirths: 0,
 	moneySpent: 0,

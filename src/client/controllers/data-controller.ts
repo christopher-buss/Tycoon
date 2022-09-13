@@ -22,6 +22,7 @@ export default class DataController implements OnStart {
 				const result = NetResult.deserialize(serialized);
 				if (result.isErr()) {
 					Log.Error("Could not get initial player data from server because:\n{@Reason}", result.unwrapErr());
+					return;
 				}
 
 				this.onGotNewData(result.unwrap());

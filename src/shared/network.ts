@@ -4,9 +4,14 @@ import { IPlayerData } from "./meta/default-player-data";
 
 interface ServerEvents {}
 
+export type DropperInfo = Vector3int16;
+
 interface ClientEvents {
 	/** Fired by the server when the players data changes. */
 	playerDataChanged(newPlayerData: Partial<IPlayerData>): void;
+
+	/** Fired by the server when a dropper should spawn a new item. */
+	dropperSpawned(dropperType: number, dropperInfo: DropperInfo): void;
 }
 
 interface ServerFunctions {

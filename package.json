@@ -4,8 +4,10 @@
   "description": "",
   "main": "index.js",
   "scripts": {
+    "darklua": "darklua process out production",
     "build": "rbxtsc --rojo ./develop.project.json",
-    "watch": "rbxtsc -w --rojo ./develop.project.json"
+    "watch": "rbxtsc -w --rojo ./develop.project.json",
+    "deploy": "npm run build && npm run darklua"
   },
   "keywords": [],
   "author": "",
@@ -32,10 +34,10 @@
     "@rbxts/beacon": "^2.0.0",
     "@rbxts/better-binding": "^1.0.0",
     "@rbxts/flamework": "0.0.11",
-    "@rbxts/fusion": "^0.2.0-dev-4231eef",
     "@rbxts/janitor": "^1.14.1-ts.0",
     "@rbxts/lerp-functions": "^1.0.2",
     "@rbxts/log": "^0.6.3",
+    "@rbxts/partcache": "^1.1.1",
     "@rbxts/profileservice": "^1.4.1",
     "@rbxts/roact": "^1.4.2-ts.3",
     "@rbxts/roact-hooked": "^2.1.1",

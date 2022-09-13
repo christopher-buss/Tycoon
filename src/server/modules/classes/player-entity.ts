@@ -40,7 +40,7 @@ export default class PlayerEntity {
 	 * @param callback Callback that gets passed the players existing data and returns
 	 * their new data.
 	 */
-	public updateData(callback: (existingData: DeepReadonly<IPlayerData>) => IPlayerData): void {
+	public updateData(callback: (existingData: IPlayerData) => IPlayerData): void {
 		const currentData = this.dataProfile.Data;
 		const newData = callback(currentData);
 		this.dataProfile.Data = newData;

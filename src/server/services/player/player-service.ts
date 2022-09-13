@@ -1,7 +1,7 @@
 import { Flamework, OnInit, OnStart, Reflect, Service } from "@flamework/core";
 import { Signal } from "@rbxts/beacon";
 import { Janitor } from "@rbxts/janitor";
-import Log from "@rbxts/log";
+import { Logger } from "@rbxts/log";
 import { Option } from "@rbxts/rust-classes";
 import { Players } from "@rbxts/services";
 import PlayerEntity from "server/modules/classes/player-entity";
@@ -34,8 +34,13 @@ export class PlayerService implements OnInit, OnStart {
 	private playerEntities = new Map<Player, PlayerEntity>();
 	private onEntityRemoving = new Signal<void>();
 
-	constructor(private playerDataService: PlayerDataService, private playerRemovalService: PlayerRemovalService) {}
+	constructor(
+		private readonly logger: Logger,
+		private playerDataService: PlayerDataService,
+		private playerRemovalService: PlayerRemovalService,
+	) {}
 
+	/** @hidden */
 	public onInit(): void {
 		Players.PlayerAdded.Connect((player) => {
 			this.onPlayerJoin(player);
@@ -46,11 +51,11 @@ export class PlayerService implements OnInit, OnStart {
 		});
 
 		game.BindToClose(() => {
-			Log.Debug("Game closing, holding open until all player entities are removed.");
+			this.logger.Debug("Game closing, holding open until all player entities are removed.");
 			while (!this.playerEntities.isEmpty()) {
 				this.onEntityRemoving.Wait();
 			}
-			Log.Debug("All player entities removed, closing game.");
+			this.logger.Debug("All player entities removed, closing game.");
 		});
 	}
 
@@ -111,7 +116,7 @@ export class PlayerService implements OnInit, OnStart {
 		const janitor = new Janitor<void>();
 		const playerRemoving = new Janitor<void>();
 		janitor.Add(() => {
-			Log.Info(`Player {@Player} leaving game, cleaning up Janitor`, player);
+			this.logger.Info(`Player {@Player} leaving game, cleaning up Janitor`, player);
 
 			// Cleanup anything that has bound to this lifecycle event.
 			playerRemoving.Destroy();

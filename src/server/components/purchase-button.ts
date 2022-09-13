@@ -1,9 +1,12 @@
 import { BaseComponent, Component } from "@flamework/components";
-import { Modding, OnStart } from "@flamework/core";
+import { OnStart } from "@flamework/core";
 import { Janitor } from "@rbxts/janitor";
 import { Logger } from "@rbxts/log";
-import { RunService } from "@rbxts/services";
+import { HttpService, RunService } from "@rbxts/services";
 import Spring from "@rbxts/spring";
+import { LeaderstatsService } from "server/services/leaderstats-service";
+import { PlayerService } from "server/services/player/player-service";
+import { MoneyService } from "server/services/stores/money-service";
 import { FlameworkUtil } from "shared/util/flamework-utils";
 import { lerpNumber } from "shared/util/math-util";
 import { PlayerUtil } from "shared/util/player-util";
@@ -11,7 +14,8 @@ import { Attributes, IPurchaseButtonModel } from "types/interfaces/buttons";
 import { Lot } from "./lot";
 
 export interface IOnPurchaseButtonBought {
-	onPurchaseButtonBought: () => void;
+	/** Called when this button is successfully purchased. */
+	onPurchaseButtonBought(): void;
 }
 
 /**
@@ -29,10 +33,16 @@ export class PurchaseButton extends BaseComponent<Attributes, IPurchaseButtonMod
 
 	private listeners = new Set<IOnPurchaseButtonBought>();
 
-	constructor(private readonly logger: Logger) {
+	constructor(
+		private readonly logger: Logger,
+		private readonly playerService: PlayerService,
+		private readonly leaderstatsService: LeaderstatsService,
+		private readonly moneyService: MoneyService,
+	) {
 		super();
+		this.attributes.ComponentId = HttpService.GenerateGUID(false);
 		this.attributes.DisplayName = this.instance.Name;
-		this.attributes.Price = 0; // prices[this.LinkedComponentId]; ?
+		// this.attributes.Price = 0; // prices[this.LinkedComponentId]; ?
 		this.debounce = false;
 		this.dependencies = [];
 		this.janitor = new Janitor();
@@ -50,24 +60,18 @@ export class PurchaseButton extends BaseComponent<Attributes, IPurchaseButtonMod
 			return;
 		}
 
-		Modding.onListenerAdded<IOnPurchaseButtonBought>((object) => {
-			this.listeners.add(object);
-		});
-
-		Modding.onListenerRemoved<IOnPurchaseButtonBought>((object) => {
-			this.listeners.delete(object);
-		});
-
 		// Don't have this onStart, only have it when a player owns a tycoon and doesn't own the linked component
 		this.bindButtonTouched();
+	}
+
+	public addListener(object: IOnPurchaseButtonBought): void {
+		this.listeners.add(object);
 	}
 
 	private bindButtonTouched(): void {
 		this.instance.Primary.CanTouch = true;
 		this.forceButtonVisible();
-		this.janitor.Add(() => {
-			this.touchPart.Touched.Connect((otherPart) => this.onComponentTouched(otherPart));
-		});
+		this.janitor.Add(this.touchPart.Touched.Connect((otherPart) => this.onComponentTouched(otherPart)));
 	}
 
 	/** @hidden */
@@ -90,18 +94,25 @@ export class PurchaseButton extends BaseComponent<Attributes, IPurchaseButtonMod
 			return;
 		}
 
-		this.logger.Info("{ComponentId} purchased by {@Player}", this.attributes.LinkedComponentId, player);
+		this.logger.Info("{ComponentId} attempting to be purchased by {@Player}", this.attributes.ComponentId, player);
 
-		this.hideButton().finally(() => {
-			// this.destroy();
-			print("Button Invisible");
+		const canSpend = this.moneyService.spendMoney(player, this.attributes.Price);
+		if (!canSpend) {
+			task.delay(0.5, () => {
+				this.debounce = false;
+			});
+			return;
+		}
 
-			for (const listener of this.listeners) {
-				task.spawn(() => {
-					listener.onPurchaseButtonBought();
-				});
-			}
-		});
+		this.logger.Info("{ComponentId} purchased by {@Player}", this.attributes.ComponentId, player);
+
+		for (const listener of this.listeners) {
+			task.spawn(() => {
+				listener.onPurchaseButtonBought();
+			});
+		}
+
+		this.hideButton(); //.finally(() => {});
 	}
 
 	/** @hidden */
@@ -116,7 +127,6 @@ export class PurchaseButton extends BaseComponent<Attributes, IPurchaseButtonMod
 			return;
 		}
 
-		this.touchPart.Transparency = base;
 		this.touchPart.CanCollide = visible;
 
 		const spring = new Spring<number>(base, 5, goal, 1);
@@ -133,9 +143,6 @@ export class PurchaseButton extends BaseComponent<Attributes, IPurchaseButtonMod
 			"Disconnect",
 			"Visibility",
 		);
-
-		this.touchPart.Transparency = goal;
-		this.touchPart.CanCollide = visible;
 	}
 
 	/** Show the purchase button using a transparency lerp. */
@@ -160,7 +167,8 @@ export class PurchaseButton extends BaseComponent<Attributes, IPurchaseButtonMod
 
 	/** @override */
 	public destroy(): void {
-		this.janitor.Destroy();
 		super.destroy();
+		print("Streaming Out?");
+		this.janitor.Destroy();
 	}
 }
