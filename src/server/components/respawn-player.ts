@@ -31,7 +31,6 @@ export class RespawnPlayer extends BaseComponent<{}, BasePart> implements OnStar
 		}
 
 		const player = player_opt.unwrap();
-
 		if (player.GetAttribute("Respawning") === true) {
 			return;
 		}
@@ -43,5 +42,10 @@ export class RespawnPlayer extends BaseComponent<{}, BasePart> implements OnStar
 			player.LoadCharacter();
 			player.SetAttribute("Respawning", undefined);
 		});
+	}
+
+	public destroy(): void {
+		super.destroy();
+		this.janitor.Destroy();
 	}
 }
