@@ -2,7 +2,7 @@ import { BaseComponent, Component } from "@flamework/components";
 import { OnStart } from "@flamework/core";
 import { Logger } from "@rbxts/log";
 import { Option, Result } from "@rbxts/rust-classes";
-import { HttpService, Players } from "@rbxts/services";
+import { HttpService, Players, Teams } from "@rbxts/services";
 import { LotService } from "server/services/lot-service";
 import { ILotAttributes, ILotModel, LotErrors } from "types/interfaces/lots";
 
@@ -11,8 +11,11 @@ import { ILotAttributes, ILotModel, LotErrors } from "types/interfaces/lots";
  */
 @Component({ tag: "Lot" })
 export class Lot extends BaseComponent<ILotAttributes, ILotModel> implements OnStart {
+	private readonly team: Team;
+
 	public constructor(private readonly logger: Logger, private readonly lotService: LotService) {
 		super();
+		this.team = Teams.FindFirstChild(this.instance.Name) as Team;
 	}
 
 	/** @hidden */
@@ -55,7 +58,10 @@ export class Lot extends BaseComponent<ILotAttributes, ILotModel> implements OnS
 	 * @param player the new owner of the lot.
 	 */
 	private setupOwner(player: Player): void {
+		player.RequestStreamAroundAsync(this.instance.Spawn.Position);
 		player.RespawnLocation = this.instance.Spawn;
+		player.Team = this.team;
+		player.LoadCharacter();
 	}
 
 	/**

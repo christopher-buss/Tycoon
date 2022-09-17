@@ -1,5 +1,6 @@
-import { Dependency, Service } from "@flamework/core";
+import { Service } from "@flamework/core";
 import ProfileService from "@rbxts/profileservice";
+import { ProfileStore } from "@rbxts/profileservice/globals";
 import { Option } from "@rbxts/rust-classes";
 import { Players } from "@rbxts/services";
 import DefaultPlayerData, { IPlayerData, PlayerDataProfile } from "shared/meta/default-player-data";
@@ -15,8 +16,11 @@ import PlayerRemovalService from "./player-removal-service";
  */
 @Service({})
 export default class PlayerDataService {
-	private removalService = Dependency<PlayerRemovalService>();
-	private gameProfileStore = ProfileService.GetProfileStore<IPlayerData>("PlayerData", DefaultPlayerData);
+	private gameProfileStore: ProfileStore<IPlayerData>;
+
+	constructor(private readonly removalService: PlayerRemovalService) {
+		this.gameProfileStore = ProfileService.GetProfileStore<IPlayerData>("PlayerData", DefaultPlayerData);
+	}
 
 	public async loadPlayerProfile(player: Player): Promise<Option<PlayerDataProfile>> {
 		const dataKey = tostring(player.UserId);

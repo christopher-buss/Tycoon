@@ -1,4 +1,41 @@
 interface ReplicatedStorage extends Instance {
+	Assets: Folder & {
+		Gamepasses: Folder & {
+			SpeedCoil: Tool & {
+				Handle: Part & {
+					Attachment0: Attachment;
+					BodyForce: BodyForce;
+					Coil: SpringConstraint;
+					CoilSound: Sound;
+					Attachment1: Attachment;
+				};
+				ThumbnailPart: Part & {
+					Decal: Decal;
+				};
+				CoilScript: Script;
+			};
+			Cloud: Tool & {
+				LeftTurn: Animation;
+				Script: Script;
+				LocalScript: LocalScript;
+				R15RightTurn: Animation;
+				R15CoastingPose: Animation;
+				Handle: Part & {
+					Smoke: Smoke;
+					Wind: Sound;
+					RightGripAttachment: Attachment;
+					Mesh: SpecialMesh;
+				};
+				CoastingPose: Animation;
+				R15LeftTurn: Animation;
+				RightTurn: Animation;
+			};
+		};
+		Effects: Folder & {
+			Fire: Fire;
+			Sparkles: Sparkles;
+		};
+	};
 	TS: Folder & {
 		network: ModuleScript;
 		ui: Folder & {

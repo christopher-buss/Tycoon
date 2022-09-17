@@ -10,10 +10,10 @@ const DefaultPlayerData = {
 
 	gamePasses: {
 		// tools
-		cloud: false,
-		speedCoil: false,
+		cloudGamepass: false,
+		speedCoilGamepass: false,
 
-		multiplier: 1,
+		doubleMoneyGamepass: true,
 	},
 
 	settings: {
@@ -24,6 +24,10 @@ const DefaultPlayerData = {
 };
 
 export default DefaultPlayerData;
+
+export type PlayerKey = keyof typeof DefaultPlayerData;
+export type GamepassPlayerKey = keyof typeof DefaultPlayerData.gamePasses;
+export type SettingsPlayerKey = keyof typeof DefaultPlayerData.settings;
 
 export type IPlayerData = typeof DefaultPlayerData;
 export type PlayerDataProfile = Profile<IPlayerData>;

@@ -29,7 +29,8 @@ export default class PlayerEntity {
 		public readonly player: Player,
 		public readonly janitor: Janitor,
 		public readonly playerRemoving: Janitor,
-		private dataProfile: PlayerDataProfile,
+		/** @hidden */
+		public readonly dataProfile: PlayerDataProfile,
 	) {
 		this.name = player.Name;
 		this.data = dataProfile.Data;

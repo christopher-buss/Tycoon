@@ -39,17 +39,17 @@ export class LotService implements OnInit, OnStart, OnPlayerJoin {
 	) {}
 
 	/** @hidden */
-	onInit(): void {
+	public onInit(): void {
 		this.lotOwnedObjs = FlameworkUtil.getDependencySingletons((ctor) => {
 			return Flamework.implements<OnLotOwned>(ctor);
 		});
 	}
 
 	/** @hidden */
-	onStart(): void {}
+	public onStart(): void {}
 
 	/** @hidden */
-	onPlayerJoin(playerEntity: playerEntity): void {
+	public onPlayerJoin(playerEntity: playerEntity): void {
 		playerEntity.playerRemoving.Add(() => {
 			this.onPlayerRemoving(playerEntity.player);
 		});
