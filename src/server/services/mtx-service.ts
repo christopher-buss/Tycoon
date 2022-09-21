@@ -57,7 +57,7 @@ export class MtxService implements OnInit, OnPlayerJoin {
 			metaData.MetaTags.set("ProfilePurchaseIds", []);
 		}
 
-		if (localPurchaseIds.find((id) => id === purchaseId) === undefined) {
+		if (localPurchaseIds !== undefined && !localPurchaseIds.includes(purchaseId)) {
 			while (localPurchaseIds.size() >= this.purchaseIdLog) {
 				localPurchaseIds.remove(1);
 			}
@@ -67,7 +67,7 @@ export class MtxService implements OnInit, OnPlayerJoin {
 
 		function checkLatestMetaTags(): Option<Enum.ProductPurchaseDecision> {
 			const savedPurchaseIds = metaData.MetaTagsLatest.get("ProfilePurchaseIds") as string[];
-			if (savedPurchaseIds !== undefined && savedPurchaseIds.find((id) => id === purchaseId)) {
+			if (savedPurchaseIds !== undefined && savedPurchaseIds.includes(purchaseId)) {
 				return Option.some<Enum.ProductPurchaseDecision>(Enum.ProductPurchaseDecision.PurchaseGranted);
 			}
 
@@ -86,7 +86,6 @@ export class MtxService implements OnInit, OnPlayerJoin {
 			const connection = playerData.MetaTagsUpdated.Connect(() => {
 				const result_opt = checkLatestMetaTags();
 				if (result_opt.isNone() && !playerData.IsActive()) {
-					connection.Disconnect();
 					resolve(Enum.ProductPurchaseDecision.NotProcessedYet);
 				}
 			});
@@ -115,6 +114,7 @@ export class MtxService implements OnInit, OnPlayerJoin {
 	 * @returns
 	 */
 	private async processReceipt(receiptInfo: ReceiptInfo): Promise<Enum.ProductPurchaseDecision> {
+		this.logger.Info(`Processing receipt ${receiptInfo.PurchaseId} for ${receiptInfo.PlayerId}`);
 		const player = Players.GetPlayerByUserId(receiptInfo.PlayerId);
 		if (!player) {
 			return Enum.ProductPurchaseDecision.NotProcessedYet;
