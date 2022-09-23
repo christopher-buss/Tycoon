@@ -17,6 +17,7 @@
 			"node_modules/@flamework"
 		],
 		"forceConsistentCasingInFileNames": true,
+		"moduleDetection": "force",
 		// configurable
 		"rootDir": "src",
 		"outDir": "out",
@@ -25,9 +26,9 @@
 		"tsBuildInfoFile": "out/tsconfig.tsbuildinfo",
 		"experimentalDecorators": true,
 		"plugins": [
-			{
-				"transform": "rbxts-transform-env"
-			},
+			// {
+			// 	"transform": "rbxts-transform-env"
+			// },
 			{
 				"transform": "rbxts-transform-debug"
 			},
