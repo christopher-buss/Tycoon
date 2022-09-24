@@ -5,6 +5,9 @@ import PlayerEntity from "server/modules/classes/player-entity";
 import { LeaderstatsService } from "../leaderstats-service";
 import { PlayerService } from "../player/player-service";
 
+/**
+ * A wrapper for accessing the player's money.
+ */
 @Service({})
 export class MoneyService {
 	constructor(
@@ -13,6 +16,11 @@ export class MoneyService {
 		private readonly leaderstatsService: LeaderstatsService,
 	) {}
 
+	/**
+	 *
+	 * @param entity
+	 * @returns
+	 */
 	public getMoneyForEntity(entity: PlayerEntity): Option<number> {
 		return Option.wrap<number>(entity.data.cash);
 	}
@@ -28,6 +36,12 @@ export class MoneyService {
 		});
 	}
 
+	/**
+	 *
+	 * @param player
+	 * @param toSpend
+	 * @returns
+	 */
 	public spendMoney(player: Player, toSpend: number): boolean {
 		const playerEntity_opt = this.playerService.getEntity(player);
 		if (playerEntity_opt.isNone()) {
@@ -53,12 +67,23 @@ export class MoneyService {
 		);
 	}
 
+	/**
+	 *
+	 * @param entity
+	 * @param toSpend
+	 * @returns
+	 */
 	private checkIfEntityHasEnoughMoney(entity: PlayerEntity, toSpend: number): Option<boolean> {
 		return this.getMoneyForEntity(entity).andWith<boolean>((currentMoney) => {
 			return Option.some<boolean>(currentMoney - toSpend > 0);
 		});
 	}
 
+	/**
+	 *
+	 * @param entity
+	 * @param amount
+	 */
 	private updatePlayerMoney(entity: PlayerEntity, amount: number): void {
 		entity.updateData((data) => {
 			data.cash -= amount;
