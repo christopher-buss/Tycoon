@@ -1,44 +1,51 @@
 {
 	"Flamework Controller": {
-		"prefix":[ "controller", "flameworkcontroller"],
+		"prefix": [
+			"controller",
+			"flameworkcontroller"
+		],
 		"description": "Create a Flamework controller",
 		"body": [
 			"import { Controller, OnStart, OnInit } from \"@flamework/core\";",
 			"",
 			"@Controller({})",
 			"export class ${1:$TM_FILENAME_BASE} implements OnStart, OnInit {",
-				"\tonInit() {",
-					"\t\t$2",
-				"\t}",
-				"",
-				"\tonStart() {",
-					"\t\t$0",
-				"\t}",
+			"\tpublic onInit() {",
+			"\t\t$2",
+			"\t}",
+			"",
+			"\tpublic onStart() {",
+			"\t\t$0",
+			"\t}",
 			"}",
 		]
 	},
-
 	"Flamework Service": {
-		"prefix":[ "service", "flameworkservice"],
+		"prefix": [
+			"service",
+			"flameworkservice"
+		],
 		"description": "Create a Flamework service",
 		"body": [
 			"import { Service, OnStart, OnInit } from \"@flamework/core\";",
 			"",
 			"@Service({})",
 			"export class ${1:$TM_FILENAME_BASE} implements OnStart, OnInit {",
-				"\tonInit() {",
-					"\t\t$2",
-				"\t}",
-				"",
-				"\tonStart() {",
-					"\t\t$0",
-				"\t}",
+			"\tpublic onInit() {",
+			"\t\t$2",
+			"\t}",
+			"",
+			"\tpublic onStart() {",
+			"\t\t$0",
+			"\t}",
 			"}",
 		]
 	},
-
 	"Flamework Component": {
-		"prefix":[ "component", "flameworkcomponent"],
+		"prefix": [
+			"component",
+			"flameworkcomponent"
+		],
 		"description": "Create a Flamework component",
 		"body": [
 			"import { OnStart } from \"@flamework/core\";",
@@ -48,9 +55,9 @@
 			"",
 			"@Component({})",
 			"export class ${1:$TM_FILENAME_BASE} extends BaseComponent<Attributes> implements OnStart {",
-				"\tonStart() {",
-					"\t\t$0",
-				"\t}",
+			"\tpublic onStart() {",
+			"\t\t$0",
+			"\t}",
 			"}",
 		]
 	},

@@ -1,4 +1,5 @@
 import { Networking } from "@flamework/networking";
+import { NotificationData } from "server/meta/notification-data";
 import { NetPlayerData } from "types/interfaces/network-types";
 import { IPlayerData } from "./meta/default-player-data";
 
@@ -12,6 +13,9 @@ interface ClientEvents {
 
 	/** Fired by the server when a dropper should spawn a new item. */
 	dropperSpawned(dropperType: number, dropperInfo: DropperInfo): void;
+
+	/** Fired by the server when a notification should be displayed on the client. */
+	sendNotification(notificationData: NotificationData): void;
 }
 
 interface ServerFunctions {
