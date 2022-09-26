@@ -1,0 +1,28 @@
+diff --git a/node_modules/@rbxts/partcache/out/index.d.ts b/node_modules/@rbxts/partcache/out/index.d.ts
+index 6467360..f78dfc7 100644
+--- a/node_modules/@rbxts/partcache/out/index.d.ts
++++ b/node_modules/@rbxts/partcache/out/index.d.ts
+@@ -4,7 +4,7 @@ interface PartCacheConstructor {
+ 	/**
+ 	 * Creates a new part cache using the specified template part, creating precreatedParts parts to grab from the cache. This will error if template is nil or precreatedParts < 0. By default precreatedParts is 5.
+ 	 */
+-	new<T extends BasePart = BasePart>(template: T, precreatedParts: number): PartCache<T>;
++	new<T extends BasePart = BasePart>(template: T, precreatedParts: number, currentCacheParent: Instance): PartCache<T>;
+ }
+ 
+ declare const PartCacheModule: PartCacheConstructor;
+diff --git a/node_modules/@rbxts/partcache/out/init.lua b/node_modules/@rbxts/partcache/out/init.lua
+index 8d4df7e..66bd18e 100644
+--- a/node_modules/@rbxts/partcache/out/init.lua
++++ b/node_modules/@rbxts/partcache/out/init.lua
+@@ -68,8 +68,8 @@ local function MakeFromTemplate(template: BasePart, currentCacheParent: Instance
+ 	local part: BasePart = template:Clone()
+ 	-- ^ Ignore W000 type mismatch between Instance and BasePart. False alert.
+ 
+-	part.CFrame = CF_REALLY_FAR_AWAY
+-	part.Anchored = true
++	part:PivotTo(CF_REALLY_FAR_AWAY)
++	-- part.Anchored = true
+ 	part.Parent = currentCacheParent
+ 	return part
+ end
