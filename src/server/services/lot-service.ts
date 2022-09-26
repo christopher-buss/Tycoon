@@ -2,7 +2,7 @@ import { Components } from "@flamework/components";
 import { Flamework, OnInit, OnStart, Service } from "@flamework/core";
 import { Logger } from "@rbxts/log";
 import { Option, Result } from "@rbxts/rust-classes";
-import { Lot } from "server/components/lot";
+import { Lot } from "server/components/lot/lot";
 import playerEntity from "server/modules/classes/player-entity";
 import { FlameworkUtil } from "shared/util/flamework-utils";
 import KickCode from "types/enum/kick-reason";
