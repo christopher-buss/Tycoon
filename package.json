@@ -7,7 +7,8 @@
     "darklua": "darklua process out production",
     "build": "rbxtsc --rojo ./develop.project.json",
     "watch": "rbxtsc -w --rojo ./develop.project.json",
-    "deploy": "npm run build && npm run darklua"
+    "deploy": "npm run build && npm run darklua",
+    "postinstall": "patch-package"
   },
   "keywords": [],
   "author": "",
@@ -33,6 +34,7 @@
     "@rbxts/abbreviate": "^3.0.4",
     "@rbxts/beacon": "^2.0.0",
     "@rbxts/better-binding": "^1.0.0",
+    "@rbxts/chat-service": "^1.2.1",
     "@rbxts/flamework": "0.0.11",
     "@rbxts/janitor": "^1.14.1-ts.0",
     "@rbxts/lerp-functions": "^1.0.2",
@@ -46,8 +48,10 @@
     "@rbxts/rust-classes": "^0.11.2",
     "@rbxts/services": "^1.5.1",
     "@rbxts/spring": "^1.0.2",
+    "@rbxts/stacks-and-queues": "^1.0.5",
     "@rbxts/streamable": "^0.1.0",
     "@rbxts/topbar-plus": "^2.0.9",
+    "patch-package": "^6.4.7",
     "rbxts-transform-debug": "github:roblox-aurora/rbxts-transform-debug#v2.0.0",
     "rbxts-transform-env": "^1.1.0-ts4.5",
     "rbxts-transformer-services": "^1.0.1",

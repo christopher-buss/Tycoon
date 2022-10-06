@@ -4,13 +4,13 @@ import { Janitor } from "@rbxts/janitor";
 import { Logger } from "@rbxts/log";
 import { HttpService, RunService } from "@rbxts/services";
 import Spring from "@rbxts/spring";
-import { LeaderstatsService } from "server/services/leaderstats-service";
 import { PlayerService } from "server/services/player/player-service";
 import { MoneyService } from "server/services/stores/money-service";
+import { EncodePartIdentifier, encoderPartIdentifiers } from "shared/meta/part-identifiers";
 import { FlameworkUtil } from "shared/util/flamework-utils";
 import { lerpNumber } from "shared/util/math-util";
 import { PlayerUtil } from "shared/util/player-util";
-import { Attributes, IPurchaseButtonModel } from "types/interfaces/buttons";
+import { IPurchaseButtonAttributes, IPurchaseButtonModel } from "types/interfaces/buttons";
 import { Lot } from "./lot";
 
 export interface IOnPurchaseButtonBought {
@@ -23,7 +23,7 @@ export interface IOnPurchaseButtonBought {
  * linked object.
  */
 @Component({ tag: "PurchaseButton" })
-export class PurchaseButton extends BaseComponent<Attributes, IPurchaseButtonModel> implements OnStart {
+export class PurchaseButton extends BaseComponent<IPurchaseButtonAttributes, IPurchaseButtonModel> implements OnStart {
 	private debounce: boolean;
 	private readonly janitor: Janitor<{ Visibility: string | RBXScriptConnection }>;
 	private readonly touchPart: BasePart;
@@ -31,45 +31,44 @@ export class PurchaseButton extends BaseComponent<Attributes, IPurchaseButtonMod
 	private readonly dependencies: Array<string>;
 	private lot!: Lot;
 
-	private listeners = new Set<IOnPurchaseButtonBought>();
+	public listeners = new Set<IOnPurchaseButtonBought>();
 
 	constructor(
 		private readonly logger: Logger,
 		private readonly playerService: PlayerService,
-		private readonly leaderstatsService: LeaderstatsService,
 		private readonly moneyService: MoneyService,
 	) {
 		super();
 		this.attributes.ComponentId = HttpService.GenerateGUID(false);
 		this.attributes.DisplayName = this.instance.Name;
-		// this.attributes.Price = 0; // prices[this.LinkedComponentId]; ?
 		this.debounce = false;
 		this.dependencies = [];
 		this.janitor = new Janitor();
-		this.touchPart = this.instance.Primary;
+		this.touchPart = this.instance.Head;
 	}
 
-	onStart() {
+	public onStart() {
 		FlameworkUtil.waitForComponentOnInstance<Lot>(this.instance.Parent?.Parent as Model).andThen((component) => {
 			assert(component !== undefined, "Lot is undefined");
 			this.lot = component;
 		});
 
-		if (!this.dependencies.isEmpty()) {
-			this.bindButtonTouched();
-			return;
-		}
+		// if (!this.dependencies.isEmpty()) {
+		// 	this.bindButtonTouched();
+		// 	return;
+		// }
 
 		// Don't have this onStart, only have it when a player owns a tycoon and doesn't own the linked component
-		this.bindButtonTouched();
+		// this.bindButtonTouched();
 	}
 
 	public addListener(object: IOnPurchaseButtonBought): void {
 		this.listeners.add(object);
 	}
 
-	private bindButtonTouched(): void {
-		this.instance.Primary.CanTouch = true;
+	public bindButtonTouched(): void {
+		this.logger.Info("Binding button touched for {ComponentId}", this.attributes.ComponentId);
+		this.touchPart.CanTouch = true;
 		this.forceButtonVisible();
 		this.janitor.Add(this.touchPart.Touched.Connect((otherPart) => this.onComponentTouched(otherPart)));
 	}
@@ -94,6 +93,13 @@ export class PurchaseButton extends BaseComponent<Attributes, IPurchaseButtonMod
 			return;
 		}
 
+		const playerEntity_opt = this.playerService.getEntity(player);
+		if (playerEntity_opt.isNone()) {
+			this.logger.Error(`Player entity for ${player} could not be found`);
+			this.debounce = false;
+			return;
+		}
+
 		this.logger.Info("{ComponentId} attempting to be purchased by {@Player}", this.attributes.ComponentId, player);
 
 		const canSpend = this.moneyService.spendMoney(player, this.attributes.Price);
@@ -103,6 +109,18 @@ export class PurchaseButton extends BaseComponent<Attributes, IPurchaseButtonMod
 			});
 			return;
 		}
+
+		const playerEntity = playerEntity_opt.unwrap();
+		playerEntity.updateData((data) => {
+			const identifier = encoderPartIdentifiers[this.attributes.DisplayName! as keyof EncodePartIdentifier];
+			if (identifier === undefined) {
+				this.logger.Error("Identifier is undefined");
+				return data;
+			}
+
+			data.purchased.push(identifier);
+			return data;
+		});
 
 		this.logger.Info("{ComponentId} purchased by {@Player}", this.attributes.ComponentId, player);
 
@@ -146,29 +164,28 @@ export class PurchaseButton extends BaseComponent<Attributes, IPurchaseButtonMod
 	}
 
 	/** Show the purchase button using a transparency lerp. */
-	private showButton(): Promise<void> {
+	public showButton(): Promise<void> {
 		return this.setButtonVisibility(true, true);
 	}
 
 	/** Hide the purchase button using a transparency lerp. */
-	private hideButton(): Promise<void> {
+	public hideButton(): Promise<void> {
 		return this.setButtonVisibility(false, false);
 	}
 
 	/** Show the purchase button instantaneously. */
-	private forceButtonVisible(): Promise<void> {
+	public forceButtonVisible(): Promise<void> {
 		return this.setButtonVisibility(true, true);
 	}
 
 	/** Hide the purchase button instantaneously. */
-	private forceButtonHidden(): Promise<void> {
+	public forceButtonHidden(): Promise<void> {
 		return this.setButtonVisibility(false, true);
 	}
 
 	/** @override */
 	public destroy(): void {
 		super.destroy();
-		print("Streaming Out?");
 		this.janitor.Destroy();
 	}
 }

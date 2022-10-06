@@ -7,7 +7,9 @@ import { Option } from "@rbxts/rust-classes";
 import { Players } from "@rbxts/services";
 import { observeChild } from "@rbxts/streamable";
 import purchaseButton from "shared/ui/world/purchase-button";
-import { Attributes, IPurchaseButtonModel } from "types/interfaces/buttons";
+import { IPurchaseButtonAttributes, IPurchaseButtonModel } from "types/interfaces/buttons";
+
+const noop = () => {};
 
 /**
  * A component that players in the game can touch to purchase corresponding
@@ -15,7 +17,7 @@ import { Attributes, IPurchaseButtonModel } from "types/interfaces/buttons";
  * related to the purchase button.
  */
 @Component({ tag: "PurchaseButton" })
-export class PurchaseButton extends BaseComponent<Attributes, IPurchaseButtonModel> implements OnStart {
+export class PurchaseButton extends BaseComponent<IPurchaseButtonAttributes, IPurchaseButtonModel> implements OnStart {
 	private readonly janitor: Janitor<void>;
 	private tree_opt: Option<Roact.Tree>;
 
@@ -28,9 +30,9 @@ export class PurchaseButton extends BaseComponent<Attributes, IPurchaseButtonMod
 	/** @hidden */
 	public onStart() {
 		this.janitor.Add(
-			observeChild(this.instance, "Primary", (_primary) => {
+			observeChild(this.instance, "Head", (_primary) => {
 				this.onStreamIn();
-				return () => {};
+				return noop;
 			}),
 		);
 	}
@@ -51,7 +53,7 @@ export class PurchaseButton extends BaseComponent<Attributes, IPurchaseButtonMod
 	 */
 	private createInterface(): Roact.Element {
 		return purchaseButton({
-			Adornee: this.instance.Primary as BasePart,
+			Adornee: this.instance.Head as BasePart & MeshPart,
 			DisplayName: this.instance.Name,
 			Price: this.attributes.Price,
 			Janitor: this.janitor,

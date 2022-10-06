@@ -2,7 +2,7 @@ import { Janitor } from "@rbxts/janitor";
 import Log from "@rbxts/log";
 import { Events } from "server/network";
 import { IPlayerData, PlayerDataProfile } from "shared/meta/default-player-data";
-import { DeepReadonly } from "types/util/readonly";
+import { Immutable } from "types/util/readonly";
 
 /**
  * A Player Entity class that is attached to all players in the game.
@@ -18,7 +18,7 @@ export default class PlayerEntity {
 	 * Readonly version of the players data. Updates should be done through the
 	 * `updateData` method.
 	 */
-	public data: DeepReadonly<IPlayerData>;
+	public data: Immutable<IPlayerData>;
 
 	/**
 	 * This class should handle *everything* to do with a specific player. This

@@ -78,11 +78,7 @@ export class LotService implements OnInit, OnStart, OnPlayerJoin {
 		const vacantLot = this.getVacantLots();
 		const randomLot_opt = Option.wrap(vacantLot[rng.NextInteger(0, vacantLot.size() - 1)]);
 		return randomLot_opt.match<Result<string, LotErrors>>(
-			(lot: Lot) => {
-				return lot.assignOwner(player).map<string>(() => {
-					return lot.attributes.ComponentId!;
-				});
-			},
+			(lot: Lot) => lot.assignOwner(player).map<string>(() => lot.attributes.ComponentId!),
 			() => Result.err<string, LotErrors>(LotErrors.NoLots),
 		);
 	}
@@ -118,9 +114,7 @@ export class LotService implements OnInit, OnStart, OnPlayerJoin {
 	public fireOnLotOwned(lot: Lot): void {
 		const owner = lot.getOwner().expect(`[${lot.attributes.ComponentId!}]: Expected owner in lot`);
 		for (const [, obj] of this.lotOwnedObjs) {
-			task.spawn(() => {
-				return obj.onLotOwned(lot, owner);
-			});
+			task.spawn(() => obj.onLotOwned(lot, owner));
 		}
 	}
 

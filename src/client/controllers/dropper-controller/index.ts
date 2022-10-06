@@ -4,25 +4,25 @@ import PartCacheModule from "@rbxts/partcache";
 import { PartCache } from "@rbxts/partcache/out/class";
 import { ReplicatedStorage, TweenService, Workspace } from "@rbxts/services";
 import { Events } from "client/network";
-import partIdentifiers from "shared/meta/part-identifiers";
+import { decoderPartIdentifiers } from "shared/meta/part-identifiers";
 import { DropperInfo } from "shared/network";
 
 @Controller({})
 export class DropperController implements OnStart, OnInit {
 	private cachedConveyorLocations: Map<string, Array<Array<Vector3>>>;
 	private partCache: Map<string, PartCache>;
-	private nearestTycoon = "Temp";
+	private nearestTycoon = "Emperor Dumpling Tycoon";
 
 	constructor() {
 		this.cachedConveyorLocations = new Map();
 		this.partCache = new Map();
 	}
 
-	onInit() {
+	public onInit() {
 		this.storeCachedConveyorLocations();
 	}
 
-	onStart() {
+	public onStart() {
 		Events.dropperSpawned.connect((...args) => this.dropItem(...args));
 
 		const parts = ReplicatedStorage.PartInfo;
@@ -35,7 +35,7 @@ export class DropperController implements OnStart, OnInit {
 	}
 
 	private dropItem(dropperType: number, dropperInfo: DropperInfo) {
-		const partType = partIdentifiers[dropperInfo.X as never];
+		const partType = decoderPartIdentifiers[dropperInfo.X as never];
 		const dropperId = dropperInfo.Y;
 
 		const newPart = this.partCache.get(partType)?.GetPart();

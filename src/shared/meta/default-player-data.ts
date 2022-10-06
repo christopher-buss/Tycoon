@@ -1,11 +1,13 @@
 import { Profile } from "@rbxts/profileservice/globals";
 
 const DefaultPlayerData = {
-	cash: 10,
+	cash: 1000,
 	inGroup: false,
 	rebirths: 0,
 	moneySpent: 0,
-	// purchased: [],
+
+	purchased: [] as number[], // uses the part-identifiers rather than strings.
+
 	obbyLastCompleted: os.clock(),
 
 	gamePasses: {

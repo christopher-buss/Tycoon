@@ -134,6 +134,7 @@ export class MtxService implements OnInit, OnPlayerJoin {
 	/**
 	 *
 	 * @param playerEntity
+	 * @hidden
 	 */
 	public onPlayerJoin(playerEntity: PlayerEntity): void {
 		for (const [id, gamepassFunctionName] of this.gamePasses) {

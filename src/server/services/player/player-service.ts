@@ -28,7 +28,9 @@ export interface OnPlayerJoin {
  * A service that handles functionality related to player data and life cycle
  * events.
  */
-@Service({})
+@Service({
+	loadOrder: 0,
+})
 export class PlayerService implements OnInit, OnStart {
 	private playerJoinEvents = new Map<string, OnPlayerJoin>();
 	private playerEntities = new Map<Player, PlayerEntity>();
@@ -66,6 +68,10 @@ export class PlayerService implements OnInit, OnStart {
 			return Promise.retry(() => this.onPlayerRequestedData(player), 3);
 		});
 
+		for (const player of Players.GetPlayers()) {
+			task.spawn(() => this.onPlayerJoin(player));
+		}
+
 		this.setupOnPlayerJoinLifecycle();
 	}
 
@@ -94,9 +100,10 @@ export class PlayerService implements OnInit, OnStart {
 	 * @returns The player's current data if it exists.
 	 */
 	private async onPlayerRequestedData(player: Player): Promise<NetPlayerData> {
+		this.logger.Info("Player {@Player} requested their data", player);
 		const entity_opt = this.getEntity(player);
 		return entity_opt.match<NetPlayerData>(
-			(playerEntity: PlayerEntity) => NetResult.ok<IPlayerData>(playerEntity.data),
+			(playerEntity: PlayerEntity) => NetResult.ok<IPlayerData>(playerEntity.data as IPlayerData),
 			() => NetResult.err<ServerError>(ServerError.NoPlayerEntity),
 		);
 	}

@@ -1,4 +1,4 @@
-export = {
+export const encoderPartIdentifiers = {
 	["Blue Octopus"]: 20,
 	["Blue Squid"]: 34,
 	["Cabbage"]: 10,
@@ -34,6 +34,9 @@ export = {
 	["Sugar Vegetable Dumpling"]: 33,
 	["Vegetable Dumpling"]: 15,
 	["Velvet Dumpling"]: 23,
+};
+
+export const decoderPartIdentifiers = {
 	[20]: "Blue Octopus",
 	[34]: "Blue Squid",
 	[10]: "Cabbage",
@@ -70,3 +73,6 @@ export = {
 	[15]: "Vegetable Dumpling",
 	[23]: "Velvet Dumpling",
 };
+
+export type EncodePartIdentifier = typeof encoderPartIdentifiers;
+export type DecodePartIdentifier = typeof decoderPartIdentifiers;

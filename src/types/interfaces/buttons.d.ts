@@ -1,4 +1,4 @@
-export interface Attributes {
+export interface IPurchaseButtonAttributes {
 	ComponentId?: string;
 	DisplayName?: string;
 	// LinkedComponentId: string;
@@ -6,5 +6,5 @@ export interface Attributes {
 }
 
 export interface IPurchaseButtonModel extends Model {
-	Primary: BasePart & MeshPart;
+	Head: BasePart & MeshPart;
 }

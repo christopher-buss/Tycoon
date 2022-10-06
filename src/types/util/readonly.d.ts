@@ -1,13 +1,30 @@
-export type DeepReadonly<T> = T extends (infer R)[]
-	? DeepReadonlyArray<R>
-	: T extends Callback
+// export type DeepReadonly<T> = T extends (infer R)[]
+// 	? DeepReadonlyArray<R>
+// 	: T extends Callback
+// 	? T
+// 	: T extends object
+// 	? DeepReadonlyObject<T>
+// 	: T;
+
+// export interface DeepReadonlyArray<T> extends ReadonlyArray<DeepReadonly<T>> { }
+
+// export type DeepReadonlyObject<T> = {
+// 	readonly [P in keyof T]: DeepReadonly<T[P]>;
+// };
+
+type ImmutablePrimitive = undefined | boolean | string | number;
+
+export type Immutable<T> = T extends ImmutablePrimitive
 	? T
-	: T extends object
-	? DeepReadonlyObject<T>
-	: T;
+	: T extends Array<infer U>
+	? ImmutableArray<U>
+	: T extends Map<infer K, infer V>
+	? ImmutableMap<K, V>
+	: T extends Set<infer M>
+	? ImmutableSet<M>
+	: ImmutableObject<T>;
 
-export interface DeepReadonlyArray<T> extends ReadonlyArray<DeepReadonly<T>> {}
-
-export type DeepReadonlyObject<T> = {
-	readonly [P in keyof T]: DeepReadonly<T[P]>;
-};
+export type ImmutableArray<T> = ReadonlyArray<Immutable<T>>;
+export type ImmutableMap<K, V> = ReadonlyMap<Immutable<K>, Immutable<V>>;
+export type ImmutableSet<T> = ReadonlySet<Immutable<T>>;
+export type ImmutableObject<T> = { readonly [K in keyof T]: Immutable<T[K]> };
