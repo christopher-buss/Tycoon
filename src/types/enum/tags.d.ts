@@ -1,9 +1,10 @@
 export const enum Tag {
+	"ConveyorBelt" = "ConveyorBelt",
 	"GamepassPrompt" = "GamepassPrompt",
 	"PlayerHead" = "PlayerHead",
 	"PurchaseButton" = "PurchaseButton",
 	"RebirthButton" = "RebirthButton",
 	"RebirthUpgrade" = "RebirthUpgrade",
-	"ConveyorBelt" = "ConveyorBelt",
+	"RebirthUpgradeAnimation" = "RebirthUpgradeAnimation",
 	"RespawnPlayer" = "RespawnPlayer",
 }

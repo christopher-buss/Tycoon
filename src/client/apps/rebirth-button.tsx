@@ -23,9 +23,10 @@ class RebirthButton extends Roact.PureComponent<IStateProps> {
 	public render() {
 		return (
 			<billboardgui
+				Key={Tag.RebirthButton}
 				MaxDistance={125}
 				Size={new UDim2(10, 0, 2, 0)}
-				Adornee={this.props.instance?.WaitForChild("Board") as BasePart}
+				Adornee={this.props.instance}
 			>
 				<textlabel
 					Key="Contents"

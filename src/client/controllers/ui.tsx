@@ -149,7 +149,6 @@ export class UserInterfaceController implements OnStart {
 		if (instance) {
 			if (!config.useSurfaceGui) {
 				gui = content;
-				print("gui", gui);
 			} else {
 				gui = (
 					<surfacegui
