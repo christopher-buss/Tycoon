@@ -1,7 +1,15 @@
 export interface ILotModel extends Model {
 	// Primary: BasePart;
-	Spawn: SpawnLocation;
 	Buttons: Folder;
+	Essentials: Folder & {
+		Claim: BasePart & {
+			Gui: BillboardGui & {
+				PlayerName: TextBox;
+				TycoonName: TextBox;
+			};
+		};
+	};
+	Spawn: SpawnLocation;
 }
 
 export interface ILotAttributes {

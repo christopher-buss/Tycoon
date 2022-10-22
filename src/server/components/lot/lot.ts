@@ -20,7 +20,6 @@ import { PurchaseButton } from "./purchase-button";
 @Component({ tag: "Lot" })
 export class Lot extends BaseComponent<ILotAttributes, ILotModel> implements OnStart {
 	private readonly team: Team;
-	// private buttonComponents: PurchaseButton[];
 
 	public constructor(
 		private readonly logger: Logger,
@@ -28,7 +27,6 @@ export class Lot extends BaseComponent<ILotAttributes, ILotModel> implements OnS
 		private readonly playerService: PlayerService,
 	) {
 		super();
-		// this.buttonComponents = [];
 
 		this.team = Teams.FindFirstChild(this.instance.Name) as Team;
 		assert(this.team !== undefined, `Team ${this.instance.Name} does not exist`);
@@ -38,19 +36,6 @@ export class Lot extends BaseComponent<ILotAttributes, ILotModel> implements OnS
 	public onStart() {
 		// Generate an identifier for the lot.
 		this.attributes.ComponentId = HttpService.GenerateGUID(false);
-
-		// const buttons = this.instance.Buttons.GetChildren();
-		// buttons.forEach((button) => {
-		// 	const buttonComponent = Dependency<Components>().getComponent<PurchaseButton>(button);
-		// 	if (!buttonComponent) {
-		// 		// this.logger.Error("Could not find purchase button component for {@Button}", button);
-		// 		return;
-		// 	}
-
-		// 	this.buttonComponents.push(buttonComponent);
-		// });
-
-		// this.lotService.addLotButtons(this, this.buttonComponents);
 	}
 
 	/**
@@ -94,6 +79,11 @@ export class Lot extends BaseComponent<ILotAttributes, ILotModel> implements OnS
 		player.LoadCharacter();
 		player.SetAttribute("Lot", this.team.Name);
 		this.loadPurchaseButtons(player);
+		this.setupGui(player);
+	}
+
+	private setupGui(player?: Player): void {
+		this.instance.Essentials.Claim.Gui.PlayerName.Text = player?.Name ?? "Unclaimed";
 	}
 
 	/**
@@ -167,6 +157,7 @@ export class Lot extends BaseComponent<ILotAttributes, ILotModel> implements OnS
 		return this.getOwner().match(
 			() => {
 				this.attributes.OwnerId = undefined;
+				this.setupGui();
 				task.spawn(() => this.clearOwnedButtons());
 				return Result.ok<true, LotErrors>(true);
 			},
