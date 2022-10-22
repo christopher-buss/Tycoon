@@ -3,4 +3,7 @@ export const enum Tag {
 	"PlayerHead" = "PlayerHead",
 	"PurchaseButton" = "PurchaseButton",
 	"RebirthButton" = "RebirthButton",
+	"RebirthUpgrade" = "RebirthUpgrade",
+	"ConveyorBelt" = "ConveyorBelt",
+	"RespawnPlayer" = "RespawnPlayer",
 }

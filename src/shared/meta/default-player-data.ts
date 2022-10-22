@@ -23,6 +23,8 @@ const DefaultPlayerData = {
 		effects: true,
 		music: true,
 	},
+
+	acquiredTools: [] as string[], // tools that the player has acquired through the game.
 };
 
 export default DefaultPlayerData;

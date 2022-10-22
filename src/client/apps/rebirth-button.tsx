@@ -22,7 +22,11 @@ interface IStateProps extends IPassedProps {
 class RebirthButton extends Roact.PureComponent<IStateProps> {
 	public render() {
 		return (
-			<billboardgui MaxDistance={125} Size={new UDim2(10, 0, 2, 0)}>
+			<billboardgui
+				MaxDistance={125}
+				Size={new UDim2(10, 0, 2, 0)}
+				Adornee={this.props.instance?.WaitForChild("Board") as BasePart}
+			>
 				<textlabel
 					Key="Contents"
 					BackgroundTransparency={1}

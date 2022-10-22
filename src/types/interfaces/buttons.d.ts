@@ -13,4 +13,5 @@ export interface IRebirthButtonAttributes {}
 
 export interface IRebirthButtonModel extends Model {
 	TouchPart: BasePart;
+	Board: BasePart;
 }

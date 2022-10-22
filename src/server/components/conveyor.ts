@@ -1,5 +1,6 @@
 import { BaseComponent, Component } from "@flamework/components";
 import { OnStart } from "@flamework/core";
+import { Tag } from "types/enum/tags";
 
 interface IConveyorAttributes {
 	ConveyorSpeed: number;
@@ -17,7 +18,7 @@ interface IConveyor extends BasePart {
  * once setup is complete.
  */
 @Component({
-	tag: "ConveyorBelt",
+	tag: Tag.ConveyorBelt,
 })
 export class conveyor extends BaseComponent<IConveyorAttributes, IConveyor> implements OnStart {
 	public onStart(): void {

@@ -2,6 +2,7 @@ import { BaseComponent, Component } from "@flamework/components";
 import { OnStart } from "@flamework/core";
 import { Janitor } from "@rbxts/janitor";
 import { PlayerUtil } from "shared/util/player-util";
+import { Tag } from "types/enum/tags";
 
 /**
  * A component used to respawn the player on touch.
@@ -10,7 +11,7 @@ import { PlayerUtil } from "shared/util/player-util";
  * respawned after a brief delay.
  */
 @Component({
-	tag: "RespawnPlayer",
+	tag: Tag.RespawnPlayer,
 })
 export class RespawnPlayer extends BaseComponent<{}, BasePart> implements OnStart {
 	private readonly janitor: Janitor<void>;

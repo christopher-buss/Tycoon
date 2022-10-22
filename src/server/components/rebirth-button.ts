@@ -6,9 +6,12 @@ import { PlayerChatService } from "server/services/player/player-chat-service";
 import { PlayerService } from "server/services/player/player-service";
 import { BASE_REBIRTH_PRICE, REBIRTH_ADDITIONAL_PRICE } from "shared/shared-constants";
 import { PlayerUtil } from "shared/util/player-util";
+import { Tag } from "types/enum/tags";
 import { IRebirthButtonAttributes, IRebirthButtonModel } from "types/interfaces/buttons";
 
-@Component({})
+@Component({
+	tag: Tag.RebirthButton,
+})
 export class RebirthButton extends BaseComponent<IRebirthButtonAttributes, IRebirthButtonModel> implements OnStart {
 	private debounce: boolean;
 
