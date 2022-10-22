@@ -20,6 +20,7 @@ import { PurchaseButton } from "./purchase-button";
 @Component({ tag: "Lot" })
 export class Lot extends BaseComponent<ILotAttributes, ILotModel> implements OnStart {
 	private readonly team: Team;
+	// private buttonComponents: PurchaseButton[];
 
 	public constructor(
 		private readonly logger: Logger,
@@ -27,6 +28,8 @@ export class Lot extends BaseComponent<ILotAttributes, ILotModel> implements OnS
 		private readonly playerService: PlayerService,
 	) {
 		super();
+		// this.buttonComponents = [];
+
 		this.team = Teams.FindFirstChild(this.instance.Name) as Team;
 		assert(this.team !== undefined, `Team ${this.instance.Name} does not exist`);
 	}
@@ -35,6 +38,19 @@ export class Lot extends BaseComponent<ILotAttributes, ILotModel> implements OnS
 	public onStart() {
 		// Generate an identifier for the lot.
 		this.attributes.ComponentId = HttpService.GenerateGUID(false);
+
+		// const buttons = this.instance.Buttons.GetChildren();
+		// buttons.forEach((button) => {
+		// 	const buttonComponent = Dependency<Components>().getComponent<PurchaseButton>(button);
+		// 	if (!buttonComponent) {
+		// 		// this.logger.Error("Could not find purchase button component for {@Button}", button);
+		// 		return;
+		// 	}
+
+		// 	this.buttonComponents.push(buttonComponent);
+		// });
+
+		// this.lotService.addLotButtons(this, this.buttonComponents);
 	}
 
 	/**
@@ -55,6 +71,7 @@ export class Lot extends BaseComponent<ILotAttributes, ILotModel> implements OnS
 					() => Result.err<true, LotErrors>(LotErrors.PlayerAlreadyHasLot),
 					() => {
 						this.attributes.OwnerId = player.UserId;
+						this.lotService.fireOnLotOwned(this);
 						task.spawn(() => {
 							this.setupOwner(player);
 						});
@@ -75,7 +92,7 @@ export class Lot extends BaseComponent<ILotAttributes, ILotModel> implements OnS
 		player.RespawnLocation = this.instance.Spawn;
 		player.Team = this.team;
 		player.LoadCharacter();
-
+		player.SetAttribute("Lot", this.team.Name);
 		this.loadPurchaseButtons(player);
 	}
 
@@ -89,8 +106,8 @@ export class Lot extends BaseComponent<ILotAttributes, ILotModel> implements OnS
 			return;
 		}
 
-		const entity = entity_opt.unwrap();
-		entity.data.purchased.forEach((encoded) => {
+		const playerEntity = entity_opt.unwrap();
+		playerEntity.data.purchased.forEach((encoded) => {
 			const decoded = decoderPartIdentifiers[encoded as keyof DecodePartIdentifier];
 			if (decoded === undefined) {
 				this.logger.Error("Could not decode part identifier {@Identifier}", encoded);
@@ -109,10 +126,10 @@ export class Lot extends BaseComponent<ILotAttributes, ILotModel> implements OnS
 			}
 
 			// Add the corresponding item to the tycoon.
-			buttonComponent.forceButtonHidden();
+			buttonComponent.unbindButtonTouched();
 			for (const listener of buttonComponent.listeners) {
 				task.spawn(() => {
-					listener.onPurchaseButtonBought();
+					listener.onPurchaseButtonBought(player);
 				});
 			}
 		});
@@ -121,11 +138,11 @@ export class Lot extends BaseComponent<ILotAttributes, ILotModel> implements OnS
 		const nonOwnedButtons = buttons.filter((button) => {
 			const encoded = encoderPartIdentifiers[button.Name as keyof EncodePartIdentifier];
 			if (encoded === undefined) {
-				this.logger.Error("Could not encode part identifier {@Identifier}", button.Name);
+				this.logger.Debug("Could not encode part identifier {@Identifier}", button.Name);
 				return;
 			}
 
-			return !entity.data.purchased.includes(encoded);
+			return !playerEntity.data.purchased.includes(encoded);
 		});
 
 		nonOwnedButtons.forEach((button) => {
@@ -146,14 +163,29 @@ export class Lot extends BaseComponent<ILotAttributes, ILotModel> implements OnS
 	 * reason why the owner could not be removed.
 	 */
 	public clearOwner(): Result<true, LotErrors> {
-		this.logger.Info("Attempting to remove lot owner", this.attributes.ComponentId!);
+		this.logger.Info(`Attempting to clear owner of lot {@Lot}`, this.attributes.ComponentId!);
 		return this.getOwner().match(
 			() => {
 				this.attributes.OwnerId = undefined;
+				task.spawn(() => this.clearOwnedButtons());
 				return Result.ok<true, LotErrors>(true);
 			},
 			() => Result.err<true, LotErrors>(LotErrors.ClearOwnership),
 		);
+	}
+
+	private clearOwnedButtons(): void {
+		const buttons = this.instance.Buttons.GetChildren();
+
+		buttons.forEach((button) => {
+			const buttonComponent = Dependency<Components>().getComponent<PurchaseButton>(button);
+			if (!buttonComponent) {
+				// this.logger.Error("Could not find purchase button component for {@Button}", button);
+				return;
+			}
+
+			buttonComponent.unbindButtonTouched();
+		});
 	}
 
 	/**

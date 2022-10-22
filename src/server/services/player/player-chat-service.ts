@@ -1,5 +1,5 @@
 import { OnInit, OnStart, Service } from "@flamework/core";
-import { ChatService, GetLuaChatService } from "@rbxts/chat-service";
+import { ChatService, ExtraData, GetLuaChatService } from "@rbxts/chat-service";
 import playerEntity from "server/modules/classes/player-entity";
 import { OnPlayerJoin, PlayerService } from "./player-service";
 
@@ -62,7 +62,6 @@ export class PlayerChatService implements OnStart, OnInit, OnPlayerJoin {
 	}
 
 	private speakerAdded(speakerName: string): void {
-		print("Speaker Added");
 		task.wait(3);
 		const speaker = this.ChatService.GetSpeaker(speakerName);
 		const player = speaker?.GetPlayer();
@@ -84,5 +83,13 @@ export class PlayerChatService implements OnStart, OnInit, OnPlayerJoin {
 				}
 			}
 		});
+	}
+
+	public sendSystemMessage(message: string, data: Partial<ExtraData>): void {
+		this.ChatService.GetSpeaker("System")?.SayMessage(message, "All", data);
+	}
+
+	public sendLocalSystemMessage(player: Player, message: string, data: Partial<ExtraData>): void {
+		this.ChatService.GetSpeaker(player.Name)?.SendSystemMessage(message, "System", data);
 	}
 }

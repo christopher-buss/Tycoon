@@ -1,0 +1,48 @@
+import { OnStart, Service } from "@flamework/core";
+import { initaliseServer } from "@rbxts/character-realism";
+import promiseR15, { promiseR6 } from "@rbxts/promise-character";
+import { promiseChildOfClass } from "@rbxts/promise-child";
+import { CollectionService } from "@rbxts/services";
+import playerEntity from "server/modules/classes/player-entity";
+import { Tag } from "types/enum/tags";
+import { MoneyService } from "../stores/money-service";
+import { OnPlayerJoin } from "./player-service";
+
+@Service({})
+export class PlayerCharacterService implements OnStart, OnPlayerJoin {
+	constructor(private readonly moneyService: MoneyService) {}
+
+	public onStart(): void {
+		initaliseServer();
+	}
+
+	public onPlayerJoin(playerEntity: playerEntity): void {
+		const player = playerEntity.player;
+		if (player.Character) {
+			this.characterAdded(player.Character);
+		}
+
+		player.CharacterAdded.Connect((character) => {
+			this.characterAdded(character);
+		});
+
+		// while (true) {
+		// 	this.moneyService.updatePlayerMoney(playerEntity, -10000);
+		// 	task.wait(1);
+		// }
+	}
+
+	private async characterAdded(_c: Model) {
+		const rigType = (await promiseChildOfClass(_c, "Humanoid")).RigType.Name;
+
+		if (rigType === "R15") {
+			const rig15 = await promiseR15(_c);
+			CollectionService.AddTag(rig15.Head, Tag.PlayerHead);
+		} else if (rigType === "R6") {
+			const rig6 = await promiseR6(_c);
+			CollectionService.AddTag(rig6.Head, Tag.PlayerHead);
+		} else {
+			throw `${_c.Name} has an unknown rig type! ${rigType}`;
+		}
+	}
+}

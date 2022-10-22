@@ -1,9 +1,7 @@
 import { Controller, OnInit, OnStart } from "@flamework/core";
 import { Janitor } from "@rbxts/janitor";
-import PartCacheModule from "@rbxts/partcache";
 import { PartCache } from "@rbxts/partcache/out/class";
-import { ReplicatedStorage, TweenService, Workspace } from "@rbxts/services";
-import { Events } from "client/network";
+import { TweenService, Workspace } from "@rbxts/services";
 import { decoderPartIdentifiers } from "shared/meta/part-identifiers";
 import { DropperInfo } from "shared/network";
 
@@ -19,19 +17,18 @@ export class DropperController implements OnStart, OnInit {
 	}
 
 	public onInit() {
-		this.storeCachedConveyorLocations();
+		// Events.dropperSpawned.connect((...args) => this.dropItem(...args));
 	}
 
 	public onStart() {
-		Events.dropperSpawned.connect((...args) => this.dropItem(...args));
-
-		const parts = ReplicatedStorage.PartInfo;
-		for (const part of parts.GetChildren()) {
-			task.spawn(() => {
-				const partCache = new PartCacheModule(part as BasePart, 5, Workspace.Cache);
-				this.partCache.set(part.Name, partCache);
-			});
-		}
+		// this.storeCachedConveyorLocations();
+		// const parts = ReplicatedStorage.PartInfo;
+		// for (const part of parts.GetChildren()) {
+		// 	task.spawn(() => {
+		// 		const partCache = new PartCacheModule(part as BasePart, 5, Workspace.Cache);
+		// 		this.partCache.set(part.Name, partCache);
+		// 	});
+		// }
 	}
 
 	private dropItem(dropperType: number, dropperInfo: DropperInfo) {

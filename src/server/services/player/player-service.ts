@@ -5,7 +5,7 @@ import { Logger } from "@rbxts/log";
 import { Option } from "@rbxts/rust-classes";
 import { Players } from "@rbxts/services";
 import PlayerEntity from "server/modules/classes/player-entity";
-import { Functions } from "server/network";
+import { Events, Functions } from "server/network";
 import { IPlayerData } from "shared/meta/default-player-data";
 import { FlameworkUtil } from "shared/util/flamework-utils";
 import { NetResult } from "shared/util/networking";
@@ -65,7 +65,22 @@ export class PlayerService implements OnInit, OnStart {
 	public onStart(): void {
 		/** Setup callback for allowing player to request data */
 		Functions.requestPlayerData.setCallback((player) => {
-			return Promise.retry(() => this.onPlayerRequestedData(player), 3);
+			return Promise.retryWithDelay(() => this.onPlayerRequestedData(player), 10, 1);
+		});
+
+		Events.updateSettings.connect((player, settings) => {
+			const entity_opt = this.getEntity(player);
+			if (entity_opt.isSome()) {
+				const playerEntity = entity_opt.unwrap();
+				playerEntity.updateData((data) => {
+					data.settings = {
+						background: settings.background ?? data.settings.background,
+						effects: settings.effects ?? data.settings.effects,
+						music: settings.music ?? data.settings.music,
+					};
+					return data;
+				});
+			}
 		});
 
 		for (const player of Players.GetPlayers()) {
@@ -100,12 +115,16 @@ export class PlayerService implements OnInit, OnStart {
 	 * @returns The player's current data if it exists.
 	 */
 	private async onPlayerRequestedData(player: Player): Promise<NetPlayerData> {
-		this.logger.Info("Player {@Player} requested their data", player);
-		const entity_opt = this.getEntity(player);
-		return entity_opt.match<NetPlayerData>(
-			(playerEntity: PlayerEntity) => NetResult.ok<IPlayerData>(playerEntity.data as IPlayerData),
-			() => NetResult.err<ServerError>(ServerError.NoPlayerEntity),
-		);
+		return new Promise((resolve, reject) => {
+			this.logger.Info("Player {@Player} requested their data", player);
+			const entity_opt = this.getEntity(player);
+
+			if (entity_opt.isSome()) {
+				return resolve(NetResult.ok<IPlayerData>(entity_opt.unwrap().data as IPlayerData));
+			}
+
+			return reject(NetResult.err<ServerError>(ServerError.NoPlayerEntity));
+		});
 	}
 
 	/**

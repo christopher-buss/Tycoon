@@ -84,7 +84,7 @@ export class MoneyService {
 	 * @param entity
 	 * @param amount
 	 */
-	private updatePlayerMoney(entity: PlayerEntity, amount: number): void {
+	public updatePlayerMoney(entity: PlayerEntity, amount: number): void {
 		entity.updateData((data) => {
 			data.cash -= amount;
 			data.moneySpent += amount;

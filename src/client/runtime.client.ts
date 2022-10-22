@@ -15,6 +15,7 @@ Modding.registerDependency<Logger>((ctor) => {
 	return Log.ForContext(ctor);
 });
 
+Flamework.addPaths("src/client/apps");
 Flamework.addPaths("src/client/components");
 Flamework.addPaths("src/client/controllers");
 Flamework.addPaths("src/shared/components");

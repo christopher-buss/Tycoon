@@ -7,6 +7,7 @@ import Spring from "@rbxts/spring";
 import { PlayerService } from "server/services/player/player-service";
 import { MoneyService } from "server/services/stores/money-service";
 import { EncodePartIdentifier, encoderPartIdentifiers } from "shared/meta/part-identifiers";
+import Parts from "shared/meta/part-info";
 import { FlameworkUtil } from "shared/util/flamework-utils";
 import { lerpNumber } from "shared/util/math-util";
 import { PlayerUtil } from "shared/util/player-util";
@@ -15,7 +16,7 @@ import { Lot } from "./lot";
 
 export interface IOnPurchaseButtonBought {
 	/** Called when this button is successfully purchased. */
-	onPurchaseButtonBought(): void;
+	onPurchaseButtonBought(owner: Player): void;
 }
 
 /**
@@ -25,7 +26,7 @@ export interface IOnPurchaseButtonBought {
 @Component({ tag: "PurchaseButton" })
 export class PurchaseButton extends BaseComponent<IPurchaseButtonAttributes, IPurchaseButtonModel> implements OnStart {
 	private debounce: boolean;
-	private readonly janitor: Janitor<{ Visibility: string | RBXScriptConnection }>;
+	private janitor: Janitor<{ Visibility: string | RBXScriptConnection }>;
 	private readonly touchPart: BasePart;
 
 	private readonly dependencies: Array<string>;
@@ -45,6 +46,19 @@ export class PurchaseButton extends BaseComponent<IPurchaseButtonAttributes, IPu
 		this.dependencies = [];
 		this.janitor = new Janitor();
 		this.touchPart = this.instance.Head;
+
+		const part = Parts[this.attributes.DisplayName as keyof typeof Parts];
+		if (part === undefined) {
+			return;
+		}
+
+		const price = part.Price;
+		if (price === undefined || price < 0) {
+			this.logger.Error(`Price for ${this.attributes.DisplayName} is invalid.`);
+			return;
+		}
+
+		this.attributes.Price = price;
 	}
 
 	public onStart() {
@@ -71,6 +85,13 @@ export class PurchaseButton extends BaseComponent<IPurchaseButtonAttributes, IPu
 		this.touchPart.CanTouch = true;
 		this.forceButtonVisible();
 		this.janitor.Add(this.touchPart.Touched.Connect((otherPart) => this.onComponentTouched(otherPart)));
+	}
+
+	public unbindButtonTouched(): void {
+		this.logger.Debug("Unbinding button touched for {ComponentId}", this.attributes.ComponentId);
+		this.touchPart.CanTouch = false;
+		this.forceButtonHidden();
+		this.janitor.Cleanup();
 	}
 
 	/** @hidden */
@@ -102,7 +123,7 @@ export class PurchaseButton extends BaseComponent<IPurchaseButtonAttributes, IPu
 
 		this.logger.Info("{ComponentId} attempting to be purchased by {@Player}", this.attributes.ComponentId, player);
 
-		const canSpend = this.moneyService.spendMoney(player, this.attributes.Price);
+		const canSpend = this.moneyService.spendMoney(player, this.attributes.Price!);
 		if (!canSpend) {
 			task.delay(0.5, () => {
 				this.debounce = false;
@@ -126,7 +147,7 @@ export class PurchaseButton extends BaseComponent<IPurchaseButtonAttributes, IPu
 
 		for (const listener of this.listeners) {
 			task.spawn(() => {
-				listener.onPurchaseButtonBought();
+				listener.onPurchaseButtonBought(player);
 			});
 		}
 
@@ -134,7 +155,6 @@ export class PurchaseButton extends BaseComponent<IPurchaseButtonAttributes, IPu
 	}
 
 	/** @hidden */
-	// TODO: Should this be done on a client-component?
 	private async setButtonVisibility(visible: boolean, force: boolean): Promise<void> {
 		const goal = visible ? 0 : 1;
 		const base = visible ? 1 : 0;

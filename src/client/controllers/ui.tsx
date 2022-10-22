@@ -1,4 +1,4 @@
-import { Controller, Flamework, OnInit, Reflect } from "@flamework/core";
+import { Controller, Flamework, Modding, OnStart, Reflect } from "@flamework/core";
 import { Logger } from "@rbxts/log";
 import Roact from "@rbxts/roact";
 import RoactRodux, { StoreProvider } from "@rbxts/roact-rodux";
@@ -24,11 +24,12 @@ export interface IAppConfig {
 	ignoreGuiInset?: boolean;
 	/** Show this app on any part with this CollectionService tag. */
 	tag?: string;
-	/** Show this app on a billboardgui if defined. */
-	type?: "billboardgui";
 	/** If this is specified then the root component will be connected to Rodux. */
 	mapStateToProps?: (state: IClientStore) => unknown;
 	mapDispatchToProps?: (dispatch: StoreDispatch) => unknown;
+
+	/** This only needs to be set if an instance is present and the gui is not a surface gui. */
+	useSurfaceGui?: boolean;
 }
 
 interface AppInfo {
@@ -37,10 +38,16 @@ interface AppInfo {
 	config: IAppConfig;
 }
 
-export declare function App(opts: IAppConfig): ClassDecorator;
+export interface IPassedProps {
+	instance?: BasePart;
+}
+
+// export declare function App(opts: IAppConfig): ClassDecorator;
+
+export const App = Modding.createMetaDecorator<[IAppConfig]>("Class");
 
 @Controller({})
-export class UserInterfaceController implements OnInit {
+export class UserInterfaceController implements OnStart {
 	private appHandles = new Map<Constructor, Roact.Tree>();
 	private apps = new Map<Constructor, AppInfo>();
 	private playerGui = Players.LocalPlayer.FindFirstChildOfClass("PlayerGui")!;
@@ -48,19 +55,22 @@ export class UserInterfaceController implements OnInit {
 
 	constructor(private readonly logger: Logger) {}
 
-	onInit() {
+	public onStart(): void {
 		for (const [ctor, identifier] of Reflect.objToId) {
 			const app = Reflect.getOwnMetadata<DecoratorMetadata<IAppConfig>>(
 				ctor,
 				`flamework:decorators.${Flamework.id<typeof App>()}`,
 			);
+
 			if (app) {
 				const config = app.arguments[0];
+
 				this.apps.set(ctor as Constructor, {
 					ctor: ctor as Constructor,
 					config,
 					identifier,
 				});
+
 				if (config.tag !== undefined) {
 					this.setupTagConnections(config.tag);
 				}
@@ -70,15 +80,21 @@ export class UserInterfaceController implements OnInit {
 
 	/** Setup CollectionService connections for a specific tag. */
 	private setupTagConnections(tag: string) {
-		if (this.tagConnections.has(tag)) return;
+		if (this.tagConnections.has(tag)) {
+			return;
+		}
 
 		CollectionService.GetTagged(tag).forEach((i) => {
 			return this.onTagAdded(tag, i);
 		});
+
 		CollectionService.GetInstanceAddedSignal(tag).Connect((i) => {
 			return this.onTagAdded(tag, i);
 		});
-		// CollectionService.GetInstanceRemovedSignal(tag).Connect((i) => this.onTagRemoved(tag, i));
+
+		CollectionService.GetInstanceRemovedSignal(tag).Connect((i) => {
+			return this.onTagRemoved(tag, i);
+		});
 
 		this.logger.Debug(`Added connections for tag "{Tag}"`, tag);
 		this.tagConnections.add(tag);
@@ -86,7 +102,10 @@ export class UserInterfaceController implements OnInit {
 
 	/** When an instance is added to a tag, we want to find out which apps render onto it. */
 	private onTagAdded(tag: string, instance: Instance) {
-		if (!instance.IsA("BasePart")) return;
+		if (!instance.IsA("BasePart")) {
+			return;
+		}
+
 		this.logger.Debug(`Instance "{Instance}" added to tag "{Tag}"`, instance.GetFullName(), tag);
 
 		for (const [app, { config }] of this.apps) {
@@ -97,6 +116,12 @@ export class UserInterfaceController implements OnInit {
 			this.showApp(app, instance);
 			return;
 		}
+	}
+
+	/** Unmount any apps which are connected to a dead instance. */
+	private onTagRemoved(tag: string, instance: Instance) {
+		this.logger.Debug(`Instance "${instance.GetFullName()}" removed from tag "${tag}"`);
+		this.tagConnections.delete(tag);
 	}
 
 	private showApp(element: Constructor, instance?: BasePart): void {
@@ -113,22 +138,35 @@ export class UserInterfaceController implements OnInit {
 			)(component);
 		}
 
-		const content = <StoreProvider store={ClientStore}>{Roact.createElement(component)}</StoreProvider>;
+		const content = (
+			<StoreProvider store={ClientStore}>
+				{Roact.createElement<IPassedProps>(component, { instance })}
+			</StoreProvider>
+		);
 
-		const handle = Roact.mount(
-			instance ? (
-				<surfacegui
-					Key={config.name}
-					Adornee={instance}
-					LightInfluence={1}
-					ResetOnSpawn={false}
-					ZIndexBehavior={Enum.ZIndexBehavior.Sibling}
-					SizingMode={Enum.SurfaceGuiSizingMode.PixelsPerStud}
-					PixelsPerStud={50}
-				>
-					{content}
-				</surfacegui>
-			) : (
+		let gui: Roact.Element;
+
+		if (instance) {
+			if (!config.useSurfaceGui) {
+				gui = content;
+				print("gui", gui);
+			} else {
+				gui = (
+					<surfacegui
+						Key={config.name}
+						Adornee={instance}
+						LightInfluence={1}
+						ResetOnSpawn={false}
+						ZIndexBehavior={Enum.ZIndexBehavior.Sibling}
+						SizingMode={Enum.SurfaceGuiSizingMode.PixelsPerStud}
+						PixelsPerStud={50}
+					>
+						{content}
+					</surfacegui>
+				);
+			}
+		} else {
+			gui = (
 				<screengui
 					Key={config.name}
 					DisplayOrder={config.displayOrder}
@@ -138,10 +176,10 @@ export class UserInterfaceController implements OnInit {
 				>
 					{content}
 				</screengui>
-			),
-			this.playerGui,
-			config.name,
-		);
+			);
+		}
+
+		const handle = Roact.mount(gui, this.playerGui, config.name);
 
 		this.appHandles.set(element, handle);
 		this.logger.Debug(`Mounted new app instance "{Name}"`, config.name);

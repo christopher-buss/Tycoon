@@ -1,10 +1,10 @@
 import { Components } from "@flamework/components";
-import { Flamework, OnInit, OnStart, Service } from "@flamework/core";
+import { Modding, OnStart, Service } from "@flamework/core";
 import { Logger } from "@rbxts/log";
 import { Option, Result } from "@rbxts/rust-classes";
 import { Lot } from "server/components/lot/lot";
 import playerEntity from "server/modules/classes/player-entity";
-import { FlameworkUtil } from "shared/util/flamework-utils";
+import { Events } from "server/network";
 import KickCode from "types/enum/kick-reason";
 import { LotErrors } from "types/interfaces/lots";
 import PlayerRemovalService from "./player/player-removal-service";
@@ -29,24 +29,27 @@ const rng = new Random();
  * A service which handles any functionality related to lots.
  */
 @Service({})
-export class LotService implements OnInit, OnStart, OnPlayerJoin {
-	private lotOwnedObjs!: Map<string, OnLotOwned>;
+export class LotService implements OnStart, OnPlayerJoin {
+	private lotOwnedObjs: Set<OnLotOwned>;
 
 	constructor(
 		private readonly logger: Logger,
 		private components: Components,
 		private playerRemovalService: PlayerRemovalService,
-	) {}
-
-	/** @hidden */
-	public onInit(): void {
-		this.lotOwnedObjs = FlameworkUtil.getDependencySingletons((ctor) => {
-			return Flamework.implements<OnLotOwned>(ctor);
-		});
+	) {
+		this.lotOwnedObjs = new Set();
 	}
 
 	/** @hidden */
-	public onStart(): void {}
+	public onStart(): void {
+		Modding.onListenerAdded<OnLotOwned>((object) => {
+			this.lotOwnedObjs.add(object);
+		});
+
+		Modding.onListenerRemoved<OnLotOwned>((object) => {
+			this.lotOwnedObjs.delete(object);
+		});
+	}
 
 	/** @hidden */
 	public onPlayerJoin(playerEntity: playerEntity): void {
@@ -65,6 +68,9 @@ export class LotService implements OnInit, OnStart, OnPlayerJoin {
 			this.logger.Warn("There are no available lots in this server!");
 			this.playerRemovalService.removeForBug(player, KickCode.PlayerFullServer);
 		}
+
+		print(`[${player.Name}]: Assigned lot ${assign_res.unwrap()}`);
+		Events.playerAssignedToLot.fire(player, assign_res.unwrap());
 	}
 
 	/**
@@ -113,8 +119,9 @@ export class LotService implements OnInit, OnStart, OnPlayerJoin {
 	 */
 	public fireOnLotOwned(lot: Lot): void {
 		const owner = lot.getOwner().expect(`[${lot.attributes.ComponentId!}]: Expected owner in lot`);
-		for (const [, obj] of this.lotOwnedObjs) {
-			task.spawn(() => obj.onLotOwned(lot, owner));
+
+		for (const listener of this.lotOwnedObjs) {
+			task.spawn(() => listener.onLotOwned(lot, owner));
 		}
 	}
 

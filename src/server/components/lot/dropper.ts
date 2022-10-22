@@ -2,11 +2,18 @@ import { BaseComponent, Component } from "@flamework/components";
 import { OnStart } from "@flamework/core";
 import { Logger } from "@rbxts/log";
 import { DropperService } from "server/services/dropper-service";
+import { PathType } from "shared/meta/path-types";
 import { FlameworkUtil } from "shared/util/flamework-utils";
 import { IOnPurchaseButtonBought, PurchaseButton } from "./purchase-button";
 
 export interface IDropperAttributes {
-	PathType?: string;
+	PathType?: PathType;
+}
+
+export interface IDropperInfo {
+	DropperType: string;
+	PathType: PathType;
+	Owner: Player; // may need later on
 }
 
 @Component({
@@ -27,9 +34,16 @@ export class Dropper extends BaseComponent<IDropperAttributes> implements OnStar
 		});
 	}
 
-	public onPurchaseButtonBought(): void {
+	public onPurchaseButtonBought(owner: Player): void {
 		this.logger.Info(`Dropper ${this.instance.Name} was bought!`);
-		this.dropperService.addOwnedDropper(this.instance.Name, this.attributes.PathType!);
+
+		const dropperInfo: IDropperInfo = {
+			DropperType: this.instance.Name,
+			PathType: this.attributes.PathType!,
+			Owner: owner,
+		};
+
+		this.dropperService.addOwnedDropper(dropperInfo);
 		// Register Dropper as being purchased
 	}
 }

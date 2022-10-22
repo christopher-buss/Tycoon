@@ -3,13 +3,19 @@ import { INotificationEntry } from "server/meta/notification-data";
 import { NetPlayerData } from "types/interfaces/network-types";
 import { IPlayerData } from "./meta/default-player-data";
 
-interface ServerEvents {}
-
 export type DropperInfo = Vector3int16;
+
+interface ServerEvents {
+	/** Called by the client to update their settings. */
+	updateSettings(newSettings: Partial<IPlayerData["settings"]>): void;
+}
 
 interface ClientEvents {
 	/** Fired by the server when the players data changes. */
 	playerDataChanged(newPlayerData: Partial<IPlayerData>): void;
+
+	/** Fired by the server when a player is assigned to a lot. */
+	playerAssignedToLot(lotId: string): void;
 
 	/** Fired by the server when a dropper should spawn a new item. */
 	dropperSpawned(dropperType: number, dropperInfo: DropperInfo): void;

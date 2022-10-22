@@ -10,8 +10,8 @@ interface Attributes {
 	GamepassId: number;
 }
 
-interface IGamepassPromptModel extends Model {
-	Primary: BasePart;
+export interface IGamepassPromptModel extends Model {
+	TouchPart: BasePart;
 }
 
 @Component({})
@@ -24,7 +24,8 @@ export class GamepassPrompt extends BaseComponent<Attributes, IGamepassPromptMod
 	}
 
 	public onStart() {
-		this.Janitor.Add(this.instance.Primary.Touched.Connect((...args) => this.onTouched(...args)));
+		this.instance.TouchPart.CanTouch = true;
+		this.Janitor.Add(this.instance.TouchPart.Touched.Connect((...args) => this.onTouched(...args)));
 	}
 
 	private onTouched(part: BasePart) {

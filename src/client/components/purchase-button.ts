@@ -27,7 +27,6 @@ export class PurchaseButton extends BaseComponent<IPurchaseButtonAttributes, IPu
 		this.tree_opt = Option.none<Roact.Tree>();
 	}
 
-	/** @hidden */
 	public onStart() {
 		this.janitor.Add(
 			observeChild(this.instance, "Head", (_primary) => {
@@ -69,12 +68,12 @@ export class PurchaseButton extends BaseComponent<IPurchaseButtonAttributes, IPu
 			Roact.mount(billboard, Players.LocalPlayer.FindFirstChildOfClass("PlayerGui"), this.instance.Name),
 		);
 
-		this.logger.Info(`Successfully mounted purchase button for ${this.instance.Name}`);
+		this.logger.Debug(`Successfully mounted purchase button for ${this.instance.Name}`);
 
 		this.janitor.Add(() => {
 			if (this.tree_opt.isSome()) {
 				Roact.unmount(this.tree_opt.unwrap());
-				this.logger.Info(`Successfully unmounted purchase button for ${this.instance.Name}`);
+				this.logger.Debug(`Successfully unmounted purchase button for ${this.instance.Name}`);
 				return;
 			}
 		});
