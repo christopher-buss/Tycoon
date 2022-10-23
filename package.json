@@ -6,7 +6,7 @@
   "scripts": {
     "darklua": "darklua process out production",
     "build": "rbxtsc --rojo ./develop.project.json",
-    "watch": "rbxtsc -w --rojo ./develop.project.json",
+    "watch": "cross-env NODE_ENV=development rbxtsc -w --rojo ./develop.project.json",
     "deploy": "npm run build && npm run darklua",
     "postinstall": "patch-package"
   },
@@ -51,6 +51,7 @@
     "@rbxts/promise-child": "^1.2.1",
     "@rbxts/roact": "^1.4.2-ts.3",
     "@rbxts/roact-hooked": "^2.1.1",
+    "@rbxts/roact-hooks": "^0.4.1-ts.2",
     "@rbxts/roact-rodux": "^0.2.2-ts.7",
     "@rbxts/rodux": "^3.0.0-ts.3",
     "@rbxts/rust-classes": "^0.11.2",
@@ -59,10 +60,11 @@
     "@rbxts/stacks-and-queues": "^1.0.5",
     "@rbxts/streamable": "^0.1.0",
     "@rbxts/topbar-plus": "^2.0.9",
+    "cross-env": "^7.0.3",
     "eslint-plugin-sonarjs": "^0.16.0",
     "patch-package": "^6.4.7",
     "rbxts-transform-debug": "github:roblox-aurora/rbxts-transform-debug#v2.0.0",
-    "rbxts-transform-env": "^1.1.0-ts4.5",
+    "rbxts-transform-env": "^2.0.3",
     "rbxts-transformer-services": "^1.0.1",
     "rbxts-transformer-t": "^1.1.5",
     "typestrict": "^1.0.2"

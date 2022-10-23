@@ -18,6 +18,8 @@ export type StoreDispatch = Rodux.Dispatch<StoreActions>;
 export interface IAppConfig {
 	/** Debug name for app. */
 	name: string;
+	/** Should display on game start */
+	displayOnStart?: boolean;
 	/** Display order of Surface/ScreenGui. */
 	displayOrder?: number;
 	/** Ignore topbar inset if rendering with a ScreenGui. */
@@ -73,6 +75,8 @@ export class UserInterfaceController implements OnStart {
 
 				if (config.tag !== undefined) {
 					this.setupTagConnections(config.tag);
+				} else if (config.displayOnStart) {
+					this.showApp(ctor as Constructor);
 				}
 			}
 		}

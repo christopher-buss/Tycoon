@@ -1,6 +1,6 @@
 import { OnStart, Service } from "@flamework/core";
 import { initaliseServer } from "@rbxts/character-realism";
-import promiseR15, { promiseR6 } from "@rbxts/promise-character";
+import promiseR15, { CharacterRigR15, CharacterRigR6, promiseR6 } from "@rbxts/promise-character";
 import { promiseChildOfClass } from "@rbxts/promise-child";
 import { CollectionService } from "@rbxts/services";
 import playerEntity from "server/modules/classes/player-entity";
@@ -37,12 +37,20 @@ export class PlayerCharacterService implements OnStart, OnPlayerJoin {
 
 		if (rigType === "R15") {
 			const rig15 = await promiseR15(_c);
-			CollectionService.AddTag(rig15.Head, Tag.PlayerHead);
+			this.characterR15(rig15);
 		} else if (rigType === "R6") {
 			const rig6 = await promiseR6(_c);
-			CollectionService.AddTag(rig6.Head, Tag.PlayerHead);
+			this.characterR6(rig6);
 		} else {
 			throw `${_c.Name} has an unknown rig type! ${rigType}`;
 		}
+	}
+
+	private characterR6(rig6: CharacterRigR6) {
+		CollectionService.AddTag(rig6.Head, Tag.PlayerHead);
+	}
+
+	private characterR15(rig15: CharacterRigR15) {
+		CollectionService.AddTag(rig15.Head, Tag.PlayerHead);
 	}
 }

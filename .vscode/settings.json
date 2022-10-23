@@ -49,10 +49,13 @@
 		"screengui",
 		"streamable",
 		"surfacegui",
+		"textbutton",
 		"textlabel",
 		"topbar",
 		"traceback",
 		"uicorner",
+		"uisizeconstraint",
+		"uitextsizeconstraint",
 		"Unassigning"
 	],
 	"files.eol": "\n",

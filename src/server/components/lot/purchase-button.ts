@@ -29,7 +29,6 @@ export class PurchaseButton extends BaseComponent<IPurchaseButtonAttributes, IPu
 	private janitor: Janitor<{ Visibility: string | RBXScriptConnection }>;
 	private readonly touchPart: BasePart;
 
-	private readonly dependencies: Array<string>;
 	private lot!: Lot;
 
 	public listeners = new Set<IOnPurchaseButtonBought>();
@@ -43,7 +42,7 @@ export class PurchaseButton extends BaseComponent<IPurchaseButtonAttributes, IPu
 		this.attributes.ComponentId = HttpService.GenerateGUID(false);
 		this.attributes.DisplayName = this.instance.Name;
 		this.debounce = false;
-		this.dependencies = [];
+
 		this.janitor = new Janitor();
 		this.touchPart = this.instance.Head;
 

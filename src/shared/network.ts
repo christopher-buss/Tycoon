@@ -8,6 +8,9 @@ export type DropperInfo = Vector3int16;
 interface ServerEvents {
 	/** Called by the client to update their settings. */
 	updateSettings(newSettings: Partial<IPlayerData["settings"]>): void;
+
+	/** Called by the client to activate an effect. */
+	modifyEffect(activate: boolean, effectName: string): void;
 }
 
 interface ClientEvents {

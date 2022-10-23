@@ -20,10 +20,10 @@ function ButtonBillboard({ Adornee, DisplayName, Price, Janitor }: IProps): Roac
 
 	return (
 		<billboardgui
-			AlwaysOnTop={true}
+			AlwaysOnTop={false}
 			Adornee={Adornee}
 			LightInfluence={0}
-			MaxDistance={40}
+			MaxDistance={95}
 			Size={UDim2.fromScale(8, 2)}
 			StudsOffset={new Vector3(0, 2, 0)}
 			ResetOnSpawn={false}

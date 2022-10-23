@@ -22,6 +22,8 @@ export class MtxService implements OnInit, OnPlayerJoin {
 		this.gamePasses.set(71804134, "cloudGamepass");
 		this.gamePasses.set(70168504, "speedCoilGamepass");
 		this.gamePasses.set(70167932, "doubleMoneyGamepass");
+		this.gamePasses.set(71225919, "sparklesEffect");
+		this.gamePasses.set(71225950, "fireEffect");
 	}
 
 	/** @hidden */
@@ -237,5 +239,19 @@ export class MtxService implements OnInit, OnPlayerJoin {
 
 	private doubleMoneyGamepass(playerEntity: PlayerEntity): void {
 		playerEntity.player.SetAttribute("DoubleMoneyGamepass", true);
+	}
+
+	private sparklesEffect(playerEntity: PlayerEntity): void {
+		playerEntity.updateData((data) => {
+			data.gamePasses.sparkleEffectGamepass = true;
+			return data;
+		});
+	}
+
+	private fireEffect(playerEntity: PlayerEntity): void {
+		playerEntity.updateData((data) => {
+			data.gamePasses.fireEffectGamepass = true;
+			return data;
+		});
 	}
 }

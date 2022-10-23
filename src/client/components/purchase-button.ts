@@ -68,7 +68,7 @@ export class PurchaseButton extends BaseComponent<IPurchaseButtonAttributes, IPu
 			Roact.mount(billboard, Players.LocalPlayer.FindFirstChildOfClass("PlayerGui"), this.instance.Name),
 		);
 
-		this.logger.Debug(`Successfully mounted purchase button for ${this.instance.Name}`);
+		// this.logger.Debug(`Successfully mounted purchase button for ${this.instance.Name}`);
 
 		this.janitor.Add(() => {
 			if (this.tree_opt.isSome()) {
