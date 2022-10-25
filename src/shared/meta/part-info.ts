@@ -207,6 +207,18 @@ const Parts = {
 		Value: 13,
 		DropTime: 12,
 	},
+
+	["Pressure Washer"]: {
+		Price: 0,
+		Value: 0,
+		DropTime: 0,
+	},
+
+	["Dumpling Oven"]: {
+		Price: 0,
+		Value: 0,
+		DropTime: 0,
+	},
 };
 
 export default Parts;

@@ -1,9 +1,10 @@
 import { BaseComponent, Component } from "@flamework/components";
 import { OnStart } from "@flamework/core";
 import { Logger } from "@rbxts/log";
-import { DropperService } from "server/services/dropper-service";
+import { DropperService } from "server/services/tycoon/dropper-service";
 import { PathType } from "shared/meta/path-types";
 import { FlameworkUtil } from "shared/util/flamework-utils";
+import { Tag } from "types/enum/tags";
 import { IOnPurchaseButtonBought, PurchaseButton } from "./purchase-button";
 
 export interface IDropperAttributes {
@@ -17,7 +18,7 @@ export interface IDropperInfo {
 }
 
 @Component({
-	tag: "Dropper",
+	tag: Tag.Dropper,
 })
 export class Dropper extends BaseComponent<IDropperAttributes> implements OnStart, IOnPurchaseButtonBought {
 	constructor(private readonly logger: Logger, private readonly dropperService: DropperService) {

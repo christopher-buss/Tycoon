@@ -15,9 +15,6 @@ export default class DataController implements OnStart {
 	/** @hidden */
 	public onStart(): void {
 		Events.playerDataChanged.connect((data) => this.onGotNewData(data));
-		Events.playerAssignedToLot.connect((lotId) => {
-			print("Lot Id = " + lotId);
-		});
 
 		/** Request initial player data from the server */
 		Functions.requestPlayerData()

@@ -47,7 +47,6 @@ export class RightBarApp extends Roact.PureComponent<EnableEffectButtonProps> {
 							if (this.props.OwnsSparkles && this.props.SparklesActivated) {
 								Events.modifyEffect(false, "sparkleEffectGamepass");
 							} else if (this.props.OwnsSparkles && !this.props.SparklesActivated) {
-								print("SPARKLES ACTIVATED");
 								Events.modifyEffect(true, "sparkleEffectGamepass");
 							} else {
 								MarketplaceService.PromptGamePassPurchase(Players.LocalPlayer, 71225919);

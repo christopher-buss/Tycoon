@@ -34,6 +34,9 @@ export const encoderPartIdentifiers = {
 	["Sugar Vegetable Dumpling"]: 33,
 	["Vegetable Dumpling"]: 15,
 	["Velvet Dumpling"]: 23,
+
+	["Pressure Washer"]: 36,
+	["Dumpling Oven"]: 37,
 };
 
 export const decoderPartIdentifiers = {
@@ -72,6 +75,9 @@ export const decoderPartIdentifiers = {
 	[33]: "Sugar Vegetable Dumpling",
 	[15]: "Vegetable Dumpling",
 	[23]: "Velvet Dumpling",
+
+	[36]: "Pressure Washer",
+	[37]: "Dumpling Oven",
 };
 
 export type EncodePartIdentifier = typeof encoderPartIdentifiers;

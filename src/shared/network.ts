@@ -2,8 +2,9 @@ import { Networking } from "@flamework/networking";
 import { INotificationEntry } from "server/meta/notification-data";
 import { NetPlayerData } from "types/interfaces/network-types";
 import { IPlayerData } from "./meta/default-player-data";
+import { PathType } from "./meta/path-types";
 
-export type DropperInfo = Vector3int16;
+export type DropperInfo = Vector2int16;
 
 interface ServerEvents {
 	/** Called by the client to update their settings. */
@@ -11,6 +12,9 @@ interface ServerEvents {
 
 	/** Called by the client to activate an effect. */
 	modifyEffect(activate: boolean, effectName: string): void;
+
+	/** Called by the client to state that they've joined the group. */
+	joinedGroup(): void;
 }
 
 interface ClientEvents {
@@ -25,6 +29,15 @@ interface ClientEvents {
 
 	/** Fired by the server when a notification should be displayed on the client. */
 	sendNotification(notificationData: INotificationEntry): void;
+
+	/** Fired by the server when a player is in range of a tycoon and doesn't have it's data. */
+	playerInRangeOfLot(lotName: string, data: Map<PathType, Vector2int16>): void;
+
+	/**Fired by the server when a player is no longer in range of a tycoon */
+	playerOutOfRangeOfLot(): void;
+
+	/** Fired by the server when a player buys an object */
+	playerBoughtObject(objectLocation: string): void;
 }
 
 interface ServerFunctions {

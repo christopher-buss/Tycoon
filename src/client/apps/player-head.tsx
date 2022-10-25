@@ -15,7 +15,7 @@ interface IStateProps extends IPassedProps {
 	useSurfaceGui: false,
 	mapStateToProps: (state: IClientStore) => {
 		return identity<IStateProps>({
-			cash: "¥" + FormatCompact(state.playerData.cash),
+			cash: "¥" + FormatCompact(state.playerData.cash, 2),
 			rebirths: state.playerData.rebirths + " rebirths",
 		});
 	},

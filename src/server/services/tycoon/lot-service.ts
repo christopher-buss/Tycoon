@@ -1,14 +1,14 @@
 import { Components } from "@flamework/components";
-import { Modding, OnStart, Service } from "@flamework/core";
+import { Modding, OnInit, OnStart, Service } from "@flamework/core";
 import { Logger } from "@rbxts/log";
 import { Option, Result } from "@rbxts/rust-classes";
+import { ReplicatedStorage } from "@rbxts/services";
 import { Lot } from "server/components/lot/lot";
 import playerEntity from "server/modules/classes/player-entity";
-import { Events } from "server/network";
 import KickCode from "types/enum/kick-reason";
 import { LotErrors } from "types/interfaces/lots";
-import PlayerRemovalService from "./player/player-removal-service";
-import { OnPlayerJoin } from "./player/player-service";
+import PlayerRemovalService from "../player/player-removal-service";
+import { OnPlayerJoin } from "../player/player-service";
 
 export interface OnLotOwned {
 	/**
@@ -29,7 +29,7 @@ const rng = new Random();
  * A service which handles any functionality related to lots.
  */
 @Service({})
-export class LotService implements OnStart, OnPlayerJoin {
+export class LotService implements OnInit, OnStart, OnPlayerJoin {
 	private lotOwnedObjs: Set<OnLotOwned>;
 
 	constructor(
@@ -38,6 +38,10 @@ export class LotService implements OnStart, OnPlayerJoin {
 		private playerRemovalService: PlayerRemovalService,
 	) {
 		this.lotOwnedObjs = new Set();
+	}
+
+	public onInit(): void {
+		this.storeUpgraders();
 	}
 
 	/** @hidden */
@@ -68,9 +72,6 @@ export class LotService implements OnStart, OnPlayerJoin {
 			this.logger.Warn("There are no available lots in this server!");
 			this.playerRemovalService.removeForBug(player, KickCode.PlayerFullServer);
 		}
-
-		print(`[${player.Name}]: Assigned lot ${assign_res.unwrap()}`);
-		Events.playerAssignedToLot.fire(player, assign_res.unwrap());
 	}
 
 	/**
@@ -160,5 +161,37 @@ export class LotService implements OnStart, OnPlayerJoin {
 		}
 
 		this.logger.Info("Unassigning lot ownership done!");
+	}
+
+	private storeUpgraders(): void {
+		const container = new Instance("Folder");
+		container.Name = "Upgraders";
+		container.Parent = ReplicatedStorage;
+
+		// for (const lot of [
+		// 	"Cream Dumpling",
+		// 	"Emperor Dumpling",
+		// 	"Imperial Dumpling",
+		// 	"Jelly Dumpling",
+		// 	"Mint Dumpling",
+		// ]) {
+		// 	const lotContainer = new Instance("Folder");
+		// 	lotContainer.Name = lot;
+		// 	lotContainer.Parent = container;
+		// }
+
+		// CollectionService.GetTagged(Tag.Upgrader).forEach((upgrader) => {
+		// 	// for (const part of upgrader.GetDescendants()) {
+		// 	// 	if (part.IsA("BasePart")) {
+		// 	// 		part.Transparency = 1;
+		// 	// 		part.CanCollide = false;
+		// 	// 	} else if (part.IsA("ParticleEmitter") || part.IsA("Beam") || part.IsA("PointLight")) {
+		// 	// 		part.Enabled = false;
+		// 	// 	} else if (part.IsA("Decal"))
+		// 	// }
+
+		// 	const owner = upgrader.Parent?.Parent?.Name;
+		// 	upgrader.Parent = container.FindFirstChild(owner!);
+		// });
 	}
 }

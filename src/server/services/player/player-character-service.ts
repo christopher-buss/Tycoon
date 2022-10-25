@@ -5,12 +5,11 @@ import { promiseChildOfClass } from "@rbxts/promise-child";
 import { CollectionService } from "@rbxts/services";
 import playerEntity from "server/modules/classes/player-entity";
 import { Tag } from "types/enum/tags";
-import { MoneyService } from "../stores/money-service";
 import { OnPlayerJoin } from "./player-service";
 
 @Service({})
 export class PlayerCharacterService implements OnStart, OnPlayerJoin {
-	constructor(private readonly moneyService: MoneyService) {}
+	constructor() {}
 
 	public onStart(): void {
 		initaliseServer();
@@ -25,11 +24,6 @@ export class PlayerCharacterService implements OnStart, OnPlayerJoin {
 		player.CharacterAdded.Connect((character) => {
 			this.characterAdded(character);
 		});
-
-		// while (true) {
-		// 	this.moneyService.updatePlayerMoney(playerEntity, -10000);
-		// 	task.wait(1);
-		// }
 	}
 
 	private async characterAdded(_c: Model) {

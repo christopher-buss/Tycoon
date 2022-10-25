@@ -40,7 +40,7 @@ export class NotificationService implements OnStart {
 		Events.sendNotification.broadcast(data);
 	}
 
-	private sendNotificationToPlayer(player: Player, data: INotificationEntry) {
+	public sendNotificationToPlayer(player: Player, data: INotificationEntry) {
 		Events.sendNotification.fire(player, data);
 	}
 }

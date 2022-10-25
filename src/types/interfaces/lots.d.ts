@@ -1,4 +1,4 @@
-export interface ILotModel extends Model {
+export interface ILotModel extends Folder {
 	// Primary: BasePart;
 	Buttons: Folder;
 	Essentials: Folder & {
@@ -9,6 +9,7 @@ export interface ILotModel extends Model {
 			};
 		};
 	};
+	Objects: Folder;
 	Spawn: SpawnLocation;
 }
 

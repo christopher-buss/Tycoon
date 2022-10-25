@@ -109,7 +109,6 @@ export class PlayerEffectService implements OnInit, OnPlayerJoin {
 		player: Player,
 		effectLocation: BasePart,
 	) {
-		print("activate", activate, "effectType", effectType, "player", player, "effectLocation", effectLocation);
 		let effect = player.Character?.FindFirstChild(effectLocation.Name)?.FindFirstChild(effectType) as T;
 		if (effect === undefined) {
 			effect = new Instance(effectType as unknown as keyof CreatableInstances) as T;

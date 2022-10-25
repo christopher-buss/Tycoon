@@ -53,10 +53,13 @@
 		"textlabel",
 		"topbar",
 		"traceback",
+		"Tweenable",
 		"uicorner",
 		"uisizeconstraint",
 		"uitextsizeconstraint",
-		"Unassigning"
+		"Unassigning",
+		"Upgrader",
+		"Upgraders"
 	],
 	"files.eol": "\n",
 	"editor.stickyScroll.enabled": true

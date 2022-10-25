@@ -46,7 +46,7 @@ export class TopbarController implements OnStart {
 				this.musicController.pauseMusic();
 				muteMusic.setImage(6413981913);
 				if (muteMusic.getToggleState() === "selected") {
-					muteMusic.select();
+					muteMusic.deselect();
 				}
 			}
 		});

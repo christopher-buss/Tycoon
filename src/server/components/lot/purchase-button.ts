@@ -6,7 +6,6 @@ import { HttpService, RunService } from "@rbxts/services";
 import Spring from "@rbxts/spring";
 import { PlayerService } from "server/services/player/player-service";
 import { MoneyService } from "server/services/stores/money-service";
-import { EncodePartIdentifier, encoderPartIdentifiers } from "shared/meta/part-identifiers";
 import Parts from "shared/meta/part-info";
 import { FlameworkUtil } from "shared/util/flamework-utils";
 import { lerpNumber } from "shared/util/math-util";
@@ -80,7 +79,7 @@ export class PurchaseButton extends BaseComponent<IPurchaseButtonAttributes, IPu
 	}
 
 	public bindButtonTouched(): void {
-		this.logger.Info("Binding button touched for {ComponentId}", this.attributes.ComponentId);
+		this.logger.Debug("Binding button touched for {ComponentId}", this.attributes.ComponentId);
 		this.touchPart.CanTouch = true;
 		this.forceButtonVisible();
 		this.janitor.Add(this.touchPart.Touched.Connect((otherPart) => this.onComponentTouched(otherPart)));
@@ -131,16 +130,16 @@ export class PurchaseButton extends BaseComponent<IPurchaseButtonAttributes, IPu
 		}
 
 		const playerEntity = playerEntity_opt.unwrap();
-		playerEntity.updateData((data) => {
-			const identifier = encoderPartIdentifiers[this.attributes.DisplayName! as keyof EncodePartIdentifier];
-			if (identifier === undefined) {
-				this.logger.Error("Identifier is undefined");
-				return data;
-			}
+		// playerEntity.updateData((data) => {
+		// 	const identifier = encoderPartIdentifiers[this.attributes.DisplayName! as keyof EncodePartIdentifier];
+		// 	if (identifier === undefined) {
+		// 		this.logger.Error("Identifier is undefined");
+		// 		return data;
+		// 	}
 
-			data.purchased.push(identifier);
-			return data;
-		});
+		// 	data.purchased.push(identifier);
+		// 	return data;
+		// });
 
 		this.logger.Info("{ComponentId} purchased by {@Player}", this.attributes.ComponentId, player);
 
@@ -174,6 +173,7 @@ export class PurchaseButton extends BaseComponent<IPurchaseButtonAttributes, IPu
 				this.touchPart.Transparency = lerpNumber(base, goal, position);
 
 				if ((goal === 1 && position > 0.99) || (goal === 0 && position < 0.01)) {
+					this.touchPart.Transparency = goal;
 					this.janitor.Remove("Visibility");
 				}
 			}),

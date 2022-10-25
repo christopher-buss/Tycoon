@@ -3,8 +3,8 @@ import { Dependency, OnStart } from "@flamework/core";
 import { Logger } from "@rbxts/log";
 import { Option, Result } from "@rbxts/rust-classes";
 import { HttpService, Players, Teams } from "@rbxts/services";
-import { LotService } from "server/services/lot-service";
 import { PlayerService } from "server/services/player/player-service";
+import { LotService } from "server/services/tycoon/lot-service";
 import {
 	DecodePartIdentifier,
 	decoderPartIdentifiers,
@@ -20,6 +20,8 @@ import { PurchaseButton } from "./purchase-button";
 @Component({ tag: "Lot" })
 export class Lot extends BaseComponent<ILotAttributes, ILotModel> implements OnStart {
 	private readonly team: Team;
+	public readonly name: string;
+	public readonly position: Vector3;
 
 	public constructor(
 		private readonly logger: Logger,
@@ -30,6 +32,9 @@ export class Lot extends BaseComponent<ILotAttributes, ILotModel> implements OnS
 
 		this.team = Teams.FindFirstChild(this.instance.Name) as Team;
 		assert(this.team !== undefined, `Team ${this.instance.Name} does not exist`);
+
+		this.name = this.team.Name;
+		this.position = this.instance.Spawn.Position;
 	}
 
 	/** @hidden */
