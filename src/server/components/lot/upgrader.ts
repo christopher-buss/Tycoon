@@ -4,6 +4,7 @@ import { Logger } from "@rbxts/log";
 import { ServerStorage } from "@rbxts/services";
 import { Events } from "server/network";
 import { DropperService } from "server/services/tycoon/dropper-service";
+import Parts from "shared/meta/part-info";
 import { PathType } from "shared/meta/path-types";
 import { FlameworkUtil } from "shared/util/flamework-utils";
 import { Tag } from "types/enum/tags";
@@ -11,13 +12,13 @@ import { ILotModel } from "types/interfaces/lots";
 import { IOnPurchaseButtonBought, PurchaseButton } from "./purchase-button";
 
 export interface IUpgraderAttributes {
-	PathType?: PathType;
+	PathType: PathType;
 }
 
-export interface IDropperInfo {
-	DropperType: string;
+export interface IUpgraderInfo {
 	PathType: PathType;
-	Owner: Player; // may need later on
+	Owner: Player;
+	Value: number;
 }
 
 @Component({
@@ -69,7 +70,13 @@ export class Upgrader extends BaseComponent<IUpgraderAttributes> implements OnSt
 		// 	Owner: owner,
 		// };
 
-		// this.dropperService.addOwnedDropper(dropperInfo);
+		const upgraderInfo: IUpgraderInfo = {
+			PathType: this.attributes.PathType,
+			Owner: player,
+			Value: Parts[this.instance.Name as keyof typeof Parts].Value,
+		};
+
+		this.dropperService.addOwnedUpgrader(upgraderInfo);
 		// Register Dropper as being purchased
 	}
 }

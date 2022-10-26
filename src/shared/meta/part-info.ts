@@ -1,4 +1,4 @@
-const Parts = {
+const PartInfo = {
 	["Robux Dropper"]: {
 		Price: -1,
 		Value: 3,
@@ -210,78 +210,66 @@ const Parts = {
 
 	["Pressure Washer"]: {
 		Price: 0,
-		Value: 0,
-		DropTime: 0,
+		Value: 10,
 	},
 
 	["Dumpling Oven"]: {
 		Price: 0,
-		Value: 0,
-		DropTime: 0,
+		Value: 10,
 	},
 
 	["Crate Net Machine"]: {
 		Price: 0,
 		Value: 0,
-		DropTime: 0,
 	},
 
 	["Dumpling Boat Upgrade"]: {
 		Price: 0,
 		Value: 0,
-		DropTime: 0,
 	},
 
 	["Dumpling Gold Standard"]: {
 		Price: 0,
 		Value: 0,
-		DropTime: 0,
 	},
 
 	["Dumpling Packager"]: {
 		Price: 0,
 		Value: 0,
-		DropTime: 0,
 	},
 
 	["Dumpling Scenter"]: {
 		Price: 0,
 		Value: 0,
-		DropTime: 0,
 	},
 
 	["Dumpling Tube Cleaner"]: {
 		Price: 0,
 		Value: 0,
-		DropTime: 0,
 	},
 
 	["Dumpling Tube Upgrade"]: {
 		Price: 0,
 		Value: 0,
-		DropTime: 0,
 	},
 
 	["Fishery Boat Upgrade"]: {
 		Price: 0,
 		Value: 0,
-		DropTime: 0,
 	},
 
 	["Fishery Chemical Wash"]: {
 		Price: 0,
 		Value: 0,
-		DropTime: 0,
 	},
 
 	["Fishery Pressure Wash"]: {
 		Price: 0,
 		Value: 0,
-		DropTime: 0,
 	},
 };
 
-export default Parts;
+export default PartInfo;
 
-export type PartInfoKey = keyof typeof Parts;
-export type PartInfoValue = typeof Parts[PartInfoKey];
+export type PartInfoKey = keyof typeof PartInfo;
+export type PartInfoValue = typeof PartInfo["Dumpling"];

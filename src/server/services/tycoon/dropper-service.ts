@@ -3,13 +3,15 @@ import { Logger } from "@rbxts/log";
 import { Teams } from "@rbxts/services";
 import { IDropperInfo } from "server/components/lot/dropper";
 import { Lot } from "server/components/lot/lot";
+import { IUpgraderInfo } from "server/components/lot/upgrader";
 import playerEntity from "server/modules/classes/player-entity";
 import { Events } from "server/network";
 import { EncodePartIdentifier, encoderPartIdentifiers } from "shared/meta/part-identifiers";
 import Parts, { PartInfoKey, PartInfoValue } from "shared/meta/part-info";
 import { NetworkedPathType, PathType, PathTypes } from "shared/meta/path-types";
-import { REPLICATION_DISTANCE } from "shared/shared-constants";
+import { DUMPLING_TOTAL_TIME, REPLICATION_DISTANCE } from "shared/shared-constants";
 import { OnPlayerJoin, PlayerService } from "../player/player-service";
+import { MoneyService } from "../stores/money-service";
 import { LotService, OnLotOwned } from "./lot-service";
 
 type LotName = string;
@@ -33,7 +35,7 @@ export class DropperService implements OnInit, OnTick, OnPlayerJoin, OnLotOwned 
 	private timeSinceLastPlayerInRangeUpdate: number;
 
 	private ownedDroppers: Map<Player, Map<PathType, Array<IDropperSimulatingInfo>>>;
-	// private ownedUpgraders: Map<Player, Map<PathType, Map<string, number>>>;
+	private ownedUpgraders: Map<Player, Map<PathType, number[]>>;
 	private simulatedDroppers: Map<LotName, Map<PathType, Array<IDropperSimulating>>>;
 	private playersWithLot: Player[];
 	private lotPositions: Map<LotName, Vector3>;
@@ -42,8 +44,9 @@ export class DropperService implements OnInit, OnTick, OnPlayerJoin, OnLotOwned 
 
 	constructor(
 		private readonly logger: Logger,
-		private readonly playerService: PlayerService,
 		private readonly lotService: LotService,
+		private readonly moneyService: MoneyService,
+		private readonly playerService: PlayerService,
 	) {
 		this.nextId = 0;
 		this.timeSinceLastPlayerInRangeUpdate = 0;
@@ -54,6 +57,12 @@ export class DropperService implements OnInit, OnTick, OnPlayerJoin, OnLotOwned 
 		this.lotPositions = new Map<LotName, Vector3>();
 
 		this.lotToReplicateTo = new Map<Player, LotName>();
+
+		this.ownedUpgraders = new Map<Player, Map<PathType, number[]>>();
+	}
+
+	public addOwnedUpgrader(upgraderInfo: IUpgraderInfo) {
+		this.ownedUpgraders.get(upgraderInfo.Owner)?.get(upgraderInfo.PathType)?.push(upgraderInfo.Value);
 	}
 
 	public getPlayersInRangeOfLot(lotName: LotName): Player[] {
@@ -82,6 +91,12 @@ export class DropperService implements OnInit, OnTick, OnPlayerJoin, OnLotOwned 
 
 	public onLotOwned(_lot: Lot, newOwner: Player): void {
 		this.playersWithLot.push(newOwner);
+
+		this.ownedUpgraders.set(newOwner, new Map<PathType, number[]>());
+		for (const path of PathTypes) {
+			this.ownedUpgraders.get(newOwner)?.set(path, []);
+		}
+
 		const entity_opt = this.playerService.getEntity(newOwner);
 		if (entity_opt.isNone()) {
 			return;
@@ -113,7 +128,7 @@ export class DropperService implements OnInit, OnTick, OnPlayerJoin, OnLotOwned 
 			LastDrop: os.clock(),
 			Name: info.DropperType,
 			Owner: info.Owner,
-			Value: 0,
+			Value: Parts[info.DropperType as PartInfoKey].Value,
 		};
 
 		this.ownedDroppers.get(info.Owner)?.get(info.PathType)?.push(simulatingInfo);
@@ -219,6 +234,8 @@ export class DropperService implements OnInit, OnTick, OnPlayerJoin, OnLotOwned 
 			}
 		}
 
+		task.delay(DUMPLING_TOTAL_TIME, () => this.awardCashToPlayer(pathType, dropper));
+
 		return dropperInfo;
 	}
 
@@ -231,5 +248,29 @@ export class DropperService implements OnInit, OnTick, OnPlayerJoin, OnLotOwned 
 		Events.dropperSpawned.fire(player, dropperType, encodedDropperSimulating);
 	}
 
-	// private simulateDropper() {}
+	private awardCashToPlayer(pathType: PathType, dropper: IDropperSimulatingInfo) {
+		// Currently we're faking the simulation here by applying the cash to the player if they
+		// own an upgrader at the point of the dropper despawning. TODO: Can this be done better?
+		const entity_opt = this.playerService.getEntity(dropper.Owner);
+		if (entity_opt.isNone()) {
+			this.logger.Error(`Could not find entity for player ${dropper.Owner.Name}`);
+		}
+
+		let value = dropper.Value;
+
+		const entity = entity_opt.unwrap();
+		const doubleMoneyGamepass = entity.data.gamePasses.doubleMoneyGamepass;
+		if (doubleMoneyGamepass) {
+			value *= 2;
+		}
+
+		const ownedUpgraders = this.ownedUpgraders.get(dropper.Owner)?.get(pathType);
+		if (ownedUpgraders) {
+			ownedUpgraders.forEach((upgraderValue) => {
+				value += upgraderValue;
+			});
+		}
+
+		this.moneyService.givePlayerMoney(dropper.Owner, value);
+	}
 }

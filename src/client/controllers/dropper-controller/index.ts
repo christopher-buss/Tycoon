@@ -7,9 +7,10 @@ import { Players, ReplicatedStorage, TweenService, Workspace } from "@rbxts/serv
 import { Events } from "client/network";
 import { ClientStore } from "client/rodux/rodux";
 import { decoderPartIdentifiers } from "shared/meta/part-identifiers";
-import Parts from "shared/meta/part-info";
+import PartInfo from "shared/meta/part-info";
 import { PathType } from "shared/meta/path-types";
 import { DropperInfo } from "shared/network";
+import { DUMPLING_TOTAL_TIME } from "shared/shared-constants";
 
 type DropperBillboard = BillboardGui & {
 	PriceLabel: TextLabel & {
@@ -76,7 +77,7 @@ export class DropperController implements OnStart, OnInit {
 		if (ui) {
 			const data = ClientStore.getState().playerData;
 			const partPrice =
-				Parts[partType as keyof typeof Parts].Value *
+				PartInfo[partType as keyof typeof PartInfo].Value *
 				(1 + data.rebirths / 5) *
 				(data.gamePasses.doubleMoneyGamepass ? 2 : 1);
 			ui.PriceLabel.Text = tostring("¥" + partPrice);
@@ -101,7 +102,14 @@ export class DropperController implements OnStart, OnInit {
 
 	private createTween(dropperType: number, partType: string, part: BasePart) {
 		const numValue = new Instance("NumberValue");
-		const tweenInfo = new TweenInfo(26.5, Enum.EasingStyle.Linear, Enum.EasingDirection.In, 0, false, 0);
+		const tweenInfo = new TweenInfo(
+			DUMPLING_TOTAL_TIME,
+			Enum.EasingStyle.Linear,
+			Enum.EasingDirection.In,
+			0,
+			false,
+			0,
+		);
 
 		const newTween = TweenService.Create(numValue, tweenInfo, { Value: 1 });
 		const tweenJanitor = new Janitor<{ NumConnection: string | RBXScriptConnection }>();
@@ -161,7 +169,6 @@ export class DropperController implements OnStart, OnInit {
 	private stopSimulation() {}
 
 	private receivePayload(lotName: string, data: Map<PathType, Vector2int16>) {
-		print("CLIENT: Received payload");
 		this.nearestTycoon = lotName;
 	}
 }

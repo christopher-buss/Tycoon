@@ -5,3 +5,5 @@ export const BASE_REBIRTH_PRICE = 1000000;
 export const REBIRTH_ADDITIONAL_PRICE = 200000;
 
 export const REPLICATION_DISTANCE = 125;
+
+export const DUMPLING_TOTAL_TIME = 26.5;

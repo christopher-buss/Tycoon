@@ -107,6 +107,7 @@ export class PlayerChatService implements OnInit, OnPlayerJoin {
 
 	private speakerAdded(playerEntity: PlayerEntity, speaker: ChatSpeaker): void {
 		const playerTags: IChatTagContainer[] = [];
+		this.playerCurrentTags.set(playerEntity.player, playerTags);
 
 		// We only want to award the highest rank group tag.
 		for (const entry of this.groupTags) {

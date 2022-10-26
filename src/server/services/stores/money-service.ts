@@ -57,13 +57,20 @@ export class MoneyService {
 					return false;
 				}
 
-				this.updatePlayerMoney(entity, toSpend);
+				this.updatePlayerMoney(false, entity, -toSpend);
 				return true;
 			},
 			() => {
 				this.logger.Error(`Failed to check money for ${player}`);
 				return false;
 			},
+		);
+	}
+
+	public givePlayerMoney(player: Player, toGive: number): void {
+		this.playerService.getEntity(player).match<void>(
+			(entity) => this.updatePlayerMoney(true, entity, toGive),
+			() => this.logger.Error(`Failed to give money to ${player}`),
 		);
 	}
 
@@ -84,10 +91,12 @@ export class MoneyService {
 	 * @param entity
 	 * @param amount
 	 */
-	public updatePlayerMoney(entity: PlayerEntity, amount: number): void {
+	private updatePlayerMoney(force: boolean, entity: PlayerEntity, amount: number): void {
 		entity.updateData((data) => {
-			data.cash -= amount;
-			data.moneySpent += amount;
+			data.cash += amount;
+			if (!force) {
+				data.moneySpent -= amount;
+			}
 			return data;
 		});
 
