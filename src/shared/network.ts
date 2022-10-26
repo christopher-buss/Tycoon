@@ -37,7 +37,7 @@ interface ClientEvents {
 	playerOutOfRangeOfLot(): void;
 
 	/** Fired by the server when a player buys an object */
-	playerBoughtObject(objectLocation: string): void;
+	playerBoughtObject(lotName: string, pathType: PathType, objectName: string): void;
 }
 
 interface ServerFunctions {

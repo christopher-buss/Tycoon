@@ -8,7 +8,7 @@ import Spring from "@rbxts/spring";
 import { PlayerService } from "server/services/player/player-service";
 import { MoneyService } from "server/services/stores/money-service";
 import { EncodePartIdentifier, encoderPartIdentifiers } from "shared/meta/part-identifiers";
-import Parts from "shared/meta/part-info";
+import { PartInfo, PartInfoKey } from "shared/meta/part-info";
 import { FlameworkUtil } from "shared/util/flamework-utils";
 import { lerpNumber } from "shared/util/math-util";
 import { PlayerUtil } from "shared/util/player-util";
@@ -54,7 +54,7 @@ export class PurchaseButton extends BaseComponent<IPurchaseButtonAttributes, IPu
 
 		this.purchased = false;
 
-		const part = Parts[this.attributes.DisplayName as keyof typeof Parts];
+		const part = PartInfo[this.attributes.DisplayName as PartInfoKey];
 		if (part === undefined) {
 			return;
 		}
@@ -73,14 +73,6 @@ export class PurchaseButton extends BaseComponent<IPurchaseButtonAttributes, IPu
 			assert(component !== undefined, "Lot is undefined");
 			this.lot = component;
 		});
-
-		// if (!this.dependencies.isEmpty()) {
-		// 	this.bindButtonTouched();
-		// 	return;
-		// }
-
-		// Don't have this onStart, only have it when a player owns a tycoon and doesn't own the linked component
-		// this.bindButtonTouched();
 	}
 
 	public addDependency(dependency: PurchaseButton) {

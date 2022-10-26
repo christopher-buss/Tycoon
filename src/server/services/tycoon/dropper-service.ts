@@ -7,7 +7,7 @@ import { IUpgraderInfo } from "server/components/lot/upgrader";
 import playerEntity from "server/modules/classes/player-entity";
 import { Events } from "server/network";
 import { EncodePartIdentifier, encoderPartIdentifiers } from "shared/meta/part-identifiers";
-import Parts, { PartInfoKey, PartInfoValue } from "shared/meta/part-info";
+import { PartInfo, PartInfoKey, PartInfoValue } from "shared/meta/part-info";
 import { NetworkedPathType, PathType, PathTypes } from "shared/meta/path-types";
 import { DUMPLING_TOTAL_TIME, REPLICATION_DISTANCE } from "shared/shared-constants";
 import { OnPlayerJoin, PlayerService } from "../player/player-service";
@@ -31,16 +31,15 @@ interface IDropperSimulating {
 
 @Service({})
 export class DropperService implements OnInit, OnTick, OnPlayerJoin, OnLotOwned {
+	private connections: Map<Player, Set<Promise<number | void>>>;
+	private lotPositions: Map<LotName, Vector3>;
+	private lotToReplicateTo: Map<Player, LotName>;
 	private nextId: number;
-	private timeSinceLastPlayerInRangeUpdate: number;
-
 	private ownedDroppers: Map<Player, Map<PathType, Array<IDropperSimulatingInfo>>>;
 	private ownedUpgraders: Map<Player, Map<PathType, number[]>>;
-	private simulatedDroppers: Map<LotName, Map<PathType, Array<IDropperSimulating>>>;
 	private playersWithLot: Player[];
-	private lotPositions: Map<LotName, Vector3>;
-
-	private lotToReplicateTo: Map<Player, LotName>;
+	private simulatedDroppers: Map<LotName, Map<PathType, Array<IDropperSimulating>>>;
+	private timeSinceLastPlayerInRangeUpdate: number;
 
 	constructor(
 		private readonly logger: Logger,
@@ -48,17 +47,15 @@ export class DropperService implements OnInit, OnTick, OnPlayerJoin, OnLotOwned 
 		private readonly moneyService: MoneyService,
 		private readonly playerService: PlayerService,
 	) {
-		this.nextId = 0;
-		this.timeSinceLastPlayerInRangeUpdate = 0;
-
-		this.ownedDroppers = new Map<Player, Map<PathType, Array<IDropperSimulatingInfo>>>();
-		this.simulatedDroppers = new Map<LotName, Map<PathType, Array<IDropperSimulating>>>();
-		this.playersWithLot = [];
+		this.connections = new Map<Player, Set<Promise<number | void>>>();
 		this.lotPositions = new Map<LotName, Vector3>();
-
 		this.lotToReplicateTo = new Map<Player, LotName>();
-
+		this.nextId = 0;
+		this.ownedDroppers = new Map<Player, Map<PathType, Array<IDropperSimulatingInfo>>>();
 		this.ownedUpgraders = new Map<Player, Map<PathType, number[]>>();
+		this.playersWithLot = [];
+		this.simulatedDroppers = new Map<LotName, Map<PathType, Array<IDropperSimulating>>>();
+		this.timeSinceLastPlayerInRangeUpdate = 0;
 	}
 
 	public addOwnedUpgrader(upgraderInfo: IUpgraderInfo) {
@@ -120,6 +117,10 @@ export class DropperService implements OnInit, OnTick, OnPlayerJoin, OnLotOwned 
 
 		playerEntity.playerRemoving.Add(() => {
 			this.ownedDroppers.delete(playerEntity.player);
+
+			this.connections.get(playerEntity.player)?.forEach((thread) => {
+				thread.cancel();
+			});
 		});
 	}
 
@@ -128,15 +129,10 @@ export class DropperService implements OnInit, OnTick, OnPlayerJoin, OnLotOwned 
 			LastDrop: os.clock(),
 			Name: info.DropperType,
 			Owner: info.Owner,
-			Value: Parts[info.DropperType as PartInfoKey].Value,
+			Value: PartInfo[info.DropperType as PartInfoKey].Value,
 		};
 
 		this.ownedDroppers.get(info.Owner)?.get(info.PathType)?.push(simulatingInfo);
-
-		// if (currentlySimulatingArray) {
-		// 	currentlySimulatingArray.push(simulatingInfo);
-		// 	// this.ownedDroppers.get(info.Owner)?.set(info.PathType, currentlySimulating);
-		// }
 	}
 
 	public onTick(dt: number): void {
@@ -145,7 +141,7 @@ export class DropperService implements OnInit, OnTick, OnPlayerJoin, OnLotOwned 
 		for (const [player, ownedDroppers] of this.ownedDroppers) {
 			for (const [pathType, simulatingDroppers] of ownedDroppers) {
 				for (const dropper of simulatingDroppers) {
-					const partInfo = Parts[dropper.Name as PartInfoKey] as PartInfoValue;
+					const partInfo = PartInfo[dropper.Name as PartInfoKey] as PartInfoValue;
 					if (os.clock() - dropper.LastDrop >= partInfo.DropTime) {
 						const newDropper = this.spawnDropper(pathType, dropper);
 						if (newDropper) {
@@ -234,7 +230,14 @@ export class DropperService implements OnInit, OnTick, OnPlayerJoin, OnLotOwned 
 			}
 		}
 
-		task.delay(DUMPLING_TOTAL_TIME, () => this.awardCashToPlayer(pathType, dropper));
+		const thread = Promise.delay(DUMPLING_TOTAL_TIME).andThen(() => {
+			this.awardCashToPlayer(pathType, dropper);
+			// threads.delete(thread);
+			this.connections.get(dropper.Owner)?.delete(thread);
+		});
+
+		this.connections.get(dropper.Owner)?.add(thread);
+		// threads.add(thread);
 
 		return dropperInfo;
 	}
@@ -253,7 +256,8 @@ export class DropperService implements OnInit, OnTick, OnPlayerJoin, OnLotOwned 
 		// own an upgrader at the point of the dropper despawning. TODO: Can this be done better?
 		const entity_opt = this.playerService.getEntity(dropper.Owner);
 		if (entity_opt.isNone()) {
-			this.logger.Error(`Could not find entity for player ${dropper.Owner.Name}`);
+			// this.logger.Error(`Could not find entity for player ${dropper.Owner.Name}`);
+			return;
 		}
 
 		let value = dropper.Value;

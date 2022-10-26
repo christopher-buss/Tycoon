@@ -4,7 +4,7 @@ import { Logger } from "@rbxts/log";
 import { ServerStorage } from "@rbxts/services";
 import { Events } from "server/network";
 import { DropperService } from "server/services/tycoon/dropper-service";
-import Parts from "shared/meta/part-info";
+import { PartInfo, PartInfoKey } from "shared/meta/part-info";
 import { PathType } from "shared/meta/path-types";
 import { FlameworkUtil } from "shared/util/flamework-utils";
 import { Tag } from "types/enum/tags";
@@ -59,10 +59,7 @@ export class Upgrader extends BaseComponent<IUpgraderAttributes> implements OnSt
 
 		this.upgrader.Parent = this.owner.Objects;
 
-		Events.playerBoughtObject.fire(
-			this.dropperService.getPlayersInRangeOfLot(this.owner.Name),
-			this.upgrader.GetFullName(),
-		);
+		Events.playerBoughtObject.broadcast(this.owner.Name, this.attributes.PathType, this.instance.Name);
 
 		// const dropperInfo: IDropperInfo = {
 		// 	DropperType: this.instance.Name,
@@ -73,7 +70,7 @@ export class Upgrader extends BaseComponent<IUpgraderAttributes> implements OnSt
 		const upgraderInfo: IUpgraderInfo = {
 			PathType: this.attributes.PathType,
 			Owner: player,
-			Value: Parts[this.instance.Name as keyof typeof Parts].Value,
+			Value: PartInfo[this.instance.Name as PartInfoKey].Value,
 		};
 
 		this.dropperService.addOwnedUpgrader(upgraderInfo);

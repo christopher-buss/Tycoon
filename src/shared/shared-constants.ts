@@ -7,3 +7,5 @@ export const REBIRTH_ADDITIONAL_PRICE = 200000;
 export const REPLICATION_DISTANCE = 125;
 
 export const DUMPLING_TOTAL_TIME = 26.5;
+
+export const LOT_NAMES = ["Cream Dumpling", "Emperor Dumpling", "Imperial Dumpling", "Jelly Dumpling", "Mint Dumpling"];

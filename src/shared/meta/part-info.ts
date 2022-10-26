@@ -1,4 +1,4 @@
-const PartInfo = {
+export const PartInfo = {
 	["Robux Dropper"]: {
 		Price: -1,
 		Value: 3,
@@ -218,29 +218,19 @@ const PartInfo = {
 		Value: 10,
 	},
 
-	["Crate Net Machine"]: {
-		Price: 0,
-		Value: 0,
-	},
-
-	["Dumpling Boat Upgrade"]: {
-		Price: 0,
-		Value: 0,
-	},
-
-	["Dumpling Gold Standard"]: {
-		Price: 0,
-		Value: 0,
-	},
-
 	["Dumpling Packager"]: {
 		Price: 0,
-		Value: 0,
+		Value: 30,
 	},
 
 	["Dumpling Scenter"]: {
 		Price: 0,
-		Value: 0,
+		Value: 20,
+	},
+
+	["Dumpling Gold Standard"]: {
+		Price: 0,
+		Value: 40,
 	},
 
 	["Dumpling Tube Cleaner"]: {
@@ -249,6 +239,16 @@ const PartInfo = {
 	},
 
 	["Dumpling Tube Upgrade"]: {
+		Price: 0,
+		Value: 0,
+	},
+
+	["Crate Net Machine"]: {
+		Price: 0,
+		Value: 20,
+	},
+
+	["Dumpling Boat Upgrade"]: {
 		Price: 0,
 		Value: 0,
 	},
@@ -269,7 +269,57 @@ const PartInfo = {
 	},
 };
 
-export default PartInfo;
-
 export type PartInfoKey = keyof typeof PartInfo;
 export type PartInfoValue = typeof PartInfo["Dumpling"];
+
+export const Progress = {
+	["Pressure Washer"]: {
+		Progress: 229,
+	},
+
+	["Dumpling Oven"]: {
+		Progress: 265,
+	},
+
+	["Dumpling Packager"]: {
+		Progress: 348,
+	},
+
+	["Dumpling Scenter"]: {
+		Progress: 385,
+	},
+
+	["Dumpling Gold Standard"]: {
+		Progress: 453,
+	},
+
+	["Dumpling Tube Cleaner"]: {
+		Progress: 488,
+	},
+
+	["Dumpling Tube Upgrade"]: {
+		Progress: 504,
+	},
+
+	["Crate Net Machine"]: {
+		Progress: 541,
+	},
+
+	["Dumpling Boat Upgrade"]: {
+		Progress: 555,
+	},
+
+	["Fishery Boat Upgrade"]: {
+		Progress: 0,
+	},
+
+	["Fishery Chemical Wash"]: {
+		Progress: 0,
+	},
+
+	["Fishery Pressure Wash"]: {
+		Progress: 0,
+	},
+};
+
+export type ProgressKey = keyof typeof Progress;
