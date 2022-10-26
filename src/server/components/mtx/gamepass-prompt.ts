@@ -5,6 +5,7 @@ import { Logger } from "@rbxts/log";
 import { MarketplaceService } from "@rbxts/services";
 import { MtxService } from "server/services/mtx-service";
 import { PlayerUtil } from "shared/util/player-util";
+import { Tag } from "types/enum/tags";
 
 interface Attributes {
 	GamepassId: number;
@@ -14,9 +15,12 @@ export interface IGamepassPromptModel extends Model {
 	TouchPart: BasePart;
 }
 
-@Component({})
+@Component({
+	tag: Tag.GamepassPrompt,
+})
 export class GamepassPrompt extends BaseComponent<Attributes, IGamepassPromptModel> implements OnStart {
 	private readonly Janitor: Janitor<void>;
+	private debounce = false;
 
 	constructor(private readonly logger: Logger, private readonly mtxService: MtxService) {
 		super();
@@ -29,6 +33,15 @@ export class GamepassPrompt extends BaseComponent<Attributes, IGamepassPromptMod
 	}
 
 	private onTouched(part: BasePart) {
+		if (this.debounce) {
+			return;
+		}
+
+		this.debounce = true;
+		task.delay(0.5, () => {
+			this.debounce = false;
+		});
+
 		const player_opt = PlayerUtil.getPlayerFromDescendant(part);
 		if (player_opt.isNone()) {
 			return;
