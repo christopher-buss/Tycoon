@@ -23,6 +23,8 @@ export class Lot extends BaseComponent<ILotAttributes, ILotModel> implements OnS
 	public readonly name: string;
 	public readonly position: Vector3;
 
+	private objectsWithDependencies: Array<PurchaseButton>;
+
 	public constructor(
 		private readonly logger: Logger,
 		private readonly lotService: LotService,
@@ -35,6 +37,8 @@ export class Lot extends BaseComponent<ILotAttributes, ILotModel> implements OnS
 
 		this.name = this.team.Name;
 		this.position = this.instance.Spawn.Position;
+
+		this.objectsWithDependencies = [];
 	}
 
 	/** @hidden */
@@ -70,6 +74,60 @@ export class Lot extends BaseComponent<ILotAttributes, ILotModel> implements OnS
 				);
 			},
 		);
+	}
+
+	/**
+	 * Removes the current owner of the lot.
+	 *
+	 * @returns true if the owner was successfully removed, else returns the
+	 * reason why the owner could not be removed.
+	 */
+	public clearOwner(): Result<true, LotErrors> {
+		this.logger.Info(`Attempting to clear owner of lot {@Lot}`, this.attributes.ComponentId!);
+		return this.getOwner().match(
+			() => {
+				this.attributes.OwnerId = undefined;
+				this.setupGui();
+				task.spawn(() => this.clearOwnedButtons());
+				return Result.ok<true, LotErrors>(true);
+			},
+			() => Result.err<true, LotErrors>(LotErrors.ClearOwnership),
+		);
+	}
+
+	/**
+	 * Get the current owner of the lot.
+	 *
+	 * @returns Player instance if there is an owner.
+	 */
+	public getOwner(): Option<Player> {
+		// Usually we would just use GetPlayers(), but this does not
+		// necessarily work when using Roblox test players - errors have been
+		// observed when these players leave the game. Therefore for testing
+		// purposes this approach is being used.
+		for (const player of Players.GetChildren()) {
+			if (player.IsA("Player")) {
+				if (player.UserId === this.attributes.OwnerId) {
+					return Option.some<Player>(player);
+				}
+			}
+		}
+
+		return Option.none<Player>();
+	}
+
+	private clearOwnedButtons(): void {
+		const buttons = this.instance.Buttons.GetChildren();
+
+		buttons.forEach((button) => {
+			const buttonComponent = Dependency<Components>().getComponent<PurchaseButton>(button);
+			if (!buttonComponent) {
+				// this.logger.Error("Could not find purchase button component for {@Button}", button);
+				return;
+			}
+
+			buttonComponent.unbindButtonTouched();
+		});
 	}
 
 	/**
@@ -120,6 +178,8 @@ export class Lot extends BaseComponent<ILotAttributes, ILotModel> implements OnS
 				return;
 			}
 
+			buttonComponent.purchased = true;
+
 			// Add the corresponding item to the tycoon.
 			buttonComponent.unbindButtonTouched();
 			for (const listener of buttonComponent.listeners) {
@@ -133,7 +193,7 @@ export class Lot extends BaseComponent<ILotAttributes, ILotModel> implements OnS
 		const nonOwnedButtons = buttons.filter((button) => {
 			const encoded = encoderPartIdentifiers[button.Name as keyof EncodePartIdentifier];
 			if (encoded === undefined) {
-				this.logger.Debug("Could not encode part identifier {@Identifier}", button.Name);
+				this.logger.Warn("Could not encode part identifier {@Identifier}", button.Name);
 				return;
 			}
 
@@ -143,65 +203,36 @@ export class Lot extends BaseComponent<ILotAttributes, ILotModel> implements OnS
 		nonOwnedButtons.forEach((button) => {
 			const buttonComponent = Dependency<Components>().getComponent<PurchaseButton>(button);
 			if (!buttonComponent) {
-				// this.logger.Error("Could not find purchase button component for {@Button}", button);
+				this.logger.Error("Could not find purchase button component for {@Button}", button);
 				return;
+			}
+
+			const dependency = buttonComponent.attributes.Dependency;
+			if (dependency !== undefined && dependency !== "") {
+				this.objectsWithDependencies.push(buttonComponent);
 			}
 
 			buttonComponent.bindButtonTouched();
 		});
-	}
 
-	/**
-	 * Removes the current owner of the lot.
-	 *
-	 * @returns true if the owner was successfully removed, else returns the
-	 * reason why the owner could not be removed.
-	 */
-	public clearOwner(): Result<true, LotErrors> {
-		this.logger.Info(`Attempting to clear owner of lot {@Lot}`, this.attributes.ComponentId!);
-		return this.getOwner().match(
-			() => {
-				this.attributes.OwnerId = undefined;
-				this.setupGui();
-				task.spawn(() => this.clearOwnedButtons());
-				return Result.ok<true, LotErrors>(true);
-			},
-			() => Result.err<true, LotErrors>(LotErrors.ClearOwnership),
-		);
-	}
+		this.objectsWithDependencies.forEach((buttonComponent) => {
+			const dependency = buttonComponent.attributes.Dependency;
+			for (const button of buttons) {
+				if (button.Name === dependency) {
+					const dependencyButton = Dependency<Components>().getComponent<PurchaseButton>(button);
+					if (!dependencyButton) {
+						this.logger.Error("Could not find purchase button component for {@Button}", button);
+						return;
+					}
 
-	private clearOwnedButtons(): void {
-		const buttons = this.instance.Buttons.GetChildren();
+					if (!dependencyButton.purchased) {
+						buttonComponent.unbindButtonTouched();
+					}
 
-		buttons.forEach((button) => {
-			const buttonComponent = Dependency<Components>().getComponent<PurchaseButton>(button);
-			if (!buttonComponent) {
-				// this.logger.Error("Could not find purchase button component for {@Button}", button);
-				return;
-			}
-
-			buttonComponent.unbindButtonTouched();
-		});
-	}
-
-	/**
-	 * Get the current owner of the lot.
-	 *
-	 * @returns Player instance if there is an owner.
-	 */
-	public getOwner(): Option<Player> {
-		// Usually we would just use GetPlayers(), but this does not
-		// necessarily work when using Roblox test players - errors have been
-		// observed when these players leave the game. Therefore for testing
-		// purposes this approach is being used.
-		for (const player of Players.GetChildren()) {
-			if (player.IsA("Player")) {
-				if (player.UserId === this.attributes.OwnerId) {
-					return Option.some<Player>(player);
+					dependencyButton.addDependency(buttonComponent);
+					return;
 				}
 			}
-		}
-
-		return Option.none<Player>();
+		});
 	}
 }

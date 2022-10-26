@@ -2,10 +2,12 @@ import { BaseComponent, Component } from "@flamework/components";
 import { OnStart } from "@flamework/core";
 import { Janitor } from "@rbxts/janitor";
 import { Logger } from "@rbxts/log";
+import { Option } from "@rbxts/rust-classes";
 import { HttpService, RunService } from "@rbxts/services";
 import Spring from "@rbxts/spring";
 import { PlayerService } from "server/services/player/player-service";
 import { MoneyService } from "server/services/stores/money-service";
+import { EncodePartIdentifier, encoderPartIdentifiers } from "shared/meta/part-identifiers";
 import Parts from "shared/meta/part-info";
 import { FlameworkUtil } from "shared/util/flamework-utils";
 import { lerpNumber } from "shared/util/math-util";
@@ -32,6 +34,10 @@ export class PurchaseButton extends BaseComponent<IPurchaseButtonAttributes, IPu
 
 	public listeners = new Set<IOnPurchaseButtonBought>();
 
+	private dependency: Option<PurchaseButton>;
+
+	public purchased: boolean;
+
 	constructor(
 		private readonly logger: Logger,
 		private readonly playerService: PlayerService,
@@ -41,9 +47,12 @@ export class PurchaseButton extends BaseComponent<IPurchaseButtonAttributes, IPu
 		this.attributes.ComponentId = HttpService.GenerateGUID(false);
 		this.attributes.DisplayName = this.instance.Name;
 		this.debounce = false;
+		this.dependency = Option.none<PurchaseButton>();
 
 		this.janitor = new Janitor();
 		this.touchPart = this.instance.Head;
+
+		this.purchased = false;
 
 		const part = Parts[this.attributes.DisplayName as keyof typeof Parts];
 		if (part === undefined) {
@@ -74,12 +83,17 @@ export class PurchaseButton extends BaseComponent<IPurchaseButtonAttributes, IPu
 		// this.bindButtonTouched();
 	}
 
+	public addDependency(dependency: PurchaseButton) {
+		this.dependency = Option.wrap<PurchaseButton>(dependency);
+	}
+
 	public addListener(object: IOnPurchaseButtonBought): void {
 		this.listeners.add(object);
 	}
 
 	public bindButtonTouched(): void {
 		this.logger.Debug("Binding button touched for {ComponentId}", this.attributes.ComponentId);
+		this.purchased = false;
 		this.touchPart.CanTouch = true;
 		this.forceButtonVisible();
 		this.janitor.Add(this.touchPart.Touched.Connect((otherPart) => this.onComponentTouched(otherPart)));
@@ -130,18 +144,24 @@ export class PurchaseButton extends BaseComponent<IPurchaseButtonAttributes, IPu
 		}
 
 		const playerEntity = playerEntity_opt.unwrap();
-		// playerEntity.updateData((data) => {
-		// 	const identifier = encoderPartIdentifiers[this.attributes.DisplayName! as keyof EncodePartIdentifier];
-		// 	if (identifier === undefined) {
-		// 		this.logger.Error("Identifier is undefined");
-		// 		return data;
-		// 	}
+		playerEntity.updateData((data) => {
+			const identifier = encoderPartIdentifiers[this.attributes.DisplayName! as keyof EncodePartIdentifier];
+			if (identifier === undefined) {
+				this.logger.Error("Identifier is undefined");
+				return data;
+			}
 
-		// 	data.purchased.push(identifier);
-		// 	return data;
-		// });
+			data.purchased.push(identifier);
+			return data;
+		});
 
 		this.logger.Info("{ComponentId} purchased by {@Player}", this.attributes.ComponentId, player);
+
+		if (this.dependency.isSome()) {
+			this.dependency.unwrap().bindButtonTouched();
+		}
+
+		this.purchased = true;
 
 		for (const listener of this.listeners) {
 			task.spawn(() => {
@@ -149,7 +169,9 @@ export class PurchaseButton extends BaseComponent<IPurchaseButtonAttributes, IPu
 			});
 		}
 
-		this.hideButton(); //.finally(() => {});
+		this.hideButton().finally(() => {
+			this.unbindButtonTouched();
+		});
 	}
 
 	/** @hidden */

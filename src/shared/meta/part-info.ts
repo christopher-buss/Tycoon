@@ -219,6 +219,66 @@ const Parts = {
 		Value: 0,
 		DropTime: 0,
 	},
+
+	["Crate Net Machine"]: {
+		Price: 0,
+		Value: 0,
+		DropTime: 0,
+	},
+
+	["Dumpling Boat Upgrade"]: {
+		Price: 0,
+		Value: 0,
+		DropTime: 0,
+	},
+
+	["Dumpling Gold Standard"]: {
+		Price: 0,
+		Value: 0,
+		DropTime: 0,
+	},
+
+	["Dumpling Packager"]: {
+		Price: 0,
+		Value: 0,
+		DropTime: 0,
+	},
+
+	["Dumpling Scenter"]: {
+		Price: 0,
+		Value: 0,
+		DropTime: 0,
+	},
+
+	["Dumpling Tube Cleaner"]: {
+		Price: 0,
+		Value: 0,
+		DropTime: 0,
+	},
+
+	["Dumpling Tube Upgrade"]: {
+		Price: 0,
+		Value: 0,
+		DropTime: 0,
+	},
+
+	["Fishery Boat Upgrade"]: {
+		Price: 0,
+		Value: 0,
+		DropTime: 0,
+	},
+
+	["Fishery Chemical Wash"]: {
+		Price: 0,
+		Value: 0,
+		DropTime: 0,
+	},
+
+	["Fishery Pressure Wash"]: {
+		Price: 0,
+		Value: 0,
+		DropTime: 0,
+	},
 };
 
 export default Parts;

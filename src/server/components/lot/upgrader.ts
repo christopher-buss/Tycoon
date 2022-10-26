@@ -24,11 +24,16 @@ export interface IDropperInfo {
 	tag: Tag.Upgrader,
 })
 export class Upgrader extends BaseComponent<IUpgraderAttributes> implements OnStart, IOnPurchaseButtonBought {
-	private readonly owner!: ILotModel;
-	private readonly upgrader!: Model;
+	private owner!: ILotModel;
+	private upgrader!: Model;
 
 	constructor(private readonly logger: Logger, private readonly dropperService: DropperService) {
 		super();
+		this.owner = {} as ILotModel;
+		this.upgrader = {} as Model;
+	}
+
+	public onStart() {
 		const owner = this.instance.Parent?.Parent as ILotModel;
 		assert(owner, "Owner is undefined");
 		this.owner = owner;
@@ -38,16 +43,14 @@ export class Upgrader extends BaseComponent<IUpgraderAttributes> implements OnSt
 		) as Model;
 		assert(upgrader, "Upgrader is undefined");
 		this.upgrader = upgrader;
-	}
-
-	public onStart() {
-		this.upgrader.Parent = ServerStorage.Folder.FindFirstChild(this.owner.Name);
 
 		FlameworkUtil.waitForComponentOnInstance<PurchaseButton>(this.instance).andThen((component) => {
 			assert(component !== undefined, "Button is undefined");
 
 			component.addListener(this);
 		});
+
+		upgrader.Parent = ServerStorage.Folder.FindFirstChild(this.owner.Name);
 	}
 
 	public onPurchaseButtonBought(player: Player): void {

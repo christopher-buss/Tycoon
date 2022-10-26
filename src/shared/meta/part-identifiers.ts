@@ -37,6 +37,16 @@ export const encoderPartIdentifiers = {
 
 	["Pressure Washer"]: 36,
 	["Dumpling Oven"]: 37,
+	["Crate Net Machine"]: 38,
+	["Dumpling Boat Upgrade"]: 39,
+	["Dumpling Gold Standard"]: 40,
+	["Dumpling Packager"]: 41,
+	["Dumpling Scenter"]: 42,
+	["Dumpling Tube Cleaner"]: 43,
+	["Dumpling Tube Upgrade"]: 44,
+	["Fishery Boat Upgrade"]: 45,
+	["Fishery Chemical Wash"]: 46,
+	["Fishery Pressure Wash"]: 47,
 };
 
 export const decoderPartIdentifiers = {
@@ -78,6 +88,16 @@ export const decoderPartIdentifiers = {
 
 	[36]: "Pressure Washer",
 	[37]: "Dumpling Oven",
+	[38]: "Crate Net Machine",
+	[39]: "Dumpling Boat Upgrade",
+	[40]: "Dumpling Gold Standard",
+	[41]: "Dumpling Packager",
+	[42]: "Dumpling Scenter",
+	[43]: "Dumpling Tube Cleaner",
+	[44]: "Dumpling Tube Upgrade",
+	[45]: "Fishery Boat Upgrade",
+	[46]: "Fishery Chemical Wash",
+	[47]: "Fishery Pressure Wash",
 };
 
 export type EncodePartIdentifier = typeof encoderPartIdentifiers;

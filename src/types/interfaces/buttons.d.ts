@@ -1,7 +1,7 @@
 export interface IPurchaseButtonAttributes {
 	ComponentId?: string;
+	Dependency?: string;
 	DisplayName?: string;
-	// LinkedComponentId: string;
 	Price?: number;
 }
 
