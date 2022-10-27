@@ -41,7 +41,7 @@ export class RightBarApp extends Roact.PureComponent<EnableEffectButtonProps> {
 					Effect={this.props.SparklesActivated!}
 					Position={new UDim2(0.096, 0, 0.686, 0)}
 					Text={"Sparkles"}
-					Color={Color3.fromRGB(248, 163, 59)}
+					Color={Color3.fromRGB(217, 142, 248)}
 					Event={{
 						MouseButton1Down: () => {
 							if (this.props.OwnsSparkles && this.props.SparklesActivated) {
@@ -60,7 +60,7 @@ export class RightBarApp extends Roact.PureComponent<EnableEffectButtonProps> {
 					Effect={this.props.FireActivated!}
 					Position={new UDim2(0.514, 0, 0.686, 0)}
 					Text={"Fire"}
-					Color={Color3.fromRGB(217, 142, 248)}
+					Color={Color3.fromRGB(248, 163, 59)}
 					Event={{
 						MouseButton1Down: () => {
 							if (this.props.OwnsFire && this.props.FireActivated) {

@@ -9,7 +9,7 @@ import { Events } from "server/network";
 import { EncodePartIdentifier, encoderPartIdentifiers } from "shared/meta/part-identifiers";
 import { PartInfo, PartInfoKey, PartInfoValue } from "shared/meta/part-info";
 import { NetworkedPathType, PathType, PathTypes } from "shared/meta/path-types";
-import { DUMPLING_TOTAL_TIME, REPLICATION_DISTANCE } from "shared/shared-constants";
+import { REPLICATION_DISTANCE, TOTAL_PROGRESS, TOTAL_TIME } from "shared/shared-constants";
 import { OnPlayerJoin, PlayerService } from "../player/player-service";
 import { MoneyService } from "../stores/money-service";
 import { LotService, OnLotOwned } from "./lot-service";
@@ -20,6 +20,7 @@ interface IDropperSimulatingInfo {
 	LastDrop: number;
 	Name: string;
 	Owner: Player;
+	StartProgress: number;
 	Value: number;
 }
 
@@ -129,6 +130,7 @@ export class DropperService implements OnInit, OnTick, OnPlayerJoin, OnLotOwned 
 			LastDrop: os.clock(),
 			Name: info.DropperType,
 			Owner: info.Owner,
+			StartProgress: info.StartProgress,
 			Value: PartInfo[info.DropperType as PartInfoKey].Value,
 		};
 
@@ -230,25 +232,25 @@ export class DropperService implements OnInit, OnTick, OnPlayerJoin, OnLotOwned 
 			}
 		}
 
-		const thread = Promise.delay(DUMPLING_TOTAL_TIME).andThen(() => {
+		// Calculate the time it takes to reach the end of the path
+		const time = TOTAL_TIME[pathType] * (1 - dropper.StartProgress / TOTAL_PROGRESS[pathType]);
+		const thread = Promise.delay(time).andThen(() => {
 			this.awardCashToPlayer(pathType, dropper);
-			// threads.delete(thread);
 			this.connections.get(dropper.Owner)?.delete(thread);
 		});
 
 		this.connections.get(dropper.Owner)?.add(thread);
-		// threads.add(thread);
 
 		return dropperInfo;
 	}
 
-	private replicateDropper(player: Player, dropperType: NetworkedPathType, dropperInfo: IDropperSimulating): void {
+	private replicateDropper(player: Player, pathType: NetworkedPathType, dropperInfo: IDropperSimulating): void {
 		const encodedDropperSimulating = new Vector2int16(
+			pathType,
 			encoderPartIdentifiers[dropperInfo.Dropper.Name as keyof EncodePartIdentifier],
-			dropperInfo.Id,
 		);
 
-		Events.dropperSpawned.fire(player, dropperType, encodedDropperSimulating);
+		Events.dropperSpawned.fire(player, encodedDropperSimulating);
 	}
 
 	private awardCashToPlayer(pathType: PathType, dropper: IDropperSimulatingInfo) {
@@ -256,7 +258,7 @@ export class DropperService implements OnInit, OnTick, OnPlayerJoin, OnLotOwned 
 		// own an upgrader at the point of the dropper despawning. TODO: Can this be done better?
 		const entity_opt = this.playerService.getEntity(dropper.Owner);
 		if (entity_opt.isNone()) {
-			// this.logger.Error(`Could not find entity for player ${dropper.Owner.Name}`);
+			this.logger.Error(`Could not find entity for player ${dropper.Owner.Name}`);
 			return;
 		}
 

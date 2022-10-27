@@ -11,7 +11,7 @@ import { decoderPartIdentifiers } from "shared/meta/part-identifiers";
 import { PartInfo, PartInfoKey, Progress, ProgressKey } from "shared/meta/part-info";
 import { NetworkedPathType, PathType, PathTypes } from "shared/meta/path-types";
 import { DropperInfo } from "shared/network";
-import { DUMPLING_TOTAL_TIME, LOT_NAMES } from "shared/shared-constants";
+import { DUMPLING_TOTAL_TIME, LOT_NAMES, TOTAL_PROGRESS, TOTAL_TIME } from "shared/shared-constants";
 
 type DropperBillboard = BillboardGui & {
 	PriceLabel: TextLabel & {
@@ -90,9 +90,9 @@ export class DropperController implements OnStart, OnInit {
 		}
 	}
 
-	private dropItem(dropperType: number, dropperInfo: DropperInfo) {
-		const partType: string = decoderPartIdentifiers[dropperInfo.X as never];
-		const dropperId = dropperInfo.Y;
+	private dropItem(dropperInfo: DropperInfo) {
+		const pathType: NetworkedPathType = dropperInfo.X;
+		const partType = decoderPartIdentifiers[dropperInfo.Y as never] as keyof typeof PartInfo;
 
 		const newPart = this.partCache.get(partType)?.GetPart() as DropperPart;
 		if (!newPart) {
@@ -116,12 +116,22 @@ export class DropperController implements OnStart, OnInit {
 			return;
 		}
 
-		newPart.PivotTo(new CFrame(this.cachedConveyorLocations.get(this.nearestTycoon!)![dropperType][dropperId]));
+		let progress = 0;
+
+		// Since we only have one type at the moment this is better than
+		// sending the progress over the network. Maybe this should have been
+		// stored in part-info?
+		if (partType === "Robux Dropper") {
+			progress = 428;
+		}
+
+		newPart.PivotTo(new CFrame(this.cachedConveyorLocations.get(this.nearestTycoon!)![pathType][progress]));
 		newPart.Parent = Workspace;
 
-		const totalTime = DUMPLING_TOTAL_TIME;
-		const progress = 0;
-		this.createTween(totalTime, progress, dropperType, partType, newPart);
+		const decodedPathType = PathTypes[pathType];
+		const time = TOTAL_TIME[decodedPathType] * (1 - progress / TOTAL_PROGRESS[decodedPathType]);
+
+		this.createTween(time, progress, pathType, partType, newPart);
 	}
 
 	private calculateNewPosition(dropperType: number, progress: number, step: number): Vector3 {
@@ -130,9 +140,9 @@ export class DropperController implements OnStart, OnInit {
 		return previousPosition.Lerp(nextPosition, step);
 	}
 
-	private createTween(totalTime: number, progress: number, dropperType: number, partType: string, part: DropperPart) {
+	private createTween(totalTime: number, progress: number, pathType: number, partType: string, part: DropperPart) {
 		const numValue = new Instance("NumberValue");
-		numValue.Value = (1 / this.cachedConveyorLocations.get(this.nearestTycoon!)![dropperType].size()) * progress;
+		numValue.Value = (1 / this.cachedConveyorLocations.get(this.nearestTycoon!)![pathType].size()) * progress;
 
 		const tweenInfo = new TweenInfo(totalTime, Enum.EasingStyle.Linear, Enum.EasingDirection.In, 0, false, 0);
 
@@ -150,13 +160,13 @@ export class DropperController implements OnStart, OnInit {
 
 				tweenJanitor.Add(
 					numValue.Changed.Connect((t) => {
-						const totalPoints = this.cachedConveyorLocations.get(this.nearestTycoon!)![dropperType].size();
+						const totalPoints = this.cachedConveyorLocations.get(this.nearestTycoon!)![pathType].size();
 						const currentProgress = math.floor(totalPoints * t) + 1;
 						if (currentProgress >= totalPoints - 1) {
 							return;
 						}
 						if (oldProgress !== currentProgress) {
-							if (this.simulateDroppers(dropperType, "Dumpling", currentProgress, part)) {
+							if (this.simulateDroppers(PathTypes[pathType], currentProgress, part)) {
 								if (tweenJanitor) {
 									tweenJanitor.Destroy();
 								}
@@ -164,7 +174,7 @@ export class DropperController implements OnStart, OnInit {
 							oldProgress = currentProgress;
 						}
 
-						const position = this.calculateNewPosition(dropperType, currentProgress, (totalPoints * t) % 1);
+						const position = this.calculateNewPosition(pathType, currentProgress, (totalPoints * t) % 1);
 						part.PivotTo(new CFrame(position));
 					}),
 					"Disconnect",
@@ -208,12 +218,7 @@ export class DropperController implements OnStart, OnInit {
 		ui.PriceLabel.Text = tostring("¥" + price);
 	}
 
-	private simulateDroppers(
-		dropperType: number,
-		pathType: PathType,
-		upgraderProgress: number,
-		part: DropperPart,
-	): boolean {
+	private simulateDroppers(pathType: PathType, upgraderProgress: number, part: DropperPart): boolean {
 		// if (upgraderProgress === 348) {
 		// 	const position = this.cachedConveyorLocations.get(this.nearestTycoon!)![NetworkedPathType[pathType]][348];
 		// 	const crate = this.partCache.get("Crate")?.GetPart() as DropperPart;
@@ -232,7 +237,13 @@ export class DropperController implements OnStart, OnInit {
 			const crate = this.partCache.get("Crate")?.GetPart() as DropperPart;
 			if (crate) {
 				crate.PivotTo(new CFrame(position));
-				this.createTween(DUMPLING_TOTAL_TIME * (1 - 348 / 555), 348, dropperType, "Crate", crate);
+				this.createTween(
+					DUMPLING_TOTAL_TIME * (1 - 348 / 555),
+					348,
+					NetworkedPathType[pathType],
+					"Crate",
+					crate,
+				);
 				crate.Price.SetAttribute("Price", part.Price.GetAttribute("Price"));
 				const value = this.upgradersOwned.get(this.nearestTycoon!)?.get(pathType)?.get(upgraderProgress);
 				this.updateUi(crate.Price, value!.Value!);

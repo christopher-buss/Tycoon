@@ -4,12 +4,13 @@ import { lerpNumber } from "shared/util/math-util";
 
 export interface IProps {
 	Adornee: BasePart;
+	Color: Color3;
 	DisplayName?: string;
-	Price?: number;
 	Janitor: Janitor;
+	Price?: string;
 }
 
-function ButtonBillboard({ Adornee, DisplayName, Price, Janitor }: IProps): Roact.Element {
+function ButtonBillboard({ Adornee, DisplayName, Color, Price, Janitor }: IProps): Roact.Element {
 	const [binding, setBinding] = Roact.createBinding<number>(Adornee.Transparency);
 
 	Janitor.Add(
@@ -49,7 +50,7 @@ function ButtonBillboard({ Adornee, DisplayName, Price, Janitor }: IProps): Roac
 				Text={`$${Price}`}
 				TextTransparency={binding}
 				Font={Enum.Font.GothamBlack}
-				TextColor3={Color3.fromRGB(126, 126, 126)}
+				TextColor3={Color}
 				TextScaled={true}
 			>
 				<uicorner />

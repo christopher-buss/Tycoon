@@ -46,16 +46,29 @@ export class PurchaseButton extends BaseComponent<IPurchaseButtonAttributes, IPu
 		this.setupInterface(billboard);
 	}
 
+	// TextColor3={Color3.fromRGB(38, 255, 0)}
+	// TextColor3={Color3.fromRGB(126, 126, 126)}
+
 	/**
 	 * Creates the user interface object for the purchase button.
 	 * @returns the ui object.
 	 */
 	private createInterface(): Roact.Element {
+		let color = Color3.fromRGB(126, 126, 126);
+		let displayName = this.instance.Name;
+		let price = tostring(this.attributes.Price);
+		if (this.attributes.GamepassId !== undefined && this.attributes.GamepassId !== 0) {
+			color = Color3.fromRGB(38, 255, 0);
+			displayName = "🍣 " + this.instance.Name;
+			price = "R$" + this.attributes.Price;
+		}
+
 		return purchaseButton({
 			Adornee: this.instance.Head as BasePart & MeshPart,
-			DisplayName: this.instance.Name,
-			Price: this.attributes.Price,
+			Color: color,
+			DisplayName: displayName,
 			Janitor: this.janitor,
+			Price: price,
 		});
 	}
 

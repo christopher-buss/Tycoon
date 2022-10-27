@@ -4,7 +4,7 @@ import { NetPlayerData } from "types/interfaces/network-types";
 import { IPlayerData } from "./meta/default-player-data";
 import { PathType } from "./meta/path-types";
 
-export type DropperInfo = Vector2int16;
+export type DropperInfo = Vector2int16; // Path Type, Part Type
 
 interface ServerEvents {
 	/** Called by the client to update their settings. */
@@ -25,7 +25,7 @@ interface ClientEvents {
 	playerAssignedToLot(lotId: string): void;
 
 	/** Fired by the server when a dropper should spawn a new item. */
-	dropperSpawned(dropperType: number, dropperInfo: DropperInfo): void;
+	dropperSpawned(dropperInfo: DropperInfo): void;
 
 	/** Fired by the server when a notification should be displayed on the client. */
 	sendNotification(notificationData: INotificationEntry): void;

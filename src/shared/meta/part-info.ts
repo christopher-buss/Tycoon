@@ -1,6 +1,12 @@
 export const PartInfo = {
 	["Robux Dropper"]: {
-		Price: -1,
+		Price: 175,
+		Value: 3,
+		DropTime: 5,
+	},
+
+	["Robux Upgrader"]: {
+		Price: 175,
 		Value: 3,
 		DropTime: 5,
 	},

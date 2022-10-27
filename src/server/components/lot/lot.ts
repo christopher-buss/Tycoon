@@ -139,10 +139,10 @@ export class Lot extends BaseComponent<ILotAttributes, ILotModel> implements OnS
 		player.RequestStreamAroundAsync(this.instance.Spawn.Position);
 		player.RespawnLocation = this.instance.Spawn;
 		player.Team = this.team;
-		player.LoadCharacter();
 		player.SetAttribute("Lot", this.team.Name);
 		this.loadPurchaseButtons(player);
 		this.setupGui(player);
+		player.LoadCharacter();
 	}
 
 	private setupGui(player?: Player): void {

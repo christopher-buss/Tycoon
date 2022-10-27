@@ -8,13 +8,15 @@ import { Tag } from "types/enum/tags";
 import { IOnPurchaseButtonBought, PurchaseButton } from "./purchase-button";
 
 export interface IDropperAttributes {
-	PathType?: PathType;
+	PathType: PathType;
+	StartProgress?: number;
 }
 
 export interface IDropperInfo {
 	DropperType: string;
+	Owner: Player;
 	PathType: PathType;
-	Owner: Player; // may need later on
+	StartProgress: number;
 }
 
 @Component({
@@ -40,8 +42,9 @@ export class Dropper extends BaseComponent<IDropperAttributes> implements OnStar
 
 		const dropperInfo: IDropperInfo = {
 			DropperType: this.instance.Name,
-			PathType: this.attributes.PathType!,
+			PathType: this.attributes.PathType,
 			Owner: owner,
+			StartProgress: this.attributes.StartProgress ?? 0,
 		};
 
 		this.dropperService.addOwnedDropper(dropperInfo);

@@ -5,6 +5,7 @@ import { MarketplaceService, Players, ServerStorage } from "@rbxts/services";
 import Products from "server/meta/product-functions";
 import PlayerEntity from "server/modules/classes/player-entity";
 import { GamepassPlayerKey, PlayerDataProfile } from "shared/meta/default-player-data";
+import { encoderPartIdentifiers } from "shared/meta/part-identifiers";
 import { OnPlayerJoin, PlayerService } from "./player/player-service";
 
 /**
@@ -24,6 +25,7 @@ export class MtxService implements OnInit, OnPlayerJoin {
 		this.gamePasses.set(70167932, "doubleMoneyGamepass");
 		this.gamePasses.set(71225919, "sparklesEffect");
 		this.gamePasses.set(71225950, "fireEffect");
+		this.gamePasses.set(70168164, "robuxDropper");
 	}
 
 	/** @hidden */
@@ -251,6 +253,18 @@ export class MtxService implements OnInit, OnPlayerJoin {
 	private fireEffect(playerEntity: PlayerEntity): void {
 		playerEntity.updateData((data) => {
 			data.gamePasses.fireEffectGamepass = true;
+			return data;
+		});
+	}
+
+	private robuxDropper(playerEntity: PlayerEntity): void {
+		const robuxDropperEncoded = encoderPartIdentifiers["Robux Dropper"];
+		if (playerEntity.data.purchased.includes(robuxDropperEncoded)) {
+			return;
+		}
+
+		playerEntity.updateData((data) => {
+			data.purchased.push(robuxDropperEncoded);
 			return data;
 		});
 	}

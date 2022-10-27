@@ -3,8 +3,9 @@ import { OnStart } from "@flamework/core";
 import { Janitor } from "@rbxts/janitor";
 import { Logger } from "@rbxts/log";
 import { Option } from "@rbxts/rust-classes";
-import { HttpService, RunService } from "@rbxts/services";
+import { HttpService, MarketplaceService, RunService } from "@rbxts/services";
 import Spring from "@rbxts/spring";
+import { MtxService } from "server/services/mtx-service";
 import { PlayerService } from "server/services/player/player-service";
 import { MoneyService } from "server/services/stores/money-service";
 import { EncodePartIdentifier, encoderPartIdentifiers } from "shared/meta/part-identifiers";
@@ -26,33 +27,34 @@ export interface IOnPurchaseButtonBought {
  */
 @Component({ tag: "PurchaseButton" })
 export class PurchaseButton extends BaseComponent<IPurchaseButtonAttributes, IPurchaseButtonModel> implements OnStart {
-	private debounce: boolean;
-	private janitor: Janitor<{ Visibility: string | RBXScriptConnection }>;
-	private readonly touchPart: BasePart;
+	public listeners: Set<IOnPurchaseButtonBought>;
+	public purchased: boolean;
 
+	private debounce: boolean;
+	private dependency: Option<PurchaseButton>;
+	private janitor: Janitor<{ Visibility: string | RBXScriptConnection }>;
 	private lot!: Lot;
 
-	public listeners = new Set<IOnPurchaseButtonBought>();
-
-	private dependency: Option<PurchaseButton>;
-
-	public purchased: boolean;
+	private readonly touchPart: BasePart;
 
 	constructor(
 		private readonly logger: Logger,
 		private readonly playerService: PlayerService,
 		private readonly moneyService: MoneyService,
+		private readonly mtxService: MtxService,
 	) {
 		super();
+
+		this.listeners = new Set<IOnPurchaseButtonBought>();
+		this.purchased = false;
+
 		this.attributes.ComponentId = HttpService.GenerateGUID(false);
 		this.attributes.DisplayName = this.instance.Name;
 		this.debounce = false;
 		this.dependency = Option.none<PurchaseButton>();
-
 		this.janitor = new Janitor();
-		this.touchPart = this.instance.Head;
 
-		this.purchased = false;
+		this.touchPart = this.instance.Head;
 
 		const part = PartInfo[this.attributes.DisplayName as PartInfoKey];
 		if (part === undefined) {
@@ -99,7 +101,7 @@ export class PurchaseButton extends BaseComponent<IPurchaseButtonAttributes, IPu
 	}
 
 	/** @hidden */
-	private onComponentTouched(part: BasePart): void {
+	private async onComponentTouched(part: BasePart): Promise<void> {
 		if (this.debounce) {
 			return;
 		}
@@ -125,14 +127,18 @@ export class PurchaseButton extends BaseComponent<IPurchaseButtonAttributes, IPu
 			return;
 		}
 
-		this.logger.Info("{ComponentId} attempting to be purchased by {@Player}", this.attributes.ComponentId, player);
-
-		const canSpend = this.moneyService.spendMoney(player, this.attributes.Price!);
-		if (!canSpend) {
-			task.delay(0.5, () => {
-				this.debounce = false;
-			});
-			return;
+		if (this.attributes.GamepassId !== undefined && this.attributes.GamepassId > 0) {
+			const result = await this.buyWithRobux(player);
+			if (result !== true) {
+				return;
+			}
+		} else {
+			if (!this.buyWithMoney(player)) {
+				task.delay(0.5, () => {
+					this.debounce = false;
+				});
+				return;
+			}
 		}
 
 		const playerEntity = playerEntity_opt.unwrap();
@@ -164,6 +170,28 @@ export class PurchaseButton extends BaseComponent<IPurchaseButtonAttributes, IPu
 		this.hideButton().finally(() => {
 			this.unbindButtonTouched();
 		});
+	}
+
+	private buyWithMoney(player: Player): boolean {
+		this.logger.Info("{ComponentId} attempting to be purchased by {@Player}", this.attributes.ComponentId, player);
+
+		return this.moneyService.spendMoney(player, this.attributes.Price!);
+	}
+
+	private async buyWithRobux(player: Player): Promise<boolean | void> {
+		return this.mtxService
+			.checkForGamepassOwned(player, this.attributes.GamepassId!)
+			.andThen((owned) => {
+				if (!owned) {
+					MarketplaceService.PromptPurchase(player, this.attributes.GamepassId!);
+					return false;
+				}
+
+				return true;
+			})
+			.catch((err) => {
+				this.logger.Warn(`Error checking for gamepass owned: ${err}`);
+			});
 	}
 
 	/** @hidden */
