@@ -21,12 +21,15 @@ export interface IUpgraderInfo {
 	Value: number;
 }
 
+/**
+ * Upgrader component.
+ */
 @Component({
 	tag: Tag.Upgrader,
 })
 export class Upgrader extends BaseComponent<IUpgraderAttributes> implements OnStart, IOnPurchaseButtonBought {
-	private owner!: ILotModel;
-	private upgrader!: Model;
+	private owner: ILotModel;
+	private upgrader: Model;
 
 	constructor(private readonly logger: Logger, private readonly dropperService: DropperService) {
 		super();
@@ -39,15 +42,12 @@ export class Upgrader extends BaseComponent<IUpgraderAttributes> implements OnSt
 		assert(owner, "Owner is undefined");
 		this.owner = owner;
 
-		const upgrader = this.instance.Parent?.Parent?.FindFirstChild("Objects")?.FindFirstChild(
-			this.instance.Name,
-		) as Model;
+		const upgrader = this.owner.Objects.FindFirstChild(this.instance.Name) as Model;
 		assert(upgrader, "Upgrader is undefined");
 		this.upgrader = upgrader;
 
 		FlameworkUtil.waitForComponentOnInstance<PurchaseButton>(this.instance).andThen((component) => {
 			assert(component !== undefined, "Button is undefined");
-
 			component.addListener(this);
 		});
 
@@ -61,19 +61,13 @@ export class Upgrader extends BaseComponent<IUpgraderAttributes> implements OnSt
 
 		Events.playerBoughtObject.broadcast(this.owner.Name, this.attributes.PathType, this.instance.Name);
 
-		// const dropperInfo: IDropperInfo = {
-		// 	DropperType: this.instance.Name,
-		// 	PathType: this.attributes.PathType!,
-		// 	Owner: owner,
-		// };
-
 		const upgraderInfo: IUpgraderInfo = {
 			PathType: this.attributes.PathType,
 			Owner: player,
 			Value: PartInfo[this.instance.Name as PartInfoKey].Value,
 		};
 
-		this.dropperService.addOwnedUpgrader(upgraderInfo);
 		// Register Dropper as being purchased
+		this.dropperService.addOwnedUpgrader(upgraderInfo);
 	}
 }

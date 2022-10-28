@@ -330,7 +330,7 @@ export class DropperController implements OnStart, OnInit {
 			return;
 		}
 
-		if (Workspace.Camera.FindFirstChild(tostring(sound))) {
+		if (Workspace.Camera.FindFirstChild("SoundContainer")?.FindFirstChild(tostring(sound))) {
 			return;
 		}
 

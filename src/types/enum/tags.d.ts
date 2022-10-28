@@ -8,6 +8,7 @@ export const enum Tag {
 	"RebirthButton" = "RebirthButton",
 	"RebirthUpgrade" = "RebirthUpgrade",
 	"RebirthUpgradeAnimation" = "RebirthUpgradeAnimation",
+	"Remover" = "Remover",
 	"RespawnPlayer" = "RespawnPlayer",
 	"Upgrader" = "Upgrader",
 }

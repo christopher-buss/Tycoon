@@ -47,6 +47,7 @@ export const encoderPartIdentifiers = {
 	["Fishery Boat Upgrade"]: 45,
 	["Fishery Chemical Wash"]: 46,
 	["Fishery Pressure Wash"]: 47,
+	["Robux Upgrader"]: 48,
 };
 
 export const decoderPartIdentifiers = {
@@ -98,6 +99,7 @@ export const decoderPartIdentifiers = {
 	[45]: "Fishery Boat Upgrade",
 	[46]: "Fishery Chemical Wash",
 	[47]: "Fishery Pressure Wash",
+	[48]: "Robux Upgrader",
 };
 
 export type EncodePartIdentifier = typeof encoderPartIdentifiers;
