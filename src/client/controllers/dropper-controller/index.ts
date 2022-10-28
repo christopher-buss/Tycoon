@@ -46,7 +46,7 @@ type ISimulationFunction = (part: DropperPart, pathType: PathType, upgraderProgr
 @Controller({})
 export class DropperController implements OnStart, OnInit {
 	private cachedConveyorLocations: Map<string, Array<Array<Vector3>>>;
-	private currentlySimulating: Set<Janitor<{ NumConnection: string | RBXScriptConnection }>>;
+	private currentlySimulating: Array<Janitor<{ NumConnection: string | RBXScriptConnection }>>;
 	private nearestTycoon: string | undefined;
 	private partCache: Map<string, PartCache>;
 	private upgradersOwned: Map<LotName, Map<PathType, Map<DropperProgress, Partial<IUpgraderInfo>>>>;
@@ -57,7 +57,7 @@ export class DropperController implements OnStart, OnInit {
 
 	constructor(private readonly logger: Logger) {
 		this.audioFiles = new Map();
-		this.currentlySimulating = new Set();
+		this.currentlySimulating = [];
 		this.partCache = new Map();
 		this.partCacheLocation = new Instance("Folder");
 		this.simulationFunctions = new Map();
@@ -245,7 +245,12 @@ export class DropperController implements OnStart, OnInit {
 			}),
 		);
 
-		this.currentlySimulating.add(tweenJanitor);
+		this.currentlySimulating.push(tweenJanitor);
+
+		tweenJanitor.Add(() => {
+			const index = this.currentlySimulating.indexOf(tweenJanitor);
+			this.currentlySimulating.unorderedRemove(index);
+		});
 
 		tweenJanitor.Add(() => {
 			if (part.IsA("Model")) {
@@ -323,7 +328,7 @@ export class DropperController implements OnStart, OnInit {
 		return false;
 	}
 
-	private playAudio(pathType: NetworkedPathType, progress: number) {
+	private playAudio(pathType: NetworkedPathType, progress: number): void {
 		const position = this.cachedConveyorLocations.get(this.nearestTycoon!)![pathType][progress];
 		const sound = this.audioFiles.get(PathTypes[pathType])?.get(progress);
 		if (sound === undefined || sound === "0") {
@@ -338,8 +343,12 @@ export class DropperController implements OnStart, OnInit {
 		SoundSystem.Create(sound!, position, tostring(sound), false);
 	}
 
-	private stopSimulation() {
-		this.currentlySimulating.forEach((janitor) => janitor.Destroy());
+	private stopSimulation(): void {
+		print("Test: Stopping simulation");
+		this.currentlySimulating.forEach((janitor) => {
+			print("Janitor: ", janitor);
+			janitor.Destroy();
+		});
 	}
 
 	private receivePayload(lotName: string, data: Map<PathType, Vector2int16>) {

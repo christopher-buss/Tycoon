@@ -1,4 +1,4 @@
-import { OnInit, OnTick, Service } from "@flamework/core";
+import { OnInit, OnStart, OnTick, Service } from "@flamework/core";
 import { Logger } from "@rbxts/log";
 import { Teams } from "@rbxts/services";
 import { IDropperInfo } from "server/components/lot/dropper";
@@ -31,7 +31,7 @@ interface IDropperSimulating {
 }
 
 @Service({})
-export class DropperService implements OnInit, OnTick, OnPlayerJoin, OnLotOwned {
+export class DropperService implements OnInit, OnStart, OnTick, OnPlayerJoin, OnLotOwned {
 	private connections: Map<Player, Set<Promise<number | void>>>;
 	private lotPositions: Map<LotName, Vector3>;
 	private lotToReplicateTo: Map<Player, LotName>;
@@ -59,6 +59,21 @@ export class DropperService implements OnInit, OnTick, OnPlayerJoin, OnLotOwned 
 		this.timeSinceLastPlayerInRangeUpdate = 0;
 	}
 
+	public onInit() {
+		for (const team of Teams.GetTeams()) {
+			for (const _path of PathTypes) {
+				this.simulatedDroppers.set(team.Name, new Map<PathType, Array<IDropperSimulating>>());
+			}
+		}
+	}
+
+	public onStart(): void {
+		const lots = this.lotService.getAllLots();
+		for (const lot of lots) {
+			this.lotPositions.set(lot.name, lot.position);
+		}
+	}
+
 	public addOwnedUpgrader(upgraderInfo: IUpgraderInfo) {
 		this.ownedUpgraders.get(upgraderInfo.Owner)?.get(upgraderInfo.PathType)?.push(upgraderInfo.Value);
 	}
@@ -72,19 +87,6 @@ export class DropperService implements OnInit, OnTick, OnPlayerJoin, OnLotOwned 
 		});
 
 		return playersInRange;
-	}
-
-	public onInit() {
-		for (const team of Teams.GetTeams()) {
-			for (const _path of PathTypes) {
-				this.simulatedDroppers.set(team.Name, new Map<PathType, Array<IDropperSimulating>>());
-			}
-		}
-
-		const lots = this.lotService.getAllLots();
-		for (const lot of lots) {
-			this.lotPositions.set(lot.name, lot.position);
-		}
 	}
 
 	public onLotOwned(_lot: Lot, newOwner: Player): void {
@@ -165,20 +167,21 @@ export class DropperService implements OnInit, OnTick, OnPlayerJoin, OnLotOwned 
 
 		for (const player of this.playersWithLot) {
 			let tycoonSet = false;
-			this.lotPositions.forEach((lotPosition, lotName) => {
+			for (const [lotName, lotPosition] of this.lotPositions) {
 				const humanoidRootPart = player.Character?.FindFirstChild("HumanoidRootPart") as BasePart;
 				if (!humanoidRootPart) {
-					return;
+					break;
 				}
 
 				const playerPosition = humanoidRootPart.Position;
-				if (!(playerPosition.sub(lotPosition).Magnitude < REPLICATION_DISTANCE)) {
-					return;
+				if (playerPosition.sub(lotPosition).Magnitude > REPLICATION_DISTANCE) {
+					print("Player not in range of lot");
+					break;
 				}
 
 				if (this.lotToReplicateTo.get(player) === lotName) {
 					tycoonSet = true;
-					return;
+					break;
 				}
 
 				this.lotToReplicateTo.set(player, lotName);
@@ -194,9 +197,10 @@ export class DropperService implements OnInit, OnTick, OnPlayerJoin, OnLotOwned 
 				}
 
 				Events.playerInRangeOfLot.fire(player, lotName, dataToSend);
-			});
+			}
 
 			if (!tycoonSet && this.lotToReplicateTo.has(player)) {
+				print("Test: OUT OF RANGE");
 				this.lotToReplicateTo.delete(player);
 				Events.playerOutOfRangeOfLot.fire(player);
 			}
