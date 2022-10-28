@@ -34,8 +34,8 @@ export class LeaderstatsService implements OnInit, OnPlayerJoin {
 
 	/** @hidden */
 	public onInit(): void {
-		this.registerStat("Yen", "IntValue", DefaultPlayerData.cash, "cash");
 		this.registerStat("Rebirths", "IntValue", DefaultPlayerData.rebirths, "rebirths");
+		this.registerStat("Yen", "IntValue", DefaultPlayerData.cash, "cash");
 	}
 
 	/**
