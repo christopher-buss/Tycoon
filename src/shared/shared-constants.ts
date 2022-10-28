@@ -11,12 +11,9 @@ export const TOTAL_TIME = {
 	["Fish"]: 11,
 };
 
-export const DUMPLING_TOTAL_TIME = 26.5;
-export const FISH_TOTAL_TIME = 11;
-
-export const LOT_NAMES = ["Cream Dumpling", "Emperor Dumpling", "Imperial Dumpling", "Jelly Dumpling", "Mint Dumpling"];
-
 export const TOTAL_PROGRESS = {
 	["Dumpling"]: 555,
 	["Fish"]: 60,
 };
+
+export const LOT_NAMES = ["Cream Dumpling", "Emperor Dumpling", "Imperial Dumpling", "Jelly Dumpling", "Mint Dumpling"];

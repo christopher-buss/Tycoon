@@ -280,51 +280,87 @@ export type PartInfoValue = typeof PartInfo["Dumpling"];
 
 export const Progress = {
 	["Pressure Washer"]: {
+		PathType: "Dumpling",
 		Progress: 229,
+		Audio: "9112854440",
 	},
 
 	["Dumpling Oven"]: {
+		PathType: "Dumpling",
 		Progress: 265,
+		Audio: "171186876",
 	},
 
 	["Dumpling Packager"]: {
+		PathType: "Dumpling",
 		Progress: 348,
+		Audio: "9114054425",
 	},
 
 	["Dumpling Scenter"]: {
+		PathType: "Dumpling",
 		Progress: 385,
+		Audio: "186883063",
 	},
 
 	["Dumpling Gold Standard"]: {
+		PathType: "Dumpling",
 		Progress: 453,
+		Audio: "3378937315",
+	},
+
+	["Robux Dropper"]: {
+		PathType: "Dumpling",
+		Progress: 427,
+		Audio: "0",
+	},
+
+	["Robux Upgrader"]: {
+		PathType: "Dumpling",
+		Progress: 440,
+		Audio: "0",
 	},
 
 	["Dumpling Tube Cleaner"]: {
+		PathType: "Dumpling",
 		Progress: 488,
+		Audio: "0",
 	},
 
 	["Dumpling Tube Upgrade"]: {
+		PathType: "Dumpling",
 		Progress: 504,
+		Audio: "0",
 	},
 
 	["Crate Net Machine"]: {
+		PathType: "Dumpling",
 		Progress: 541,
+		Audio: "171186876",
 	},
 
 	["Dumpling Boat Upgrade"]: {
+		PathType: "Dumpling",
 		Progress: 555,
-	},
-
-	["Fishery Boat Upgrade"]: {
-		Progress: 0,
+		Audio: "0",
 	},
 
 	["Fishery Chemical Wash"]: {
-		Progress: 0,
+		PathType: "Fish",
+		Progress: 28,
+		Audio: "9112854440",
 	},
 
 	["Fishery Pressure Wash"]: {
-		Progress: 0,
+		PathType: "Fish",
+		Progress: 47,
+		Audio: "9112854440",
+	},
+
+	["Fishery Boat Upgrade"]: {
+		PathType: "Fish",
+		Progress: 60,
+		Audio: "0",
 	},
 };
 

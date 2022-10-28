@@ -63,7 +63,7 @@
     "@rbxts/topbar-plus": "^2.0.9",
     "cross-env": "^7.0.3",
     "eslint-plugin-sonarjs": "^0.16.0",
-    "patch-package": "^6.4.7",
+    "patch-package": "^6.5.0",
     "rbxts-transform-debug": "github:roblox-aurora/rbxts-transform-debug#v2.0.0",
     "rbxts-transform-env": "^2.0.3",
     "rbxts-transformer-services": "^1.0.1",

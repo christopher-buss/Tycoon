@@ -98,7 +98,7 @@ function SoundSystem.Attach(SoundObj)
 	end)
 end
 
-function SoundSystem.Create(ID, Target, Looped)
+function SoundSystem.Create(ID, Target, Name, Looped)
 	local TargetType
 
 	--------------------------
@@ -123,6 +123,7 @@ function SoundSystem.Create(ID, Target, Looped)
 	--------------------------
 
 	local Emitter = newInst("Attachment")
+	Emitter.Name = Name
 	--Emitter.Visible	= true
 
 	if TargetType == "Instance" and Target.Position then
@@ -138,9 +139,10 @@ function SoundSystem.Create(ID, Target, Looped)
 		Emitter.WorldPosition = Target.Position
 	end
 
-	local Sound = newInst("Sound")
+	local Sound: Sound = newInst("Sound")
 	Sound.Looped = Looped
 	Sound.SoundId = "rbxassetid://" .. ID:match("%d+")
+	Sound.RollOffMaxDistance = 30
 
 	local Equalizer = newInst("EqualizerSoundEffect")
 	Equalizer.LowGain = 0

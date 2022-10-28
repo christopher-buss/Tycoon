@@ -64,5 +64,6 @@
 		"Upgraders"
 	],
 	"files.eol": "\n",
-	"editor.stickyScroll.enabled": true
+	"editor.stickyScroll.enabled": true,
+	"luau-lsp.sourcemap.rojoProjectFile": "develop.project.json"
 }
