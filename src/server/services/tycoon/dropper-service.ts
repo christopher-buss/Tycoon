@@ -142,19 +142,30 @@ export class DropperService implements OnInit, OnStart, OnTick, OnPlayerJoin, On
 	public onTick(dt: number): void {
 		this.updatePlayersInRange(dt);
 
-		for (const [player, ownedDroppers] of this.ownedDroppers) {
+		for (const [, ownedDroppers] of this.ownedDroppers) {
 			for (const [pathType, simulatingDroppers] of ownedDroppers) {
 				for (const dropper of simulatingDroppers) {
 					const partInfo = PartInfo[dropper.Name as PartInfoKey] as PartInfoValue;
 					if (os.clock() - dropper.LastDrop >= partInfo.DropTime) {
-						const newDropper = this.spawnDropper(pathType, dropper);
+						const lotName = this.getLotFromDropperOwner(dropper.Owner);
+						const newDropper = this.spawnDropper(lotName, pathType, dropper);
 						if (newDropper) {
-							this.replicateDropper(player, NetworkedPathType[pathType], newDropper);
+							this.replicateDropper(lotName, NetworkedPathType[pathType], newDropper);
 						}
 					}
 				}
 			}
 		}
+	}
+
+	private getLotFromDropperOwner(owner: Player): LotName {
+		const lot = owner.GetAttribute("Lot") as string | undefined;
+		if (lot === undefined) {
+			this.logger.Error(`Could not find lot for player ${owner}`);
+			return "";
+		}
+
+		return lot;
 	}
 
 	private updatePlayersInRange(dt: number): void {
@@ -175,7 +186,6 @@ export class DropperService implements OnInit, OnStart, OnTick, OnPlayerJoin, On
 
 				const playerPosition = humanoidRootPart.Position;
 				if (playerPosition.sub(lotPosition).Magnitude > REPLICATION_DISTANCE) {
-					print("Player not in range of lot");
 					break;
 				}
 
@@ -187,16 +197,17 @@ export class DropperService implements OnInit, OnStart, OnTick, OnPlayerJoin, On
 				this.lotToReplicateTo.set(player, lotName);
 				tycoonSet = true;
 
-				const dataToSend: Map<PathType, Vector2int16> = new Map<PathType, Vector2int16>();
+				const dataToSend: Vector2int16[] = [];
 				for (const [, simulating] of this.simulatedDroppers) {
 					for (const [pathType, droppers] of simulating) {
 						for (const dropper of droppers) {
-							dataToSend.set(pathType, new Vector2int16(dropper.Progress, dropper.Id));
+							dataToSend.push(new Vector2int16(NetworkedPathType[pathType], dropper.Progress));
 						}
 					}
 				}
 
 				Events.playerInRangeOfLot.fire(player, lotName, dataToSend);
+				break;
 			}
 
 			if (!tycoonSet && this.lotToReplicateTo.has(player)) {
@@ -207,13 +218,12 @@ export class DropperService implements OnInit, OnStart, OnTick, OnPlayerJoin, On
 		}
 	}
 
-	private spawnDropper(pathType: PathType, dropper: IDropperSimulatingInfo): IDropperSimulating | undefined {
+	private spawnDropper(
+		lot: LotName,
+		pathType: PathType,
+		dropper: IDropperSimulatingInfo,
+	): IDropperSimulating | undefined {
 		const progress = 0;
-
-		const lot = dropper.Owner.GetAttribute("Lot") as string | undefined;
-		if (lot === undefined) {
-			return;
-		}
 
 		this.logger.Debug(`Spawning dropper ${dropper.Name} for ${dropper.Owner.Name}`);
 
@@ -248,13 +258,15 @@ export class DropperService implements OnInit, OnStart, OnTick, OnPlayerJoin, On
 		return dropperInfo;
 	}
 
-	private replicateDropper(player: Player, pathType: NetworkedPathType, dropperInfo: IDropperSimulating): void {
+	private replicateDropper(lot: LotName, pathType: NetworkedPathType, dropperInfo: IDropperSimulating): void {
 		const encodedDropperSimulating = new Vector2int16(
 			pathType,
 			encoderPartIdentifiers[dropperInfo.Dropper.Name as keyof EncodePartIdentifier],
 		);
 
-		Events.dropperSpawned.fire(player, encodedDropperSimulating);
+		for (const player of this.getPlayersInRangeOfLot(lot)) {
+			Events.dropperSpawned.fire(player, encodedDropperSimulating);
+		}
 	}
 
 	private awardCashToPlayer(pathType: PathType, dropper: IDropperSimulatingInfo) {

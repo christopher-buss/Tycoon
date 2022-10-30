@@ -31,7 +31,7 @@ interface ClientEvents {
 	sendNotification(notificationData: INotificationEntry): void;
 
 	/** Fired by the server when a player is in range of a tycoon and doesn't have it's data. */
-	playerInRangeOfLot(lotName: string, data: Map<PathType, Vector2int16>): void;
+	playerInRangeOfLot(lotName: string, data: DropperInfo[]): void;
 
 	/**Fired by the server when a player is no longer in range of a tycoon */
 	playerOutOfRangeOfLot(): void;

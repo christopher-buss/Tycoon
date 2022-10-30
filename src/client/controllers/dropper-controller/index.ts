@@ -268,6 +268,8 @@ export class DropperController implements OnStart, OnInit {
 			}
 		});
 
+		tweenJanitor.Add(() => newTween.Cancel());
+
 		tweenJanitor.Add(
 			newTween.Completed.Connect(() => {
 				tweenJanitor.Destroy();
