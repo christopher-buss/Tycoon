@@ -14,8 +14,6 @@ import { NetworkedPathType, PathType, PathTypes } from "shared/meta/path-types";
 import { DropperInfo } from "shared/network";
 import { LOT_NAMES, TOTAL_PROGRESS, TOTAL_TIME } from "shared/shared-constants";
 
-const CF_REALLY_FAR_AWAY = new CFrame(0, 10e8, 0);
-
 type DropperBillboard = BillboardGui & {
 	PriceLabel: TextLabel & {
 		UITextSizeConstraint: UITextSizeConstraint;
@@ -245,9 +243,8 @@ export class DropperController implements OnStart, OnInit {
 			}),
 		);
 
-		this.currentlySimulating.push(tweenJanitor);
-
 		tweenJanitor.Add(() => {
+			print("REMOVING TWEEN");
 			const index = this.currentlySimulating.indexOf(tweenJanitor);
 			this.currentlySimulating.unorderedRemove(index);
 		});
@@ -275,6 +272,8 @@ export class DropperController implements OnStart, OnInit {
 				tweenJanitor.Destroy();
 			}),
 		);
+
+		this.currentlySimulating.push(tweenJanitor);
 
 		newTween.Play();
 	}
@@ -346,14 +345,15 @@ export class DropperController implements OnStart, OnInit {
 	}
 
 	private stopSimulation(): void {
-		print("Test: Stopping simulation");
+		print("TEST: Stopping simulation");
+		print(this.currentlySimulating);
 		this.currentlySimulating.forEach((janitor) => {
-			print("Janitor: ", janitor);
-			janitor.Destroy();
+			pcall(() => janitor.Destroy());
+			// janitor.Destroy();
 		});
 	}
 
-	private receivePayload(lotName: string, data: Map<PathType, Vector2int16>) {
+	private receivePayload(lotName: string, data: Vector2int16[]) {
 		this.nearestTycoon = lotName;
 	}
 

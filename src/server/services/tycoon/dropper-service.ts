@@ -181,12 +181,12 @@ export class DropperService implements OnInit, OnStart, OnTick, OnPlayerJoin, On
 			for (const [lotName, lotPosition] of this.lotPositions) {
 				const humanoidRootPart = player.Character?.FindFirstChild("HumanoidRootPart") as BasePart;
 				if (!humanoidRootPart) {
-					break;
+					continue;
 				}
 
 				const playerPosition = humanoidRootPart.Position;
 				if (playerPosition.sub(lotPosition).Magnitude > REPLICATION_DISTANCE) {
-					break;
+					continue;
 				}
 
 				if (this.lotToReplicateTo.get(player) === lotName) {
@@ -211,7 +211,6 @@ export class DropperService implements OnInit, OnStart, OnTick, OnPlayerJoin, On
 			}
 
 			if (!tycoonSet && this.lotToReplicateTo.has(player)) {
-				print("Test: OUT OF RANGE");
 				this.lotToReplicateTo.delete(player);
 				Events.playerOutOfRangeOfLot.fire(player);
 			}
@@ -264,9 +263,11 @@ export class DropperService implements OnInit, OnStart, OnTick, OnPlayerJoin, On
 			encoderPartIdentifiers[dropperInfo.Dropper.Name as keyof EncodePartIdentifier],
 		);
 
-		for (const player of this.getPlayersInRangeOfLot(lot)) {
-			Events.dropperSpawned.fire(player, encodedDropperSimulating);
-		}
+		this.lotToReplicateTo.forEach((lotName, player) => {
+			if (lotName === lot) {
+				Events.dropperSpawned.fire(player, encodedDropperSimulating);
+			}
+		});
 	}
 
 	private awardCashToPlayer(pathType: PathType, dropper: IDropperSimulatingInfo) {
