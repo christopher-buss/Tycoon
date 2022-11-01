@@ -8,7 +8,7 @@ import SoundSystem from "client/modules/3d-sound-system";
 import { Events } from "client/network";
 import { ClientStore } from "client/rodux/rodux";
 import { IUpgraderInfo } from "server/components/lot/upgrader";
-import { decoderPartIdentifiers } from "shared/meta/part-identifiers";
+import { DecodePartIdentifier, decoderPartIdentifiers, EncodePartIdentifier } from "shared/meta/part-identifiers";
 import { PartInfo, PartInfoKey, Progress, ProgressKey } from "shared/meta/part-info";
 import { NetworkedPathType, PathType, PathTypes } from "shared/meta/path-types";
 import { DropperInfo } from "shared/network";
@@ -37,7 +37,11 @@ export type DropperPart = (BasePart | MeshPart | Model) & {
 	Union: UnionOperation;
 };
 
-type ISimulationFunction = (part: DropperPart, pathType: PathType, upgraderProgress: number) => boolean;
+type ISimulationFunction = (
+	part: DropperPart,
+	pathType: PathType,
+	upgraderProgress: number,
+) => boolean | LuaTuple<[boolean, DropperPart?]>;
 
 // interface ISimulationFunction: (part: BasePart) => void;
 
@@ -155,10 +159,11 @@ export class DropperController implements OnStart, OnInit {
 
 	private dropItem(dropperInfo: DropperInfo) {
 		const pathType: NetworkedPathType = dropperInfo.X;
-		const partType = decoderPartIdentifiers[dropperInfo.Y as never] as keyof typeof PartInfo;
+		const partType = decoderPartIdentifiers[dropperInfo.Y as never] as PartInfoKey;
 
 		const newPart = this.partCache.get(partType)?.GetPart() as DropperPart;
 		if (!newPart) {
+			this.logger.Error(`Could not find part ${partType}`);
 			return;
 		}
 
@@ -166,9 +171,7 @@ export class DropperController implements OnStart, OnInit {
 		if (ui) {
 			const data = ClientStore.getState().playerData;
 			const partPrice =
-				PartInfo[partType as PartInfoKey].Value *
-				(1 + data.rebirths / 5) *
-				(data.gamePasses.doubleMoneyGamepass ? 2 : 1);
+				PartInfo[partType].Value * (1 + data.rebirths / 5) * (data.gamePasses.doubleMoneyGamepass ? 2 : 1);
 			ui.PriceLabel.Text = tostring("¥" + partPrice);
 
 			ui.SetAttribute("Price", partPrice);
@@ -185,8 +188,8 @@ export class DropperController implements OnStart, OnInit {
 			progress = Progress["Robux Dropper"].Progress;
 		}
 
-		newPart.PivotTo(new CFrame(this.cachedConveyorLocations.get(this.nearestTycoon!)![pathType][progress]));
-		newPart.Parent = Workspace;
+		newPart.PivotTo(new CFrame(this.cachedConveyorLocations.get(this.nearestTycoon)![pathType][progress]));
+		// newPart.Parent = Workspace.PartStorage.FindFirstChild(this.nearestTycoon);
 
 		const decodedPathType = PathTypes[pathType];
 		const time = TOTAL_TIME[decodedPathType] * (1 - progress / TOTAL_PROGRESS[decodedPathType]);
@@ -209,11 +212,6 @@ export class DropperController implements OnStart, OnInit {
 		const newTween = TweenService.Create(numValue, tweenInfo, { Value: 1 });
 		const tweenJanitor = new Janitor<{ NumConnection: string | RBXScriptConnection }>();
 
-		tweenJanitor.Add(() => {
-			task.defer(() => {
-				this.partCache.get(partType)?.ReturnPart(part);
-			});
-		});
 		tweenJanitor.Add(
 			newTween.GetPropertyChangedSignal("PlaybackState").Connect(() => {
 				let oldProgress = progress;
@@ -223,12 +221,14 @@ export class DropperController implements OnStart, OnInit {
 						const totalPoints = this.cachedConveyorLocations.get(this.nearestTycoon!)![pathType].size();
 						const currentProgress = math.floor(totalPoints * t) + 1;
 						if (currentProgress >= totalPoints - 1) {
+							tweenJanitor.Destroy();
 							return;
 						}
 						if (oldProgress !== currentProgress) {
 							if (this.simulateDroppers(PathTypes[pathType], currentProgress, part)) {
 								if (tweenJanitor) {
 									tweenJanitor.Destroy();
+									return;
 								}
 							}
 							oldProgress = currentProgress;
@@ -244,13 +244,11 @@ export class DropperController implements OnStart, OnInit {
 		);
 
 		tweenJanitor.Add(() => {
-			print("REMOVING TWEEN");
-			const index = this.currentlySimulating.indexOf(tweenJanitor);
-			this.currentlySimulating.unorderedRemove(index);
-		});
+			newTween.Cancel();
 
-		tweenJanitor.Add(() => {
+			// Reset part back to original state
 			if (part.IsA("Model")) {
+				// Crate
 				part.Crate.Blossom.Enabled = false;
 				part.Crate.Blossom.Clear();
 				part.Union.Color = Color3.fromRGB(122, 87, 59);
@@ -261,17 +259,15 @@ export class DropperController implements OnStart, OnInit {
 				part.Crate.Bubble.Clear();
 				part.Net.Transparency = 1;
 			} else {
+				// Dumpling
 				part.Reflectance = 0;
 			}
+
+			this.partCache.get(partType)?.ReturnPart(part);
+
+			const index = this.currentlySimulating.indexOf(tweenJanitor);
+			this.currentlySimulating.unorderedRemove(index);
 		});
-
-		tweenJanitor.Add(() => newTween.Cancel());
-
-		tweenJanitor.Add(
-			newTween.Completed.Connect(() => {
-				tweenJanitor.Destroy();
-			}),
-		);
 
 		this.currentlySimulating.push(tweenJanitor);
 
@@ -318,11 +314,8 @@ export class DropperController implements OnStart, OnInit {
 					return true;
 				}
 			}
-		}
 
-		const value = this.upgradersOwned.get(this.nearestTycoon!)?.get(pathType)?.get(upgraderProgress);
-		if (value !== undefined) {
-			this.updateUi(part.Price, value.Value!);
+			this.updateUi(part.Price, hasUpgrader.Value!);
 			this.playAudio(NetworkedPathType[pathType], upgraderProgress);
 		}
 
@@ -341,40 +334,146 @@ export class DropperController implements OnStart, OnInit {
 		}
 
 		this.logger.Debug(`Playing sound ${sound} at ${position}`);
-		SoundSystem.Create(sound!, position, tostring(sound), false);
+		SoundSystem.Create(sound, position, tostring(sound), false);
 	}
 
 	private stopSimulation(): void {
-		print("TEST: Stopping simulation");
-		print(this.currentlySimulating);
-		this.currentlySimulating.forEach((janitor) => {
-			pcall(() => janitor.Destroy());
-			// janitor.Destroy();
-		});
+		for (let i = this.currentlySimulating.size() - 1; i >= 0; i--) {
+			const janitor = this.currentlySimulating[i];
+			if (Janitor.Is(janitor)) {
+				janitor.Destroy();
+			}
+		}
+
+		this.currentlySimulating.clear();
 	}
 
-	private receivePayload(lotName: string, data: Vector2int16[]) {
+	private receivePayload(lotName: string, data: Vector3int16[]) {
+		this.stopSimulation();
+
+		if (data === undefined) {
+			return;
+		}
+
 		this.nearestTycoon = lotName;
+
+		for (const encoded of data) {
+			const partType = decoderPartIdentifiers[
+				encoded.X as keyof DecodePartIdentifier
+			] as keyof EncodePartIdentifier;
+			print(partType);
+			const pathType = encoded.Y;
+			const progress = encoded.Z;
+
+			if (partType === "Dumpling") {
+				print(pathType, progress);
+			}
+
+			const decodedPathType = PathTypes[encoded.Y];
+
+			const part = this.partCache.get(partType)?.GetPart() as DropperPart;
+			if (!part) {
+				this.logger.Error(`Failed to get part of type ${partType}`);
+				continue;
+			}
+
+			const ui = part.FindFirstChild("Price") as DropperBillboard;
+			if (ui) {
+				const data = ClientStore.getState().playerData;
+				const partPrice =
+					PartInfo[partType].Value * (1 + data.rebirths / 5) * (data.gamePasses.doubleMoneyGamepass ? 2 : 1);
+				ui.PriceLabel.Text = tostring("¥" + partPrice);
+
+				ui.SetAttribute("Price", partPrice);
+			}
+
+			if (
+				progress >= Progress["Crate Net Machine"].Progress &&
+				this.upgradersOwned
+					.get(this.nearestTycoon!)
+					?.get(decodedPathType)
+					?.get(Progress["Crate Net Machine"].Progress)
+			) {
+				const [, crate] = this.makeCrate(part, decodedPathType, Progress["Crate Net Machine"].Progress);
+				if (!crate) {
+					this.logger.Error(`Failed to make crate for ${partType}`);
+					return;
+				}
+
+				this.createBlossom(crate);
+				this.createGoldCrate(crate);
+				this.createNetCrate(crate);
+			} else if (
+				progress >= Progress["Dumpling Gold Standard"].Progress &&
+				this.upgradersOwned
+					.get(this.nearestTycoon!)
+					?.get(decodedPathType)
+					?.get(Progress["Dumpling Gold Standard"].Progress)
+			) {
+				const [, crate] = this.makeCrate(part, decodedPathType, Progress["Dumpling Gold Standard"].Progress);
+				if (!crate) {
+					this.logger.Error(`Failed to make crate for ${partType}`);
+					return;
+				}
+
+				this.createBlossom(crate);
+				this.createGoldCrate(crate);
+			} else if (
+				progress >= Progress["Dumpling Scenter"].Progress &&
+				this.upgradersOwned
+					.get(this.nearestTycoon!)
+					?.get(decodedPathType)
+					?.get(Progress["Dumpling Scenter"].Progress)
+			) {
+				const [, crate] = this.makeCrate(part, decodedPathType, Progress["Dumpling Scenter"].Progress);
+				if (!crate) {
+					this.logger.Error(`Failed to make crate for ${partType}`);
+					return;
+				}
+
+				this.createBlossom(crate);
+			} else if (
+				progress >= Progress["Dumpling Packager"].Progress &&
+				this.upgradersOwned
+					.get(this.nearestTycoon!)
+					?.get(decodedPathType)
+					?.get(Progress["Dumpling Packager"].Progress)
+			) {
+				const [, crate] = this.makeCrate(part, decodedPathType, Progress["Dumpling Packager"].Progress);
+				if (!crate) {
+					this.logger.Error(`Failed to make crate for ${partType}`);
+					return;
+				}
+			} else {
+				const time = TOTAL_TIME[decodedPathType] * (1 - progress / TOTAL_PROGRESS[decodedPathType]);
+				this.createTween(time, progress, pathType, partType, part);
+			}
+		}
 	}
 
 	/** Simulation Functions */
-	private makeCrate(part: DropperPart, pathType: PathType, upgraderProgress: number): boolean {
+	private makeCrate(
+		part: DropperPart,
+		pathType: PathType,
+		upgraderProgress: number,
+	): LuaTuple<[boolean, DropperPart?]> {
 		const position = this.cachedConveyorLocations.get(this.nearestTycoon!)![NetworkedPathType[pathType]][
 			upgraderProgress
 		];
 		const crate = this.partCache.get("Crate")?.GetPart() as DropperPart;
-		if (crate) {
-			crate.PivotTo(new CFrame(position));
-			const timeRemainingOnPath = TOTAL_TIME.Dumpling * (1 - upgraderProgress / TOTAL_PROGRESS.Dumpling);
-			this.createTween(timeRemainingOnPath, upgraderProgress, NetworkedPathType[pathType], "Crate", crate);
-
-			crate.Price.SetAttribute("Price", part.Price.GetAttribute("Price"));
-			const value = this.upgradersOwned.get(this.nearestTycoon!)?.get(pathType)?.get(upgraderProgress);
-			this.updateUi(crate.Price, value!.Value!);
-			this.playAudio(NetworkedPathType[pathType], upgraderProgress);
-			return true;
+		if (!crate) {
+			return $tuple(false, undefined);
 		}
-		return false;
+
+		crate.PivotTo(new CFrame(position));
+		const timeRemainingOnPath = TOTAL_TIME.Dumpling * (1 - upgraderProgress / TOTAL_PROGRESS.Dumpling);
+		this.createTween(timeRemainingOnPath, upgraderProgress, NetworkedPathType[pathType], "Crate", crate);
+
+		crate.Price.SetAttribute("Price", part.Price.GetAttribute("Price"));
+		const value = this.upgradersOwned.get(this.nearestTycoon!)?.get(pathType)?.get(upgraderProgress);
+		this.updateUi(crate.Price, value!.Value!);
+		this.playAudio(NetworkedPathType[pathType], upgraderProgress);
+		return $tuple(true, crate);
 	}
 
 	private washDumpling(part: DropperPart): boolean {

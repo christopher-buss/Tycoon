@@ -2,18 +2,18 @@ interface ServerStorage extends Instance {
 	TagList: Folder & {
 		Leaderboard: Configuration;
 		Lot: Configuration;
-		FishDropper: Configuration;
+		PurchaseButton: Configuration;
 		RebirthButton: Configuration;
 		Dropper: Configuration;
 		GamepassPrompt: Configuration;
 		RespawnPlayer: Configuration;
+		Remover: Configuration;
 		Upgrader: Configuration;
 		DropperItem: Configuration;
-		RebirthUpgrade: Configuration;
 		ConveyorBelt: Configuration;
-		PurchaseButton: Configuration;
+		RebirthUpgrade: Configuration;
 	};
-	Folder: Folder & {
+	Upgraders: Folder & {
 		["Jelly Dumpling"]: Folder;
 		["Imperial Dumpling"]: Folder;
 		["Mint Dumpling"]: Folder;

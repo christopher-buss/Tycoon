@@ -51,7 +51,7 @@ export class Upgrader extends BaseComponent<IUpgraderAttributes> implements OnSt
 			component.addListener(this);
 		});
 
-		upgrader.Parent = ServerStorage.Folder.FindFirstChild(this.owner.Name);
+		upgrader.Parent = ServerStorage.Upgraders.FindFirstChild(this.owner.Name);
 	}
 
 	public onPurchaseButtonBought(player: Player): void {

@@ -36,8 +36,6 @@ export class Remover extends BaseComponent<Attributes> implements OnStart, IOnPu
 			assert(component !== undefined, "Button is undefined");
 			component.addListener(this);
 		});
-
-		// upgrader.Parent = ServerStorage.Folder.FindFirstChild(this.owner.Name);
 	}
 
 	public onPurchaseButtonBought(owner: Player): void {

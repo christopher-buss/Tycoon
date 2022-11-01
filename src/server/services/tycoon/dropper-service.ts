@@ -27,7 +27,6 @@ interface IDropperSimulatingInfo {
 interface IDropperSimulating {
 	Dropper: IDropperSimulatingInfo;
 	Progress: number;
-	Id: number;
 }
 
 @Service({})
@@ -35,7 +34,6 @@ export class DropperService implements OnInit, OnStart, OnTick, OnPlayerJoin, On
 	private connections: Map<Player, Set<Promise<number | void>>>;
 	private lotPositions: Map<LotName, Vector3>;
 	private lotToReplicateTo: Map<Player, LotName>;
-	private nextId: number;
 	private ownedDroppers: Map<Player, Map<PathType, Array<IDropperSimulatingInfo>>>;
 	private ownedUpgraders: Map<Player, Map<PathType, number[]>>;
 	private playersWithLot: Player[];
@@ -51,7 +49,6 @@ export class DropperService implements OnInit, OnStart, OnTick, OnPlayerJoin, On
 		this.connections = new Map<Player, Set<Promise<number | void>>>();
 		this.lotPositions = new Map<LotName, Vector3>();
 		this.lotToReplicateTo = new Map<Player, LotName>();
-		this.nextId = 0;
 		this.ownedDroppers = new Map<Player, Map<PathType, Array<IDropperSimulatingInfo>>>();
 		this.ownedUpgraders = new Map<Player, Map<PathType, number[]>>();
 		this.playersWithLot = [];
@@ -61,8 +58,9 @@ export class DropperService implements OnInit, OnStart, OnTick, OnPlayerJoin, On
 
 	public onInit() {
 		for (const team of Teams.GetTeams()) {
-			for (const _path of PathTypes) {
-				this.simulatedDroppers.set(team.Name, new Map<PathType, Array<IDropperSimulating>>());
+			this.simulatedDroppers.set(team.Name, new Map<PathType, Array<IDropperSimulating>>());
+			for (const path of PathTypes) {
+				this.simulatedDroppers.get(team.Name)?.set(path, []);
 			}
 		}
 	}
@@ -197,11 +195,20 @@ export class DropperService implements OnInit, OnStart, OnTick, OnPlayerJoin, On
 				this.lotToReplicateTo.set(player, lotName);
 				tycoonSet = true;
 
-				const dataToSend: Vector2int16[] = [];
+				const dataToSend: Vector3int16[] = [];
 				for (const [, simulating] of this.simulatedDroppers) {
 					for (const [pathType, droppers] of simulating) {
 						for (const dropper of droppers) {
-							dataToSend.push(new Vector2int16(NetworkedPathType[pathType], dropper.Progress));
+							const time = os.clock() - dropper.Dropper.LastDrop;
+							const currentProgress = (time / TOTAL_TIME[pathType]) * TOTAL_PROGRESS[pathType];
+
+							dataToSend.push(
+								new Vector3int16(
+									encoderPartIdentifiers[dropper.Dropper.Name as keyof EncodePartIdentifier],
+									NetworkedPathType[pathType],
+									math.floor(currentProgress),
+								),
+							);
 						}
 					}
 				}
@@ -229,27 +236,22 @@ export class DropperService implements OnInit, OnStart, OnTick, OnPlayerJoin, On
 		dropper.LastDrop = os.clock();
 
 		const dropperInfo: IDropperSimulating = {
-			Dropper: dropper,
+			Dropper: table.clone(dropper),
 			Progress: progress,
-			Id: this.nextId,
 		};
 
-		// Keep Id between 0 and 32000
-		this.nextId = (this.nextId % 32000) + 1;
-
-		const currentlySimulating = this.simulatedDroppers.get(lot);
-		if (currentlySimulating) {
-			const path = currentlySimulating.get(pathType);
-			if (path) {
-				path.push(dropperInfo);
-			}
-		}
+		this.simulatedDroppers.get(lot)?.get(pathType)?.push(dropperInfo);
 
 		// Calculate the time it takes to reach the end of the path
 		const time = TOTAL_TIME[pathType] * (1 - dropper.StartProgress / TOTAL_PROGRESS[pathType]);
 		const thread = Promise.delay(time).andThen(() => {
 			this.awardCashToPlayer(pathType, dropper);
 			this.connections.get(dropper.Owner)?.delete(thread);
+
+			const index = this.simulatedDroppers.get(lot)?.get(pathType)?.indexOf(dropperInfo);
+			if (index !== undefined && index !== -1) {
+				this.simulatedDroppers.get(lot)?.get(pathType)?.unorderedRemove(index);
+			}
 		});
 
 		this.connections.get(dropper.Owner)?.add(thread);
