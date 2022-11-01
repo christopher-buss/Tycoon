@@ -28,12 +28,12 @@ export interface IOnPurchaseButtonBought {
 @Component({ tag: "PurchaseButton" })
 export class PurchaseButton extends BaseComponent<IPurchaseButtonAttributes, IPurchaseButtonModel> implements OnStart {
 	public listeners: Set<IOnPurchaseButtonBought>;
+	public lot!: Lot;
 	public purchased: boolean;
 
 	private debounce: boolean;
 	private dependency: Option<PurchaseButton>;
 	private janitor: Janitor<{ Visibility: string | RBXScriptConnection }>;
-	private lot!: Lot;
 
 	private readonly touchPart: BasePart;
 
@@ -100,6 +100,10 @@ export class PurchaseButton extends BaseComponent<IPurchaseButtonAttributes, IPu
 		this.janitor.Cleanup();
 	}
 
+	public checkIfPlayerOwnsButton(player: Player): boolean {
+		return this.lot.getOwner().isSome() && this.lot.getOwner().unwrap().UserId === player.UserId;
+	}
+
 	/** @hidden */
 	private async onComponentTouched(part: BasePart): Promise<void> {
 		if (this.debounce) {
@@ -115,7 +119,7 @@ export class PurchaseButton extends BaseComponent<IPurchaseButtonAttributes, IPu
 		}
 
 		const player = player_opt.unwrap();
-		if (!this.lot.getOwner().isSome() || this.lot.getOwner().unwrap().UserId !== player.UserId) {
+		if (!this.checkIfPlayerOwnsButton(player)) {
 			this.debounce = false;
 			return;
 		}
@@ -183,7 +187,7 @@ export class PurchaseButton extends BaseComponent<IPurchaseButtonAttributes, IPu
 			.checkForGamepassOwned(player, this.attributes.GamepassId!)
 			.andThen((owned) => {
 				if (!owned) {
-					MarketplaceService.PromptPurchase(player, this.attributes.GamepassId!);
+					MarketplaceService.PromptGamePassPurchase(player, this.attributes.GamepassId!);
 					return false;
 				}
 

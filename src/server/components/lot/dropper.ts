@@ -28,17 +28,14 @@ export class Dropper extends BaseComponent<IDropperAttributes> implements OnStar
 	}
 
 	public onStart() {
-		FlameworkUtil.waitForComponentOnInstance<PurchaseButton>(
-			this.instance.Parent?.Parent?.FindFirstChild("Buttons")?.FindFirstChild(this.instance.Name) as Model,
-		).andThen((component) => {
+		FlameworkUtil.waitForComponentOnInstance<PurchaseButton>(this.instance).andThen((component) => {
 			assert(component !== undefined, "Button is undefined");
-
 			component.addListener(this);
 		});
 	}
 
 	public onPurchaseButtonBought(owner: Player): void {
-		this.logger.Info(`Dropper ${this.instance.Name} was bought!`);
+		this.logger.Info(`Dropper ${this.instance.Name} was bought by ${owner.Name}`);
 
 		const dropperInfo: IDropperInfo = {
 			DropperType: this.instance.Name,
@@ -48,6 +45,5 @@ export class Dropper extends BaseComponent<IDropperAttributes> implements OnStar
 		};
 
 		this.dropperService.addOwnedDropper(dropperInfo);
-		// Register Dropper as being purchased
 	}
 }

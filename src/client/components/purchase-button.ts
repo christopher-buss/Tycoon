@@ -46,9 +46,6 @@ export class PurchaseButton extends BaseComponent<IPurchaseButtonAttributes, IPu
 		this.setupInterface(billboard);
 	}
 
-	// TextColor3={Color3.fromRGB(38, 255, 0)}
-	// TextColor3={Color3.fromRGB(126, 126, 126)}
-
 	/**
 	 * Creates the user interface object for the purchase button.
 	 * @returns the ui object.
@@ -64,7 +61,7 @@ export class PurchaseButton extends BaseComponent<IPurchaseButtonAttributes, IPu
 		}
 
 		return purchaseButton({
-			Adornee: this.instance.Head as BasePart & MeshPart,
+			Adornee: this.instance.Head,
 			Color: color,
 			DisplayName: displayName,
 			Janitor: this.janitor,
@@ -81,13 +78,10 @@ export class PurchaseButton extends BaseComponent<IPurchaseButtonAttributes, IPu
 			Roact.mount(billboard, Players.LocalPlayer.FindFirstChildOfClass("PlayerGui"), this.instance.Name),
 		);
 
-		// this.logger.Debug(`Successfully mounted purchase button for ${this.instance.Name}`);
-
 		this.janitor.Add(() => {
 			if (this.tree_opt.isSome()) {
 				Roact.unmount(this.tree_opt.unwrap());
 				this.logger.Debug(`Successfully unmounted purchase button for ${this.instance.Name}`);
-				return;
 			}
 		});
 	}

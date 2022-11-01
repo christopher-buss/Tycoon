@@ -1,7 +1,9 @@
-import { OnInit, Service } from "@flamework/core";
+import { Components } from "@flamework/components";
+import { Dependency, OnInit, Service } from "@flamework/core";
 import { Logger } from "@rbxts/log";
 import { Option } from "@rbxts/rust-classes";
 import { MarketplaceService, Players, ServerStorage } from "@rbxts/services";
+import { PurchaseButton } from "server/components/lot/purchase-button";
 import Products from "server/meta/product-functions";
 import PlayerEntity from "server/modules/classes/player-entity";
 import { GamepassPlayerKey, PlayerDataProfile } from "shared/meta/default-player-data";
@@ -202,7 +204,9 @@ export class MtxService implements OnInit, OnPlayerJoin {
 		if (wasPurchased) {
 			const func = this[this.gamePasses.get(gamepassId) as never] as Callback;
 			const playerEntity = this.playerService.getEntity(player);
-			func(this, playerEntity);
+			if (playerEntity.isSome()) {
+				func(this, playerEntity.unwrap());
+			}
 		}
 	}
 
@@ -216,7 +220,6 @@ export class MtxService implements OnInit, OnPlayerJoin {
 
 		function addTool() {
 			let tool = ServerStorage.Gamepasses.FindFirstChild(toolName) as Tool;
-			// assert(tool, `Tool ${toolName} not found!`);
 			if (tool !== undefined) {
 				tool = tool.Clone();
 				tool.Parent = player.FindFirstChildOfClass("Backpack");
@@ -266,6 +269,24 @@ export class MtxService implements OnInit, OnPlayerJoin {
 		playerEntity.updateData((data) => {
 			data.purchased.push(robuxDropperEncoded);
 			return data;
+		});
+
+		const purchaseButtons = Dependency<Components>().getAllComponents<PurchaseButton>();
+		purchaseButtons.forEach((purchaseButton) => {
+			if (
+				purchaseButton.instance.Name === "Robux Dropper" &&
+				purchaseButton.checkIfPlayerOwnsButton(playerEntity.player)
+			) {
+				for (const listener of purchaseButton.listeners) {
+					task.spawn(() => {
+						listener.onPurchaseButtonBought(playerEntity.player);
+					});
+				}
+
+				purchaseButton.hideButton().finally(() => {
+					purchaseButton.unbindButtonTouched();
+				});
+			}
 		});
 	}
 }

@@ -4,7 +4,7 @@ import { Logger } from "@rbxts/log";
 import ProfileService from "@rbxts/profileservice";
 import { ProfileStore } from "@rbxts/profileservice/globals";
 import { Option } from "@rbxts/rust-classes";
-import { Players } from "@rbxts/services";
+import { Players, RunService } from "@rbxts/services";
 import DefaultPlayerData, { IPlayerData, PlayerDataProfile } from "shared/meta/default-player-data";
 import KickCode from "types/enum/kick-reason";
 import PlayerRemovalService from "./player-removal-service";
@@ -19,6 +19,8 @@ const Key = "Y:" + dateTable["year"] + " M:" + dateTable["month"] + " D:" + date
 const DntDaily = DntKey + Key; // Donations Today
 const FstKey = Key; // First Date Played
 
+const DataStoreName = RunService.IsStudio() ? "PlayerData" : "TestPlayerData";
+
 /**
  * This service handles everything to do with interfacing with Roblox
  * datastores and ProfileService for players.
@@ -31,7 +33,7 @@ export default class PlayerDataService {
 	private gameProfileStore: ProfileStore<IPlayerData>;
 
 	constructor(private readonly logger: Logger, private readonly removalService: PlayerRemovalService) {
-		this.gameProfileStore = ProfileService.GetProfileStore<IPlayerData>("PlayerData", DefaultPlayerData);
+		this.gameProfileStore = ProfileService.GetProfileStore<IPlayerData>(DataStoreName, DefaultPlayerData);
 
 		DataStore2.Combine("DATA", EloKey, PcsKey, CshKey, DntKey, FstKey, DntDaily);
 	}
