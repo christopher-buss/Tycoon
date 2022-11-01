@@ -155,6 +155,6 @@ export class LotService implements OnStart, OnPlayerJoin {
 			return;
 		}
 
-		this.logger.Info("Unassigning lot ownership done!");
+		this.logger.Info(`Cleared ownership of lot for {@Player}`);
 	}
 }

@@ -361,13 +361,9 @@ export class DropperController implements OnStart, OnInit {
 			const partType = decoderPartIdentifiers[
 				encoded.X as keyof DecodePartIdentifier
 			] as keyof EncodePartIdentifier;
-			print(partType);
+
 			const pathType = encoded.Y;
 			const progress = encoded.Z;
-
-			if (partType === "Dumpling") {
-				print(pathType, progress);
-			}
 
 			const decodedPathType = PathTypes[encoded.Y];
 

@@ -76,17 +76,6 @@ export class DropperService implements OnInit, OnStart, OnTick, OnPlayerJoin, On
 		this.ownedUpgraders.get(upgraderInfo.Owner)?.get(upgraderInfo.PathType)?.push(upgraderInfo.Value);
 	}
 
-	public getPlayersInRangeOfLot(lotName: LotName): Player[] {
-		const playersInRange: Player[] = [];
-		this.lotToReplicateTo.forEach((value, key) => {
-			if (value === lotName) {
-				playersInRange.push(key);
-			}
-		});
-
-		return playersInRange;
-	}
-
 	public onLotOwned(_lot: Lot, newOwner: Player): void {
 		this.playersWithLot.push(newOwner);
 
@@ -104,7 +93,7 @@ export class DropperService implements OnInit, OnStart, OnTick, OnPlayerJoin, On
 		playerEntity.playerRemoving.Add(() => {
 			const index = this.playersWithLot.indexOf(newOwner);
 			if (index !== -1) {
-				this.playersWithLot.remove(index);
+				this.playersWithLot.unorderedRemove(index);
 			}
 		});
 	}
@@ -196,22 +185,20 @@ export class DropperService implements OnInit, OnStart, OnTick, OnPlayerJoin, On
 				tycoonSet = true;
 
 				const dataToSend: Vector3int16[] = [];
-				for (const [, simulating] of this.simulatedDroppers) {
-					for (const [pathType, droppers] of simulating) {
-						for (const dropper of droppers) {
-							const time = os.clock() - dropper.Dropper.LastDrop;
-							const currentProgress = (time / TOTAL_TIME[pathType]) * TOTAL_PROGRESS[pathType];
+				this.simulatedDroppers.get(lotName)?.forEach((droppers, pathType) => {
+					for (const dropper of droppers) {
+						const time = os.clock() - dropper.Dropper.LastDrop;
+						const currentProgress = (time / TOTAL_TIME[pathType]) * TOTAL_PROGRESS[pathType];
 
-							dataToSend.push(
-								new Vector3int16(
-									encoderPartIdentifiers[dropper.Dropper.Name as keyof EncodePartIdentifier],
-									NetworkedPathType[pathType],
-									math.floor(currentProgress),
-								),
-							);
-						}
+						dataToSend.push(
+							new Vector3int16(
+								encoderPartIdentifiers[dropper.Dropper.Name as keyof EncodePartIdentifier],
+								NetworkedPathType[pathType],
+								math.floor(currentProgress),
+							),
+						);
 					}
-				}
+				});
 
 				Events.playerInRangeOfLot.fire(player, lotName, dataToSend);
 				break;
