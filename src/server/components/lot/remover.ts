@@ -1,6 +1,8 @@
 import { BaseComponent, Component } from "@flamework/components";
 import { OnStart } from "@flamework/core";
+import { Janitor } from "@rbxts/janitor";
 import { Logger } from "@rbxts/log";
+import { ServerStorage } from "@rbxts/services";
 import { FlameworkUtil } from "shared/util/flamework-utils";
 import { Tag } from "types/enum/tags";
 import { ILotModel } from "types/interfaces/lots";
@@ -38,8 +40,30 @@ export class Remover extends BaseComponent<Attributes> implements OnStart, IOnPu
 		});
 	}
 
-	public onPurchaseButtonBought(owner: Player): void {
+	public onPurchaseButtonBought(owner: Player, janitor: Janitor): void {
 		this.logger.Info(`Remover ${this.instance.Name} was bought by ${owner.Name}`);
-		this.toRemove.Destroy();
+		this.toRemove.Parent = ServerStorage;
+
+		janitor.Add(() => this.reset());
 	}
+
+	public reset(): void {
+		this.logger.Debug(`Resetting remover ${this.instance.Name}`);
+		this.toRemove.Parent = this.owner.Objects;
+	}
+
+	// public onPlayerRebirthed(playerEntity: playerEntity): void {
+	// 	const lot = playerEntity.player.GetAttribute("Lot") as string | undefined;
+	// 	if (lot === undefined) {
+	// 		this.logger.Error(`Could not find lot for player ${playerEntity.player}`);
+	// 		return;
+	// 	}
+
+	// 	print("Lot: " + lot, "Owner: " + this.owner.Name);
+	// 	if (lot !== this.owner.Name) {
+	// 		return;
+	// 	}
+
+	// 	this.toRemove.Parent = this.owner.Objects;
+	// }
 }

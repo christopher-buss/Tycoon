@@ -1,5 +1,6 @@
 import { BaseComponent, Component } from "@flamework/components";
 import { OnStart } from "@flamework/core";
+import { Janitor } from "@rbxts/janitor";
 import { Logger } from "@rbxts/log";
 import { ServerStorage } from "@rbxts/services";
 import { Events } from "server/network";
@@ -54,7 +55,7 @@ export class Upgrader extends BaseComponent<IUpgraderAttributes> implements OnSt
 		upgrader.Parent = ServerStorage.Upgraders.FindFirstChild(this.owner.Name);
 	}
 
-	public onPurchaseButtonBought(player: Player): void {
+	public onPurchaseButtonBought(player: Player, janitor: Janitor): void {
 		this.logger.Info(`Upgrader ${this.instance.Name} was bought by ${player.Name}`);
 
 		this.upgrader.Parent = this.owner.Objects;
@@ -69,5 +70,12 @@ export class Upgrader extends BaseComponent<IUpgraderAttributes> implements OnSt
 
 		// Register Dropper as being purchased
 		this.dropperService.addOwnedUpgrader(upgraderInfo);
+
+		janitor.Add(() => this.reset());
+	}
+
+	public reset(): void {
+		this.logger.Debug(`Resetting upgrader ${this.instance.Name}`);
+		this.upgrader.Parent = ServerStorage.Upgraders;
 	}
 }

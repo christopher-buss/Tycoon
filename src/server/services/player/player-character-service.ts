@@ -2,6 +2,7 @@ import { OnStart, Service } from "@flamework/core";
 import { initaliseServer } from "@rbxts/character-realism";
 import promiseR15, { CharacterRigR15, CharacterRigR6, promiseR6 } from "@rbxts/promise-character";
 import { promiseChildOfClass } from "@rbxts/promise-child";
+import Roact from "@rbxts/roact";
 import { CollectionService, Players } from "@rbxts/services";
 import playerEntity from "server/modules/classes/player-entity";
 import { Tag } from "types/enum/tags";
@@ -9,7 +10,11 @@ import { OnPlayerJoin } from "./player-service";
 
 @Service({})
 export class PlayerCharacterService implements OnStart, OnPlayerJoin {
-	constructor() {}
+	private playerUi: Map<Player, Roact.Tree>;
+
+	constructor() {
+		this.playerUi = new Map();
+	}
 
 	public onStart(): void {
 		initaliseServer();
@@ -24,6 +29,9 @@ export class PlayerCharacterService implements OnStart, OnPlayerJoin {
 		player.CharacterAdded.Connect((character) => {
 			this.characterAdded(player, character);
 		});
+
+		player.SetAttribute("Cash", playerEntity.data.cash);
+		player.SetAttribute("Rebirths", playerEntity.data.rebirths);
 	}
 
 	private async characterAdded(player: Player, _c: Model) {

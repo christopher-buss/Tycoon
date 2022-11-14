@@ -12,7 +12,7 @@ import { NetworkedPathType, PathType, PathTypes } from "shared/meta/path-types";
 import { REPLICATION_DISTANCE, TOTAL_PROGRESS, TOTAL_TIME } from "shared/shared-constants";
 import { OnPlayerJoin, PlayerService } from "../player/player-service";
 import { MoneyService } from "../stores/money-service";
-import { LotService, OnLotOwned } from "./lot-service";
+import { LotService, OnLotOwned, OnPlayerRebirthed } from "./lot-service";
 
 type LotName = string;
 
@@ -30,7 +30,7 @@ interface IDropperSimulating {
 }
 
 @Service({})
-export class DropperService implements OnInit, OnStart, OnTick, OnPlayerJoin, OnLotOwned {
+export class DropperService implements OnInit, OnStart, OnTick, OnPlayerJoin, OnLotOwned, OnPlayerRebirthed {
 	private connections: Map<Player, Set<Promise<number | void>>>;
 	private lotPositions: Map<LotName, Vector3>;
 	private lotToReplicateTo: Map<Player, LotName>;
@@ -89,8 +89,17 @@ export class DropperService implements OnInit, OnStart, OnTick, OnPlayerJoin, On
 			return;
 		}
 
+		this.connections.set(newOwner, new Set<Promise<number | void>>());
+
 		const playerEntity = entity_opt.unwrap();
 		playerEntity.playerRemoving.Add(() => {
+			const lotRemoving = playerEntity.player.GetAttribute("Lot") as LotName;
+			for (const [player, lot] of this.lotToReplicateTo) {
+				if (lot === lotRemoving) {
+					Events.playerOutOfRangeOfLot.fire(player);
+				}
+			}
+
 			const index = this.playersWithLot.indexOf(newOwner);
 			if (index !== -1) {
 				this.playersWithLot.unorderedRemove(index);
@@ -143,6 +152,29 @@ export class DropperService implements OnInit, OnStart, OnTick, OnPlayerJoin, On
 				}
 			}
 		}
+	}
+
+	public onPlayerRebirthed(playerEntity: playerEntity): void {
+		this.connections.get(playerEntity.player)?.forEach((thread) => {
+			thread.cancel();
+		});
+
+		this.connections.set(playerEntity.player, new Set<Promise<number | void>>());
+
+		for (const path of PathTypes) {
+			this.ownedDroppers.get(playerEntity.player)?.set(path, []);
+		}
+
+		this.ownedUpgraders.get(playerEntity.player)?.forEach((_, pathType) => {
+			this.ownedUpgraders.get(playerEntity.player)?.set(pathType, []);
+		});
+
+		this.ownedUpgraders.set(playerEntity.player, new Map<PathType, number[]>());
+
+		const playerLot = this.getLotFromDropperOwner(playerEntity.player);
+		this.simulatedDroppers.get(playerLot)?.forEach((_, pathType) => {
+			this.simulatedDroppers.get(playerLot)?.set(pathType, []);
+		});
 	}
 
 	private getLotFromDropperOwner(owner: Player): LotName {

@@ -28,7 +28,6 @@ export class SpinComponent extends BaseComponent<{}, IModel> implements OnStart 
 	}
 
 	private spinModel() {
-		print("SPINNING MODEL");
 		this.janitor.AddPromise(
 			TweenUtil.tweenPromise<BasePart>(
 				this.instance,

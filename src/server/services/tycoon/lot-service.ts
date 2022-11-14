@@ -1,9 +1,10 @@
 import { Components } from "@flamework/components";
-import { Modding, OnStart, Service } from "@flamework/core";
+import { Flamework, Modding, OnStart, Reflect, Service } from "@flamework/core";
 import { Logger } from "@rbxts/log";
 import { Option, Result } from "@rbxts/rust-classes";
 import { Lot } from "server/components/lot/lot";
-import playerEntity from "server/modules/classes/player-entity";
+import PlayerEntity from "server/modules/classes/player-entity";
+import { FlameworkUtil } from "shared/util/flamework-utils";
 import KickCode from "types/enum/kick-reason";
 import { LotErrors } from "types/interfaces/lots";
 import PlayerRemovalService from "../player/player-removal-service";
@@ -22,24 +23,32 @@ export interface OnLotOwned {
 	onLotOwned(lot: Lot, newOwner: Player): void;
 }
 
+export interface OnPlayerRebirthed {
+	onPlayerRebirthed(playerEntity: PlayerEntity): void;
+}
+
 const rng = new Random();
 
 /**
  * A service which handles any functionality related to lots.
  */
 @Service({})
-export class LotService implements OnStart, OnPlayerJoin {
+export class LotService implements OnStart, OnPlayerJoin, OnPlayerRebirthed {
+	public onPlayerRebirthedEvents: Map<string, OnPlayerRebirthed>;
+	public numberOfPurchaseableItems: number;
+
 	private lotOwnedObjs: Set<OnLotOwned>;
 
 	constructor(
 		private readonly logger: Logger,
-		private components: Components,
-		private playerRemovalService: PlayerRemovalService,
+		private readonly components: Components,
+		private readonly playerRemovalService: PlayerRemovalService,
 	) {
+		this.onPlayerRebirthedEvents = new Map();
+		this.numberOfPurchaseableItems = 46;
 		this.lotOwnedObjs = new Set();
 	}
 
-	/** @hidden */
 	public onStart(): void {
 		Modding.onListenerAdded<OnLotOwned>((object) => {
 			this.lotOwnedObjs.add(object);
@@ -48,10 +57,12 @@ export class LotService implements OnStart, OnPlayerJoin {
 		Modding.onListenerRemoved<OnLotOwned>((object) => {
 			this.lotOwnedObjs.delete(object);
 		});
+
+		this.setupOnPlayerRebirthedLifecycle();
 	}
 
 	/** @hidden */
-	public onPlayerJoin(playerEntity: playerEntity): void {
+	public onPlayerJoin(playerEntity: PlayerEntity): void {
 		playerEntity.playerRemoving.Add(() => {
 			this.onPlayerRemoving(playerEntity.player);
 		});
@@ -156,5 +167,28 @@ export class LotService implements OnStart, OnPlayerJoin {
 		}
 
 		this.logger.Info(`Cleared ownership of lot for {@Player}`);
+	}
+
+	private setupOnPlayerRebirthedLifecycle(): void {
+		for (const [object, id] of Reflect.objToId) {
+			if (!FlameworkUtil.isService(object)) {
+				continue;
+			}
+
+			const dependency = Flamework.resolveDependency(id);
+
+			if (Flamework.implements<OnPlayerRebirthed>(dependency)) {
+				this.onPlayerRebirthedEvents.set(id, dependency);
+			}
+		}
+	}
+
+	public onPlayerRebirthed(playerEntity: PlayerEntity): void {
+		const lots = this.getAllLots();
+		for (const lot of lots) {
+			if (lot.getOwner().contains(playerEntity.player)) {
+				lot.loadPurchaseButtons(playerEntity.player);
+			}
+		}
 	}
 }

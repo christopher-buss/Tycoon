@@ -18,7 +18,7 @@ import { Lot } from "./lot";
 
 export interface IOnPurchaseButtonBought {
 	/** Called when this button is successfully purchased. */
-	onPurchaseButtonBought(owner: Player): void;
+	onPurchaseButtonBought(owner: Player, janitor: Janitor): void;
 }
 
 /**
@@ -30,10 +30,10 @@ export class PurchaseButton extends BaseComponent<IPurchaseButtonAttributes, IPu
 	public listeners: Set<IOnPurchaseButtonBought>;
 	public lot!: Lot;
 	public purchased: boolean;
+	public janitor: Janitor<{ Visibility: string | RBXScriptConnection }>;
 
 	private debounce: boolean;
 	private dependency: Option<PurchaseButton>;
-	private janitor: Janitor<{ Visibility: string | RBXScriptConnection }>;
 
 	private readonly touchPart: BasePart;
 
@@ -86,6 +86,8 @@ export class PurchaseButton extends BaseComponent<IPurchaseButtonAttributes, IPu
 	}
 
 	public bindButtonTouched(): void {
+		// this would probably be better as a buyJanitor and a removeJanitor for easier understanding
+		this.janitor.Cleanup();
 		this.logger.Debug("Binding button touched for {ComponentId}", this.attributes.ComponentId);
 		this.purchased = false;
 		this.touchPart.CanTouch = true;
@@ -165,15 +167,17 @@ export class PurchaseButton extends BaseComponent<IPurchaseButtonAttributes, IPu
 
 		this.purchased = true;
 
+		this.unbindButtonTouched();
+
 		for (const listener of this.listeners) {
 			task.spawn(() => {
-				listener.onPurchaseButtonBought(player);
+				listener.onPurchaseButtonBought(player, this.janitor);
 			});
 		}
 
-		this.hideButton().finally(() => {
-			this.unbindButtonTouched();
-		});
+		this.hideButton(); //.finally(() => {
+		// 	this.unbindButtonTouched();
+		// });
 	}
 
 	private buyWithMoney(player: Player): boolean {

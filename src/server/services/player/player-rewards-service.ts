@@ -4,13 +4,17 @@ import withPlayerEntity from "server/modules/with-player-entity";
 import { Events } from "server/network";
 import { GROUP_ID } from "shared/shared-constants";
 import { NotificationService } from "../notification-service";
+import { MoneyService } from "../stores/money-service";
 import { OnPlayerJoin } from "./player-service";
 
 const CASH_AWARDED_FOR_JOINING_GROUP = 2000;
 
 @Service({})
 export class PlayerRewardsService implements OnInit, OnPlayerJoin {
-	constructor(private readonly notificationService: NotificationService) {}
+	constructor(
+		private readonly moneyService: MoneyService,
+		private readonly notificationService: NotificationService,
+	) {}
 
 	public onInit(): void {
 		Events.joinedGroup.connect(
@@ -27,8 +31,9 @@ export class PlayerRewardsService implements OnInit, OnPlayerJoin {
 
 	private checkIfPlayerAwardedCash(playerEntity: PlayerEntity): void {
 		if (playerEntity.player.IsInGroup(GROUP_ID) && !playerEntity.data.inGroup) {
+			this.moneyService.givePlayerMoney(playerEntity.player, CASH_AWARDED_FOR_JOINING_GROUP);
+
 			playerEntity.updateData((data) => {
-				data.cash += CASH_AWARDED_FOR_JOINING_GROUP;
 				data.inGroup = true;
 				return data;
 			});

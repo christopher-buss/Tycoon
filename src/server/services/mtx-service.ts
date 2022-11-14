@@ -28,6 +28,7 @@ export class MtxService implements OnInit, OnPlayerJoin {
 		this.gamePasses.set(71225919, "sparklesEffect");
 		this.gamePasses.set(71225950, "fireEffect");
 		this.gamePasses.set(70168164, "robuxDropper");
+		this.gamePasses.set(70168457, "vip");
 	}
 
 	/** @hidden */
@@ -171,8 +172,6 @@ export class MtxService implements OnInit, OnPlayerJoin {
 					this.logger.Warn(`Failed to check for gamepass owned: {@Error}`, err);
 				});
 		}
-
-		// playerEntity.playerRemoving.Add(() => this.onPlayerRemoving(playerEntity.player));
 	}
 
 	// /** @hidden */
@@ -279,7 +278,7 @@ export class MtxService implements OnInit, OnPlayerJoin {
 			) {
 				for (const listener of purchaseButton.listeners) {
 					task.spawn(() => {
-						listener.onPurchaseButtonBought(playerEntity.player);
+						listener.onPurchaseButtonBought(playerEntity.player, purchaseButton.janitor);
 					});
 				}
 
@@ -288,5 +287,10 @@ export class MtxService implements OnInit, OnPlayerJoin {
 				});
 			}
 		});
+	}
+
+	private vip(playerEntity: PlayerEntity): void {
+		print("Awarding VIP");
+		playerEntity.player.SetAttribute("Vip", true);
 	}
 }

@@ -189,7 +189,6 @@ export class DropperController implements OnStart, OnInit {
 		}
 
 		newPart.PivotTo(new CFrame(this.cachedConveyorLocations.get(this.nearestTycoon)![pathType][progress]));
-		// newPart.Parent = Workspace.PartStorage.FindFirstChild(this.nearestTycoon);
 
 		const decodedPathType = PathTypes[pathType];
 		const time = TOTAL_TIME[decodedPathType] * (1 - progress / TOTAL_PROGRESS[decodedPathType]);
@@ -357,6 +356,11 @@ export class DropperController implements OnStart, OnInit {
 
 		this.nearestTycoon = lotName;
 
+		const upgradersOwned = this.upgradersOwned.get(this.nearestTycoon);
+		if (upgradersOwned === undefined) {
+			return;
+		}
+
 		for (const encoded of data) {
 			const partType = decoderPartIdentifiers[
 				encoded.X as keyof DecodePartIdentifier
@@ -385,10 +389,7 @@ export class DropperController implements OnStart, OnInit {
 
 			if (
 				progress >= Progress["Crate Net Machine"].Progress &&
-				this.upgradersOwned
-					.get(this.nearestTycoon!)
-					?.get(decodedPathType)
-					?.get(Progress["Crate Net Machine"].Progress)
+				upgradersOwned.get(decodedPathType)?.get(Progress["Crate Net Machine"].Progress)
 			) {
 				const [, crate] = this.makeCrate(part, decodedPathType, Progress["Crate Net Machine"].Progress);
 				if (!crate) {
@@ -401,10 +402,7 @@ export class DropperController implements OnStart, OnInit {
 				this.createNetCrate(crate);
 			} else if (
 				progress >= Progress["Dumpling Gold Standard"].Progress &&
-				this.upgradersOwned
-					.get(this.nearestTycoon!)
-					?.get(decodedPathType)
-					?.get(Progress["Dumpling Gold Standard"].Progress)
+				upgradersOwned.get(decodedPathType)!.get(Progress["Dumpling Gold Standard"].Progress)
 			) {
 				const [, crate] = this.makeCrate(part, decodedPathType, Progress["Dumpling Gold Standard"].Progress);
 				if (!crate) {
@@ -416,10 +414,7 @@ export class DropperController implements OnStart, OnInit {
 				this.createGoldCrate(crate);
 			} else if (
 				progress >= Progress["Dumpling Scenter"].Progress &&
-				this.upgradersOwned
-					.get(this.nearestTycoon!)
-					?.get(decodedPathType)
-					?.get(Progress["Dumpling Scenter"].Progress)
+				upgradersOwned.get(decodedPathType)!.get(Progress["Dumpling Scenter"].Progress)
 			) {
 				const [, crate] = this.makeCrate(part, decodedPathType, Progress["Dumpling Scenter"].Progress);
 				if (!crate) {
@@ -430,10 +425,7 @@ export class DropperController implements OnStart, OnInit {
 				this.createBlossom(crate);
 			} else if (
 				progress >= Progress["Dumpling Packager"].Progress &&
-				this.upgradersOwned
-					.get(this.nearestTycoon!)
-					?.get(decodedPathType)
-					?.get(Progress["Dumpling Packager"].Progress)
+				upgradersOwned.get(decodedPathType)!.get(Progress["Dumpling Packager"].Progress)
 			) {
 				const [, crate] = this.makeCrate(part, decodedPathType, Progress["Dumpling Packager"].Progress);
 				if (!crate) {

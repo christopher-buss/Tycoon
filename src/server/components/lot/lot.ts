@@ -36,7 +36,7 @@ export class Lot extends BaseComponent<ILotAttributes, ILotModel> implements OnS
 		assert(this.team !== undefined, `Team ${this.instance.Name} does not exist`);
 
 		this.name = this.team.Name;
-		this.position = this.instance.Spawn.Position;
+		this.position = this.instance.ReplicationPart.Position;
 
 		this.objectsWithDependencies = [];
 	}
@@ -45,6 +45,7 @@ export class Lot extends BaseComponent<ILotAttributes, ILotModel> implements OnS
 	public onStart() {
 		// Generate an identifier for the lot.
 		this.attributes.ComponentId = HttpService.GenerateGUID(false);
+		this.clearOwnedButtons();
 	}
 
 	/**
@@ -153,7 +154,7 @@ export class Lot extends BaseComponent<ILotAttributes, ILotModel> implements OnS
 	 * Add any owned items for the player to the tycoon.
 	 * @param player
 	 */
-	private loadPurchaseButtons(player: Player): void {
+	public loadPurchaseButtons(player: Player): void {
 		const entity_opt = this.playerService.getEntity(player);
 		if (!entity_opt.isSome()) {
 			return;
@@ -184,7 +185,7 @@ export class Lot extends BaseComponent<ILotAttributes, ILotModel> implements OnS
 			buttonComponent.unbindButtonTouched();
 			for (const listener of buttonComponent.listeners) {
 				task.spawn(() => {
-					listener.onPurchaseButtonBought(player);
+					listener.onPurchaseButtonBought(player, buttonComponent.janitor);
 				});
 			}
 		});

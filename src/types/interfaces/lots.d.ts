@@ -10,6 +10,7 @@ export interface ILotModel extends Folder {
 		};
 	};
 	Objects: Folder;
+	ReplicationPart: BasePart;
 	Spawn: SpawnLocation;
 }
 

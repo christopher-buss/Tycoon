@@ -1,12 +1,13 @@
 import { Flamework, Modding } from "@flamework/core";
 import Log, { Logger, LogLevel } from "@rbxts/log";
+import { RunService } from "@rbxts/services";
 import { $package } from "rbxts-transform-debug";
 
 // RunService.IsStudio() ? LogLevel.Verbose : LogLevel.Information
 
 Log.SetLogger(
 	Logger.configure()
-		.SetMinLogLevel(LogLevel.Information)
+		.SetMinLogLevel(RunService.IsStudio() ? LogLevel.Verbose : LogLevel.Information)
 		.EnrichWithProperty("Version", $package.version)
 		.WriteTo(Log.RobloxOutput({ TagFormat: "full" }))
 		.Create(),
