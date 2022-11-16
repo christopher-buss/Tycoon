@@ -172,7 +172,7 @@ export class DropperController implements OnStart, OnInit {
 			const data = ClientStore.getState().playerData;
 			const partPrice =
 				PartInfo[partType].Value * (1 + data.rebirths / 5) * (data.gamePasses.doubleMoneyGamepass ? 2 : 1);
-			ui.PriceLabel.Text = tostring("¥" + partPrice);
+			ui.PriceLabel.Text = tostring("¥" + string.format("%.0f", partPrice));
 
 			ui.SetAttribute("Price", partPrice);
 		}
@@ -294,7 +294,7 @@ export class DropperController implements OnStart, OnInit {
 			(ui.GetAttribute("Price") as number) +
 			(ClientStore.getState().playerData.gamePasses.doubleMoneyGamepass ? value * 2 : value);
 		ui.SetAttribute("Price", price);
-		ui.PriceLabel.Text = tostring("¥" + price);
+		ui.PriceLabel.Text = tostring("¥" + string.format("%.0f", price));
 	}
 
 	/**
@@ -368,7 +368,6 @@ export class DropperController implements OnStart, OnInit {
 
 			const pathType = encoded.Y;
 			const progress = encoded.Z;
-
 			const decodedPathType = PathTypes[encoded.Y];
 
 			const part = this.partCache.get(partType)?.GetPart() as DropperPart;
@@ -382,7 +381,7 @@ export class DropperController implements OnStart, OnInit {
 				const data = ClientStore.getState().playerData;
 				const partPrice =
 					PartInfo[partType].Value * (1 + data.rebirths / 5) * (data.gamePasses.doubleMoneyGamepass ? 2 : 1);
-				ui.PriceLabel.Text = tostring("¥" + partPrice);
+				ui.PriceLabel.Text = tostring("¥" + string.format("%.0f", partPrice));
 
 				ui.SetAttribute("Price", partPrice);
 			}

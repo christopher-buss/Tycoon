@@ -7,7 +7,7 @@ import { IUpgraderInfo } from "server/components/lot/upgrader";
 import playerEntity from "server/modules/classes/player-entity";
 import { Events } from "server/network";
 import { EncodePartIdentifier, encoderPartIdentifiers } from "shared/meta/part-identifiers";
-import { PartInfo, PartInfoKey, PartInfoValue } from "shared/meta/part-info";
+import { PartInfo, PartInfoKey, PartInfoValue, Progress } from "shared/meta/part-info";
 import { NetworkedPathType, PathType, PathTypes } from "shared/meta/path-types";
 import { REPLICATION_DISTANCE, TOTAL_PROGRESS, TOTAL_TIME } from "shared/shared-constants";
 import { OnPlayerJoin, PlayerService } from "../player/player-service";
@@ -220,7 +220,8 @@ export class DropperService implements OnInit, OnStart, OnTick, OnPlayerJoin, On
 				this.simulatedDroppers.get(lotName)?.forEach((droppers, pathType) => {
 					for (const dropper of droppers) {
 						const time = os.clock() - dropper.Dropper.LastDrop;
-						const currentProgress = (time / TOTAL_TIME[pathType]) * TOTAL_PROGRESS[pathType];
+						const currentProgress =
+							(time / TOTAL_TIME[pathType]) * TOTAL_PROGRESS[pathType] + dropper.Dropper.StartProgress;
 
 						dataToSend.push(
 							new Vector3int16(
@@ -248,9 +249,13 @@ export class DropperService implements OnInit, OnStart, OnTick, OnPlayerJoin, On
 		pathType: PathType,
 		dropper: IDropperSimulatingInfo,
 	): IDropperSimulating | undefined {
-		const progress = 0;
+		let progress = 0;
 
 		this.logger.Debug(`Spawning dropper ${dropper.Name} for ${dropper.Owner.Name}`);
+
+		if (dropper.Name === "Robux Dropper") {
+			progress = Progress["Robux Dropper"].Progress;
+		}
 
 		dropper.LastDrop = os.clock();
 

@@ -4,8 +4,9 @@ import { Logger } from "@rbxts/log";
 import ProfileService from "@rbxts/profileservice";
 import { ProfileStore } from "@rbxts/profileservice/globals";
 import { Option } from "@rbxts/rust-classes";
-import { Players, RunService } from "@rbxts/services";
+import { DataStoreService, HttpService, Players, RunService } from "@rbxts/services";
 import DefaultPlayerData, { IPlayerData, PlayerDataProfile } from "shared/meta/default-player-data";
+import { encoderPartIdentifiers } from "shared/meta/part-identifiers";
 import KickCode from "types/enum/kick-reason";
 import PlayerRemovalService from "./player-removal-service";
 
@@ -14,10 +15,10 @@ const PcsKey = "Diamond Key"; // Purchases
 const CshKey = "Uranium Key"; // Cash
 const DntKey = "Gold Key"; // Donations
 
-const dateTable = os.date("*t", os.time());
-const Key = "Y:" + dateTable["year"] + " M:" + dateTable["month"] + " D:" + dateTable["day"];
-const DntDaily = DntKey + Key; // Donations Today
-const FstKey = Key; // First Date Played
+// const dateTable = os.date("*t", os.time());
+// const Key = "Y:" + dateTable["year"] + " M:" + dateTable["month"] + " D:" + dateTable["day"];
+// const DntDaily = DntKey + Key; // Donations Today
+// const FstKey = Key; // First Date Played
 
 const DataStoreName = RunService.IsStudio() ? "PlayerData" : "TestPlayerData";
 
@@ -35,7 +36,10 @@ export default class PlayerDataService {
 	constructor(private readonly logger: Logger, private readonly removalService: PlayerRemovalService) {
 		this.gameProfileStore = ProfileService.GetProfileStore<IPlayerData>(DataStoreName, DefaultPlayerData);
 
-		DataStore2.Combine("DATA", EloKey, PcsKey, CshKey, DntKey, FstKey, DntDaily);
+		DataStore2.PatchGlobalSettings({
+			SavingMethod: "Standard",
+		});
+		DataStore2.Combine("DATA", EloKey, PcsKey, CshKey, DntKey);
 	}
 
 	// TODO
@@ -46,13 +50,33 @@ export default class PlayerDataService {
 		if (rebirths !== undefined) {
 			profile.Data.rebirths = rebirths;
 		}
-		print(rebirths);
 
-		const cash = DataStore2<number>(PcsKey, player).Get();
+		const cash = DataStore2<number>(CshKey, player).Get();
 		if (cash !== undefined) {
 			profile.Data.cash = cash;
 		}
-		print(cash);
+
+		const purchases = DataStore2<string>(PcsKey, player).Get();
+		if (purchases !== undefined) {
+			const decodedPurchases = HttpService.JSONDecode(purchases) as string;
+
+			const purchaseArray: number[] = [];
+			for (const purchase of decodedPurchases.split("$%")) {
+				const encodedPurchase = encoderPartIdentifiers[purchase as keyof typeof encoderPartIdentifiers];
+				if (encodedPurchase !== undefined) {
+					purchaseArray.push(encodedPurchase);
+				}
+			}
+
+			profile.Data.purchased = purchaseArray;
+		}
+
+		task.defer(() => {
+			const DataStore = DataStoreService.GetDataStore("DATA");
+			DataStore.RemoveAsync(tostring(player.UserId));
+		});
+
+		profile.Data.migrated = true;
 
 		this.logger.Info(`Finished migrating data for ${player.Name} to ProfileStore`);
 
@@ -61,9 +85,7 @@ export default class PlayerDataService {
 
 	public async loadPlayerProfile(player: Player): Promise<Option<PlayerDataProfile>> {
 		const dataKey = tostring(player.UserId);
-		// const liveProfile = this.gameProfileStore.ViewProfileAsync(dataKey);
-
-		const profile = this.gameProfileStore.LoadProfileAsync(dataKey, "ForceLoad");
+		let profile = this.gameProfileStore.LoadProfileAsync(dataKey, "ForceLoad");
 		if (profile === undefined) {
 			this.removalService.removeForBug(player, KickCode.PlayerProfileUndefined);
 			return Option.none<PlayerDataProfile>();
@@ -78,10 +100,9 @@ export default class PlayerDataService {
 
 		profile.Reconcile();
 
-		// if (liveProfile === undefined) {
-		// 	// We currently don't have a store. Need to check if we have old data from DataStore2.
-		// 	profile = await this.migrateDataToProfileStore(player, profile);
-		// }
+		if (profile.Data.migrated === false) {
+			profile = await this.migrateDataToProfileStore(player, profile);
+		}
 
 		profile.ListenToRelease(() => {
 			if (!player.IsDescendantOf(game)) {

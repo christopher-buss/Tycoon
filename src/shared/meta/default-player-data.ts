@@ -8,7 +8,7 @@ const DefaultPlayerData = {
 
 	purchased: [] as number[], // uses the part-identifiers rather than strings.
 
-	obbyLastCompleted: os.clock(),
+	obbyLastCompleted: os.time(),
 
 	gamePasses: {
 		// tools
@@ -33,6 +33,8 @@ const DefaultPlayerData = {
 	},
 
 	acquiredTools: [] as string[], // tools that the player has acquired through the game.
+
+	migrated: false, // whether or not the player has been migrated to profile service.
 };
 
 export default DefaultPlayerData;
