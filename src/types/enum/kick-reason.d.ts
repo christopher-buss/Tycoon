@@ -1,13 +1,14 @@
-declare const enum KickCode {
+declare const enum PlayerKickReason {
 	// Player entity related
-	PlayerEntityInstantiationError,
+	PlayerEntityInstantiationError = 1,
 
 	// Player data related
-	PlayerProfileUndefined,
-	PlayerProfileReleased,
+	PlayerProfileUndefined = 2,
+	PlayerProfileReleased = 3,
+	PlayerMigrationFailed = 4,
 
 	// Player game related
-	PlayerFullServer,
+	PlayerFullServer = 5,
 }
 
-export default KickCode;
+export default PlayerKickReason;

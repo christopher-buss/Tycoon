@@ -1,20 +1,46 @@
-import { Service } from "@flamework/core";
+import { OnTick, Service } from "@flamework/core";
 import { Logger } from "@rbxts/log";
 import { Option } from "@rbxts/rust-classes";
 import PlayerEntity from "server/modules/classes/player-entity";
+
 import { LeaderstatsService } from "../leaderstats-service";
-import { PlayerService } from "../player/player-service";
+import { OnPlayerJoin, PlayerService } from "../player/player-service";
 
 /**
  * A wrapper for accessing the player's money.
  */
 @Service({})
-export class MoneyService {
+export class MoneyService implements OnPlayerJoin, OnTick {
+	private moneyToAwardEachSecond: Map<PlayerEntity, number>;
+	private timeSinceLastUpdate: number;
+
 	constructor(
 		private readonly logger: Logger,
 		private readonly playerService: PlayerService,
 		private readonly leaderstatsService: LeaderstatsService,
-	) {}
+	) {
+		this.moneyToAwardEachSecond = new Map();
+		this.timeSinceLastUpdate = 0;
+	}
+
+	public onPlayerJoin(playerEntity: PlayerEntity): void {
+		this.moneyToAwardEachSecond.set(playerEntity, 0);
+	}
+
+	public onTick(dt: number): void {
+		if (this.timeSinceLastUpdate < 1) {
+			this.timeSinceLastUpdate += dt;
+			return;
+		}
+
+		this.timeSinceLastUpdate -= 1 - dt;
+
+		this.moneyToAwardEachSecond.forEach((money, playerEntity) => {
+			if (money > 0) {
+				this.updatePlayerMoney(true, playerEntity, money);
+			}
+		});
+	}
 
 	/**
 	 *
@@ -49,19 +75,23 @@ export class MoneyService {
 			return false;
 		}
 
-		const entity = playerEntity_opt.unwrap();
-		return this.checkIfEntityHasEnoughMoney(entity, toSpend).match(
+		const playerEntity = playerEntity_opt.unwrap();
+		return this.spendMoneyForEntity(playerEntity, toSpend);
+	}
+
+	public spendMoneyForEntity(playerEntity: PlayerEntity, toSpend: number): boolean {
+		return this.checkIfEntityHasEnoughMoney(playerEntity, toSpend).match(
 			(canSpend) => {
 				if (!canSpend) {
-					this.logger.Info(`Player ${player} does not have enough money to spend`);
+					this.logger.Info(`Player ${playerEntity.player} does not have enough money to spend`);
 					return false;
 				}
 
-				this.updatePlayerMoney(false, entity, -toSpend);
+				this.updatePlayerMoney(false, playerEntity, -toSpend);
 				return true;
 			},
 			() => {
-				this.logger.Error(`Failed to check money for ${player}`);
+				this.logger.Error(`Failed to check money for ${playerEntity.player}`);
 				return false;
 			},
 		);
@@ -82,7 +112,7 @@ export class MoneyService {
 	 */
 	private checkIfEntityHasEnoughMoney(entity: PlayerEntity, toSpend: number): Option<boolean> {
 		return this.getMoneyForEntity(entity).andWith<boolean>((currentMoney) => {
-			return Option.some<boolean>(currentMoney - toSpend > 0);
+			return Option.some<boolean>(currentMoney - toSpend >= 0);
 		});
 	}
 
@@ -91,7 +121,7 @@ export class MoneyService {
 	 * @param entity
 	 * @param amount
 	 */
-	private updatePlayerMoney(force: boolean, entity: PlayerEntity, amount: number): void {
+	public updatePlayerMoney(force: boolean, entity: PlayerEntity, amount: number): void {
 		entity.updateData((data) => {
 			data.cash += amount;
 			if (!force) {
@@ -100,8 +130,10 @@ export class MoneyService {
 			return data;
 		});
 
+		entity.player.SetAttribute("Cash", entity.data.cash);
+
 		// Update the leaderboard with the new value
-		this.leaderstatsService.getStatObject(entity.player, "Yen").match(
+		this.leaderstatsService.getStatObject(entity.player, "Cash").match(
 			(stat) => {
 				stat.Value = entity.data.cash;
 			},
@@ -109,5 +141,29 @@ export class MoneyService {
 				this.logger.Error(`Failed to update leaderstats for ${entity.player}`);
 			},
 		);
+	}
+
+	public addMoneyConnection(player: Player, value: number): void {
+		const playerEntity_opt = this.playerService.getEntity(player);
+		if (playerEntity_opt.isNone()) {
+			this.logger.Error(`Player entity for ${player} could not be found`);
+			return;
+		}
+
+		let moneyToGive = value;
+
+		const entity = playerEntity_opt.unwrap();
+		const doubleMoneyGamepass = entity.data.gamePasses.doubleMoneyGamepass;
+		if (doubleMoneyGamepass) {
+			moneyToGive *= 2;
+		}
+
+		const currentMoney = this.moneyToAwardEachSecond.get(entity);
+		if (currentMoney === undefined) {
+			this.logger.Fatal(`Failed to get money for ${player}`);
+			return;
+		}
+
+		this.moneyToAwardEachSecond.set(entity, currentMoney + moneyToGive);
 	}
 }

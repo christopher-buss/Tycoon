@@ -4,19 +4,20 @@ import { Janitor } from "@rbxts/janitor";
 import { Logger } from "@rbxts/log";
 import Roact from "@rbxts/roact";
 import { Option } from "@rbxts/rust-classes";
-import { Players } from "@rbxts/services";
+import { CollectionService, Players } from "@rbxts/services";
 import { observeChild } from "@rbxts/streamable";
 import purchaseButton from "shared/ui/world/purchase-button";
+import { Tag } from "types/enum/tags";
 import { IPurchaseButtonAttributes, IPurchaseButtonModel } from "types/interfaces/buttons";
 
-const noop = () => {};
+const noop = (): void => {};
 
 /**
  * A component that players in the game can touch to purchase corresponding
  * objects in the game. This client component is responsible for rendering ui
  * related to the purchase button.
  */
-@Component({ tag: "PurchaseButton" })
+@Component({ tag: Tag.PurchaseButton })
 export class PurchaseButton extends BaseComponent<IPurchaseButtonAttributes, IPurchaseButtonModel> implements OnStart {
 	private readonly janitor: Janitor<void>;
 	private tree_opt: Option<Roact.Tree>;
@@ -27,9 +28,13 @@ export class PurchaseButton extends BaseComponent<IPurchaseButtonAttributes, IPu
 		this.tree_opt = Option.none<Roact.Tree>();
 	}
 
-	public onStart() {
+	public onStart(): void {
+		if (CollectionService.HasTag(this.instance, Tag.TimerButton)) {
+			return;
+		}
+
 		this.janitor.Add(
-			observeChild(this.instance, "Head", (_primary) => {
+			observeChild(this.instance, "TouchPart", () => {
 				this.onStreamIn();
 				return noop;
 			}),
@@ -51,17 +56,20 @@ export class PurchaseButton extends BaseComponent<IPurchaseButtonAttributes, IPu
 	 * @returns the ui object.
 	 */
 	private createInterface(): Roact.Element {
+		let displayName = this.attributes.DisplayName as string;
+		if (displayName === undefined || displayName === "") {
+			displayName = this.instance.Name;
+		}
+
 		let color = Color3.fromRGB(126, 126, 126);
-		let displayName = this.instance.Name;
-		let price = tostring(this.attributes.Price);
+		let price = "$" + tostring(this.attributes.Price);
 		if (this.attributes.GamepassId !== undefined && this.attributes.GamepassId !== 0) {
 			color = Color3.fromRGB(38, 255, 0);
-			displayName = "🍣 " + this.instance.Name;
-			price = "R$" + this.attributes.Price;
+			price = this.attributes.Price + "R$";
 		}
 
 		return purchaseButton({
-			Adornee: this.instance.Head,
+			Adornee: this.instance.TouchPart,
 			Color: color,
 			DisplayName: displayName,
 			Janitor: this.janitor,

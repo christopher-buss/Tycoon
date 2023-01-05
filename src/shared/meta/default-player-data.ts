@@ -1,24 +1,24 @@
 import { Profile } from "@rbxts/profileservice/globals";
 
 const DefaultPlayerData = {
-	cash: 1000,
+	cash: 0,
 	inGroup: false,
 	rebirths: 0,
 	moneySpent: 0,
 
-	purchased: [] as number[], // uses the part-identifiers rather than strings.
+	purchased: [] as Array<number>, // uses the part-identifiers rather than strings.
 
 	obbyLastCompleted: os.clock(),
 
 	gamePasses: {
 		// tools
-		cloudGamepass: false,
-		speedCoilGamepass: false,
+		// cloudGamepass: false,
+		// speedCoilGamepass: false,
 
-		doubleMoneyGamepass: true,
+		doubleMoneyGamepass: false,
 
-		sparkleEffectGamepass: false,
-		fireEffectGamepass: false,
+		// sparkleEffectGamepass: false,
+		// fireEffectGamepass: false,
 	},
 
 	settings: {
@@ -32,7 +32,10 @@ const DefaultPlayerData = {
 		fire: false,
 	},
 
-	acquiredTools: [] as string[], // tools that the player has acquired through the game.
+	acquiredTools: [] as Array<string>, // tools that the player has acquired through the game.
+
+	/** Likely to be migrated by default when building new experiences. */
+	migrated: true, // whether or not the player has been migrated to profile service.
 };
 
 export default DefaultPlayerData;

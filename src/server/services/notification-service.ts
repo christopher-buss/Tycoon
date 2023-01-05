@@ -16,7 +16,7 @@ export class NotificationService implements OnStart {
 		this.waitPeriod = 120;
 	}
 
-	public onStart() {
+	public onStart(): void {
 		while (true) {
 			let nextAdIndex = math.random(1, this.totalNotifications);
 
@@ -36,11 +36,11 @@ export class NotificationService implements OnStart {
 		}
 	}
 
-	private sendNotificationToAllPlayers(data: INotificationEntry) {
+	private sendNotificationToAllPlayers(data: INotificationEntry): void {
 		Events.sendNotification.broadcast(data);
 	}
 
-	public sendNotificationToPlayer(player: Player, data: INotificationEntry) {
+	public sendNotificationToPlayer(player: Player, data: INotificationEntry): void {
 		Events.sendNotification.fire(player, data);
 	}
 }

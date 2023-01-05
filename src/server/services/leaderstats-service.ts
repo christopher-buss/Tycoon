@@ -3,6 +3,7 @@ import { Logger } from "@rbxts/log";
 import { Option } from "@rbxts/rust-classes";
 import playerEntity from "server/modules/classes/player-entity";
 import DefaultPlayerData, { IPlayerData } from "shared/meta/default-player-data";
+
 import { OnPlayerJoin } from "./player/player-service";
 
 interface ILeaderstatValueTypes {
@@ -22,7 +23,7 @@ interface ILeaderstatEntry<T extends keyof ILeaderstatValueTypes = keyof ILeader
  */
 @Service({})
 export class LeaderstatsService implements OnInit, OnPlayerJoin {
-	private leaderstats: ILeaderstatEntry[];
+	private leaderstats: Array<ILeaderstatEntry>;
 	private playerToLeaderstatsMap: Map<Player, Folder>;
 	private playerToValueMap: Map<Player, Map<string, Instances[keyof ILeaderstatValueTypes]>>;
 
@@ -35,7 +36,7 @@ export class LeaderstatsService implements OnInit, OnPlayerJoin {
 	/** @hidden */
 	public onInit(): void {
 		this.registerStat("Rebirths", "IntValue", DefaultPlayerData.rebirths, "rebirths");
-		this.registerStat("Yen", "IntValue", DefaultPlayerData.cash, "cash");
+		this.registerStat("Cash", "IntValue", DefaultPlayerData.cash, "cash");
 	}
 
 	/**

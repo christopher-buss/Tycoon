@@ -7,7 +7,7 @@ export type NetResult<T extends defined, E extends defined> = NetOk<T> | NetErr<
  * Utility functions for sending rust-style Result's over the network.
  */
 export namespace NetResult {
-	export function deserialize(serialized: NetResult<defined, defined>) {
+	export function deserialize(serialized: NetResult<defined, defined>): Result<defined, defined> {
 		if (serialized.type === "Ok") {
 			return Result.ok(serialized.value);
 		} else {

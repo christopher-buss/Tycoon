@@ -9,8 +9,8 @@ import { HttpService } from "@rbxts/services";
 export class CodeService implements OnStart {
 	constructor(private readonly logger: Logger) {}
 
-	public onStart() {
-		this.logger.Verbose("CodeService not implemented.");
+	public onStart(): void {
+		this.logger.Verbose(`CodeService not implemented.`);
 	}
 
 	private async getCurrentLikes(): Promise<number> {

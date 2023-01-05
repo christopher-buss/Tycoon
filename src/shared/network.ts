@@ -1,8 +1,9 @@
 import { Networking } from "@flamework/networking";
 import { INotificationEntry } from "server/meta/notification-data";
+import { PathNumber } from "types/interfaces/droppers";
 import { NetPlayerData } from "types/interfaces/network-types";
+
 import { IPlayerData } from "./meta/default-player-data";
-import { PathType } from "./meta/path-types";
 
 export type DropperInfo = Vector2int16; // Path Type, Part Type
 
@@ -31,13 +32,16 @@ interface ClientEvents {
 	sendNotification(notificationData: INotificationEntry): void;
 
 	/** Fired by the server when a player is in range of a tycoon and doesn't have it's data. */
-	playerInRangeOfLot(lotName: string, data: Vector3int16[]): void;
+	playerInRangeOfLot(lotName: string, data: Array<Vector3int16>): void;
 
 	/**Fired by the server when a player is no longer in range of a tycoon */
 	playerOutOfRangeOfLot(): void;
 
 	/** Fired by the server when a player buys an object */
-	playerBoughtObject(lotName: string, pathType: PathType, objectName: string): void;
+	playerBoughtObject(lotName: string, pathNumber: PathNumber, objectName: string): void;
+
+	/** Fired by the server when a player is teleported by a teleport */
+	playerTeleported(orientation: Vector3): void;
 }
 
 interface ServerFunctions {

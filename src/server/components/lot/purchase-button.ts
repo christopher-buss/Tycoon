@@ -2,38 +2,46 @@ import { BaseComponent, Component } from "@flamework/components";
 import { OnStart } from "@flamework/core";
 import { Janitor } from "@rbxts/janitor";
 import { Logger } from "@rbxts/log";
-import { Option } from "@rbxts/rust-classes";
 import { HttpService, MarketplaceService, RunService } from "@rbxts/services";
 import Spring from "@rbxts/spring";
+import PlayerEntity from "server/modules/classes/player-entity";
 import { MtxService } from "server/services/mtx-service";
 import { PlayerService } from "server/services/player/player-service";
 import { MoneyService } from "server/services/stores/money-service";
 import { EncodePartIdentifier, encoderPartIdentifiers } from "shared/meta/part-identifiers";
-import { PartInfo, PartInfoKey } from "shared/meta/part-info";
+import { PartInfo, PartInfoType } from "shared/meta/part-info";
 import { FlameworkUtil } from "shared/util/flamework-utils";
 import { lerpNumber } from "shared/util/math-util";
 import { PlayerUtil } from "shared/util/player-util";
+import { Tag } from "types/enum/tags";
 import { IPurchaseButtonAttributes, IPurchaseButtonModel } from "types/interfaces/buttons";
+
 import { Lot } from "./lot";
 
 export interface IOnPurchaseButtonBought {
 	/** Called when this button is successfully purchased. */
-	onPurchaseButtonBought(owner: Player): void;
+	onPurchaseButtonBought(owner: Player, janitor: Janitor): void;
 }
 
 /**
  * A button component that can be touched by a player to purchased a specified
  * linked object.
  */
-@Component({ tag: "PurchaseButton" })
+@Component({
+	tag: Tag.PurchaseButton,
+})
 export class PurchaseButton extends BaseComponent<IPurchaseButtonAttributes, IPurchaseButtonModel> implements OnStart {
+	public janitor: Janitor<{ Visibility: string | RBXScriptConnection }>;
 	public listeners: Set<IOnPurchaseButtonBought>;
 	public lot!: Lot;
 	public purchased: boolean;
 
+	private identifier: string;
 	private debounce: boolean;
-	private dependency: Option<PurchaseButton>;
-	private janitor: Janitor<{ Visibility: string | RBXScriptConnection }>;
+	private dependencies: Array<PurchaseButton>;
+
+	private canCollideMap: Map<BasePart, boolean>;
+	private transparencyMap: Map<BasePart, number>;
 
 	private readonly touchPart: BasePart;
 
@@ -48,63 +56,114 @@ export class PurchaseButton extends BaseComponent<IPurchaseButtonAttributes, IPu
 		this.listeners = new Set<IOnPurchaseButtonBought>();
 		this.purchased = false;
 
+		this.identifier = this.instance.Name;
 		this.attributes.ComponentId = HttpService.GenerateGUID(false);
-		this.attributes.DisplayName = this.instance.Name;
 		this.debounce = false;
-		this.dependency = Option.none<PurchaseButton>();
+		this.dependencies = [];
 		this.janitor = new Janitor();
 
-		this.touchPart = this.instance.Head;
+		this.touchPart = this.instance.TouchPart;
 
-		const part = PartInfo[this.attributes.DisplayName as PartInfoKey];
+		this.canCollideMap = new Map();
+		this.transparencyMap = new Map();
+		this.instance.GetChildren().forEach((child) => {
+			if (child.IsA("BasePart")) {
+				this.canCollideMap.set(child, child.CanCollide);
+				this.transparencyMap.set(child, child.Transparency);
+			}
+		});
+
+		const part = PartInfo[this.instance.Name as PartInfoType];
 		if (part === undefined) {
 			return;
 		}
 
 		const price = part.Price;
 		if (price === undefined || price < 0) {
-			this.logger.Error(`Price for ${this.attributes.DisplayName} is invalid.`);
+			this.logger.Error(`Price for ${this.identifier} is invalid.`);
 			return;
 		}
 
 		this.attributes.Price = price;
 	}
 
-	public onStart() {
-		FlameworkUtil.waitForComponentOnInstance<Lot>(this.instance.Parent?.Parent as Model).andThen((component) => {
-			assert(component !== undefined, "Lot is undefined");
-			this.lot = component;
-		});
+	/** @hidden */
+	public onStart(): void {
+		FlameworkUtil.waitForComponentOnInstance<Lot>(this.instance.Parent?.Parent as Model)
+			.andThen((component) => {
+				assert(component !== undefined, "Lot is undefined");
+				this.lot = component;
+			})
+			.catch((err) => {
+				this.logger.Error(err);
+			});
 	}
 
-	public addDependency(dependency: PurchaseButton) {
-		this.dependency = Option.wrap<PurchaseButton>(dependency);
+	/**
+	 *
+	 * @param dependency
+	 */
+	public addDependency(dependency: PurchaseButton): void {
+		this.dependencies.push(dependency);
 	}
 
+	/**
+	 *
+	 * @param object
+	 */
 	public addListener(object: IOnPurchaseButtonBought): void {
 		this.listeners.add(object);
 	}
 
-	public bindButtonTouched(): void {
-		this.logger.Debug("Binding button touched for {ComponentId}", this.attributes.ComponentId);
+	/**
+	 *
+	 * @param force
+	 */
+	public bindButtonTouched(force: boolean): void {
+		// TODO :this would probably be better as a buyJanitor and a removeJanitor for easier understanding
+		this.janitor.Cleanup();
+		this.logger.Debug(`Binding button touched for ${this.attributes.ComponentId}`);
 		this.purchased = false;
 		this.touchPart.CanTouch = true;
-		this.forceButtonVisible();
+		if (force) {
+			this.forceButtonVisible().catch((err) => this.logger.Warn(err));
+		} else {
+			this.showButton().catch((err) => this.logger.Warn(err));
+		}
 		this.janitor.Add(this.touchPart.Touched.Connect((otherPart) => this.onComponentTouched(otherPart)));
 	}
 
-	public unbindButtonTouched(): void {
-		this.logger.Debug("Unbinding button touched for {ComponentId}", this.attributes.ComponentId);
+	/**
+	 *
+	 * @param force
+	 */
+	public unbindButtonTouched(force: boolean): void {
+		this.logger.Debug(`Binding button touched for ${this.attributes.ComponentId}`);
 		this.touchPart.CanTouch = false;
-		this.forceButtonHidden();
+		if (force) {
+			this.forceButtonHidden().catch((err) => this.logger.Warn(err));
+		} else {
+			this.hideButton().catch((err) => this.logger.Warn(err));
+		}
 		this.janitor.Cleanup();
 	}
 
+	/**
+	 *
+	 * @param player
+	 * @returns
+	 */
 	public checkIfPlayerOwnsButton(player: Player): boolean {
 		return this.lot.getOwner().isSome() && this.lot.getOwner().unwrap().UserId === player.UserId;
 	}
 
-	/** @hidden */
+	/**
+	 *
+	 * @param part
+	 * @returns
+	 *
+	 * @hidden
+	 */
 	private async onComponentTouched(part: BasePart): Promise<void> {
 		if (this.debounce) {
 			return;
@@ -131,13 +190,45 @@ export class PurchaseButton extends BaseComponent<IPurchaseButtonAttributes, IPu
 			return;
 		}
 
+		const playerEntity = playerEntity_opt.unwrap();
+
+		if (this.attributes.Rebirths !== undefined && this.attributes.Rebirths > 0) {
+			if (playerEntity.data.rebirths < this.attributes.Rebirths) {
+				// dont have enough rebirths
+				if (this.attributes.GamepassId !== undefined && this.attributes.GamepassId > 0) {
+					const result = await this.buyWithRobux(player);
+					if (result !== true) {
+						task.delay(0.5, () => {
+							this.debounce = false;
+						});
+						return;
+					}
+				}
+			}
+		}
+
+		const rebirthCheck = (): boolean => {
+			print("PB: ", this.attributes.Rebirths);
+			print("PB: ", playerEntity.data.rebirths);
+			if (this.attributes.Rebirths !== undefined && this.attributes.Rebirths > 0) {
+				print("PB: ", playerEntity.data.rebirths >= this.attributes.Rebirths);
+				return playerEntity.data.rebirths >= this.attributes.Rebirths;
+			}
+			return true;
+		};
+
 		if (this.attributes.GamepassId !== undefined && this.attributes.GamepassId > 0) {
-			const result = await this.buyWithRobux(player);
-			if (result !== true) {
-				return;
+			if (!rebirthCheck()) {
+				const result = await this.buyWithRobux(player);
+				if (result !== true) {
+					task.delay(0.5, () => {
+						this.debounce = false;
+					});
+					return;
+				}
 			}
 		} else {
-			if (!this.buyWithMoney(player)) {
+			if (!rebirthCheck() || !this.buyWithMoney(playerEntity)) {
 				task.delay(0.5, () => {
 					this.debounce = false;
 				});
@@ -145,11 +236,10 @@ export class PurchaseButton extends BaseComponent<IPurchaseButtonAttributes, IPu
 			}
 		}
 
-		const playerEntity = playerEntity_opt.unwrap();
 		playerEntity.updateData((data) => {
-			const identifier = encoderPartIdentifiers[this.attributes.DisplayName! as keyof EncodePartIdentifier];
+			const identifier = encoderPartIdentifiers[this.instance.Name as keyof EncodePartIdentifier];
 			if (identifier === undefined) {
-				this.logger.Error("Identifier is undefined");
+				this.logger.Error(`Identifier for ${this.instance.Name} is undefined`);
 				return data;
 			}
 
@@ -157,31 +247,39 @@ export class PurchaseButton extends BaseComponent<IPurchaseButtonAttributes, IPu
 			return data;
 		});
 
-		this.logger.Info("{ComponentId} purchased by {@Player}", this.attributes.ComponentId, player);
-
-		if (this.dependency.isSome()) {
-			this.dependency.unwrap().bindButtonTouched();
-		}
+		this.logger.Info(`${this.attributes.ComponentId} purchased by ${player}`);
 
 		this.purchased = true;
+		this.dependencies.forEach((dependency) => dependency.bindButtonTouched(false));
+		this.unbindButtonTouched(false);
 
-		for (const listener of this.listeners) {
+		this.listeners.forEach((listener) => {
 			task.spawn(() => {
-				listener.onPurchaseButtonBought(player);
+				listener.onPurchaseButtonBought(player, this.janitor);
 			});
-		}
-
-		this.hideButton().finally(() => {
-			this.unbindButtonTouched();
 		});
+
+		// GameAnalytics.addProgressionEvent(player.UserId, {
+		// 	progressionStatus: GameAnalytics.EGAProgressionStatus.Complete,
+		// 	progression01: this.instance.Name,
+		// });
 	}
 
-	private buyWithMoney(player: Player): boolean {
-		this.logger.Info("{ComponentId} attempting to be purchased by {@Player}", this.attributes.ComponentId, player);
-
-		return this.moneyService.spendMoney(player, this.attributes.Price!);
+	/**
+	 *
+	 * @param player
+	 * @returns
+	 */
+	private buyWithMoney(playerEntity: PlayerEntity): boolean {
+		this.logger.Info(`${this.attributes.ComponentId} attempting to be purchased by ${playerEntity.player}`);
+		return this.moneyService.spendMoneyForEntity(playerEntity, this.attributes.Price!);
 	}
 
+	/**
+	 *
+	 * @param player
+	 * @returns
+	 */
 	private async buyWithRobux(player: Player): Promise<boolean | void> {
 		return this.mtxService
 			.checkForGamepassOwned(player, this.attributes.GamepassId!)
@@ -198,39 +296,55 @@ export class PurchaseButton extends BaseComponent<IPurchaseButtonAttributes, IPu
 			});
 	}
 
-	/** @hidden */
+	/**
+	 *
+	 * @param visible
+	 * @param force
+	 *
+	 * @hidden
+	 */
 	private async setButtonVisibility(visible: boolean, force: boolean): Promise<void> {
-		const goal = visible ? 0 : 1;
-		const base = visible ? 1 : 0;
+		const promises: Array<Promise<void>> = [];
 
-		if (force) {
-			this.touchPart.Transparency = goal;
-			this.touchPart.CanCollide = visible;
-			return;
-		}
+		this.transparencyMap.forEach((originalTransparency, part) => {
+			const goal = visible ? originalTransparency : 1;
+			const base = visible ? 1 : originalTransparency;
 
-		this.touchPart.CanCollide = visible;
+			if (force) {
+				part.Transparency = goal;
+				return;
+			}
 
-		const spring = new Spring<number>(base, 5, goal, 1);
+			const spring = new Spring<number>(base, 5, goal, 1);
+			promises.push(
+				new Promise((resolve) => {
+					const connection = RunService.Heartbeat.Connect((deltaTime) => {
+						const position = spring.update(deltaTime);
+						if (base !== 1) {
+							part.Transparency = lerpNumber(base, goal, position);
+						} else {
+							part.Transparency = lerpNumber(goal, base, position);
+						}
+						if ((goal === 1 && position > 0.99) || (goal === 0 && position < 0.01)) {
+							part.Transparency = goal;
+							connection.Disconnect();
+							resolve();
+						}
+					});
+				}),
+			);
+		});
 
-		this.janitor.Add(
-			RunService.Heartbeat.Connect((deltaTime) => {
-				const position = spring.update(deltaTime);
-				this.touchPart.Transparency = lerpNumber(base, goal, position);
+		this.canCollideMap.forEach((originalCanCollide, part) => {
+			part.CanCollide = visible ? originalCanCollide : false;
+		});
 
-				if ((goal === 1 && position > 0.99) || (goal === 0 && position < 0.01)) {
-					this.touchPart.Transparency = goal;
-					this.janitor.Remove("Visibility");
-				}
-			}),
-			"Disconnect",
-			"Visibility",
-		);
+		await Promise.all(promises);
 	}
 
 	/** Show the purchase button using a transparency lerp. */
 	public showButton(): Promise<void> {
-		return this.setButtonVisibility(true, true);
+		return this.setButtonVisibility(true, false);
 	}
 
 	/** Hide the purchase button using a transparency lerp. */

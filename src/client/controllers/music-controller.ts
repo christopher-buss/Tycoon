@@ -1,26 +1,36 @@
 import { Controller, OnInit, OnStart } from "@flamework/core";
+import { Logger } from "@rbxts/log";
 import { ContentProvider, ReplicatedStorage, SoundService } from "@rbxts/services";
 
 @Controller({})
 export class MusicController implements OnStart, OnInit {
-	private backgroundMusic: Sound[];
+	private backgroundMusic: Array<Sound>;
 	private backgroundMusicSoundGroup!: SoundGroup;
 	private songIndex: number;
 
-	constructor() {
+	constructor(private readonly logger: Logger) {
 		this.backgroundMusic = [];
 		this.songIndex = 0;
 	}
 
-	public onInit() {
-		this.backgroundMusic = ReplicatedStorage.Sounds.BackgroundMusic.GetChildren() as Sound[];
+	public onInit(): void {
+		this.backgroundMusic = ReplicatedStorage.Sounds.BackgroundMusic.GetChildren() as Array<Sound>;
 		this.backgroundMusicSoundGroup = SoundService.BackgroundMusic;
 	}
 
-	public onStart() {
-		Promise.try(() => ContentProvider.PreloadAsync(this.backgroundMusic)).andThen(() => {
-			this.playMusic();
-		});
+	public onStart(): void {
+		Promise.try(() => ContentProvider.PreloadAsync(this.backgroundMusic))
+			.andThen(() => {
+				if (this.backgroundMusic.size() === 0) {
+					warn(`No background music found!`);
+					return;
+				}
+
+				this.playMusic();
+			})
+			.catch((err) => {
+				this.logger.Warn(err);
+			});
 	}
 
 	private playMusic(): void {

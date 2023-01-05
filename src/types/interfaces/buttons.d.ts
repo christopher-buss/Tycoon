@@ -4,18 +4,14 @@ export interface IPurchaseButtonAttributes {
 	DisplayName?: string;
 	GamepassId?: number;
 	Price?: number;
+	Rebirths?: number;
 }
 
 export interface IPurchaseButtonModel extends Model {
-	Head: BasePart & MeshPart;
+	TouchPart: BasePart & MeshPart;
 }
 
 export interface IRebirthButtonAttributes {}
-
-// export interface IRebirthButtonModel extends Model {
-// 	TouchPart: BasePart;
-// 	Board: BasePart;
-// }
 
 export interface IRebirthButtonModel extends BasePart {
 	TouchPart: BasePart;

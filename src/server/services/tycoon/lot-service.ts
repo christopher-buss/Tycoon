@@ -3,9 +3,10 @@ import { Modding, OnStart, Service } from "@flamework/core";
 import { Logger } from "@rbxts/log";
 import { Option, Result } from "@rbxts/rust-classes";
 import { Lot } from "server/components/lot/lot";
-import playerEntity from "server/modules/classes/player-entity";
-import KickCode from "types/enum/kick-reason";
+import { default as PlayerEntity, default as playerEntity } from "server/modules/classes/player-entity";
+import PlayerKickReason from "types/enum/kick-reason";
 import { LotErrors } from "types/interfaces/lots";
+
 import PlayerRemovalService from "../player/player-removal-service";
 import { OnPlayerJoin } from "../player/player-service";
 
@@ -16,8 +17,8 @@ export interface OnLotOwned {
 	 * This should only used if you want to have extra functionality after
 	 * the player owns their own lot.
 	 *
-	 * @param lot
-	 * @param newOwner
+	 * @param lot lot now owned by the player.
+	 * @param newOwner player that now owns the lot.
 	 */
 	onLotOwned(lot: Lot, newOwner: Player): void;
 }
@@ -39,7 +40,6 @@ export class LotService implements OnStart, OnPlayerJoin {
 		this.lotOwnedObjs = new Set();
 	}
 
-	/** @hidden */
 	public onStart(): void {
 		Modding.onListenerAdded<OnLotOwned>((object) => {
 			this.lotOwnedObjs.add(object);
@@ -58,29 +58,29 @@ export class LotService implements OnStart, OnPlayerJoin {
 
 		const player = playerEntity.player;
 		if (!this.areLotsAvailable()) {
-			this.logger.Warn("There are no available lots in this server!");
-			this.playerRemovalService.removeForBug(player, KickCode.PlayerFullServer);
+			this.logger.Warn(`There are no lots available in this server. Kicking {@Player}...`);
+			this.playerRemovalService.removeForBug(player, PlayerKickReason.PlayerFullServer);
 		}
 
-		const assign_res = this.assignRandomLotToPlayer(player);
+		const assign_res = this.assignRandomLotToPlayer(playerEntity);
 		if (assign_res.isErr()) {
 			this.logger.Warn("There are no available lots in this server!");
-			this.playerRemovalService.removeForBug(player, KickCode.PlayerFullServer);
+			this.playerRemovalService.removeForBug(player, PlayerKickReason.PlayerFullServer);
 		}
 	}
 
 	/**
 	 * Assigns a random lot to the player.
 	 *
-	 * @param player
+	 * @param playerEntity
 	 * @returns the component id of the lot assigned to the player if
 	 * successful.
 	 */
-	public assignRandomLotToPlayer(player: Player): Result<string, LotErrors> {
+	public assignRandomLotToPlayer(playerEntity: PlayerEntity): Result<string, LotErrors> {
 		const vacantLot = this.getVacantLots();
 		const randomLot_opt = Option.wrap(vacantLot[rng.NextInteger(0, vacantLot.size() - 1)]);
 		return randomLot_opt.match<Result<string, LotErrors>>(
-			(lot: Lot) => lot.assignOwner(player).map<string>(() => lot.attributes.ComponentId!),
+			(lot: Lot) => lot.assignOwner(playerEntity).map<string>(() => lot.name),
 			() => Result.err<string, LotErrors>(LotErrors.NoLots),
 		);
 	}
@@ -88,7 +88,7 @@ export class LotService implements OnStart, OnPlayerJoin {
 	/**
 	 * @returns an array of all vacant lots.
 	 */
-	public getVacantLots(): Lot[] {
+	public getVacantLots(): Array<Lot> {
 		return this.getAllLots().filter((lot) => lot.getOwner().isNone());
 	}
 
@@ -102,7 +102,7 @@ export class LotService implements OnStart, OnPlayerJoin {
 	/**
 	 * @returns all the lots in the server, occupied or otherwise.
 	 */
-	public getAllLots(): Lot[] {
+	public getAllLots(): Array<Lot> {
 		return this.components.getAllComponents<Lot>();
 	}
 
@@ -114,8 +114,7 @@ export class LotService implements OnStart, OnPlayerJoin {
 	 * @hidden
 	 */
 	public fireOnLotOwned(lot: Lot): void {
-		const owner = lot.getOwner().expect(`[${lot.attributes.ComponentId!}]: Expected owner in lot`);
-
+		const owner = lot.getOwner().expect(`[${lot.name}]: Expected owner in lot`);
 		for (const listener of this.lotOwnedObjs) {
 			task.spawn(() => listener.onLotOwned(lot, owner));
 		}

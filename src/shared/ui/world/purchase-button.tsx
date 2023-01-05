@@ -47,7 +47,7 @@ function ButtonBillboard({ Adornee, DisplayName, Color, Price, Janitor }: IProps
 				Key="Price"
 				Position={UDim2.fromScale(0.5, 0.6)}
 				Size={UDim2.fromScale(0.5, 0.4)}
-				Text={`$${Price}`}
+				Text={`${Price}`}
 				TextTransparency={binding}
 				Font={Enum.Font.GothamBlack}
 				TextColor3={Color}

@@ -4,9 +4,11 @@ import { Logger } from "@rbxts/log";
 import ProfileService from "@rbxts/profileservice";
 import { ProfileStore } from "@rbxts/profileservice/globals";
 import { Option } from "@rbxts/rust-classes";
-import { Players, RunService } from "@rbxts/services";
+import { DataStoreService, HttpService, Players, RunService } from "@rbxts/services";
 import DefaultPlayerData, { IPlayerData, PlayerDataProfile } from "shared/meta/default-player-data";
-import KickCode from "types/enum/kick-reason";
+import { EncodePartIdentifier, encoderPartIdentifiers } from "shared/meta/part-identifiers";
+import PlayerKickReason from "types/enum/kick-reason";
+
 import PlayerRemovalService from "./player-removal-service";
 
 const EloKey = "Ruby Key"; // Rebirths
@@ -38,34 +40,16 @@ export default class PlayerDataService {
 		DataStore2.Combine("DATA", EloKey, PcsKey, CshKey, DntKey, FstKey, DntDaily);
 	}
 
-	// TODO
-	public async migrateDataToProfileStore(player: Player, profile: PlayerDataProfile) {
-		this.logger.Info(`Migrating data for ${player.Name} to ProfileStore`);
-
-		const rebirths = DataStore2<number>(EloKey, player).Get();
-		if (rebirths !== undefined) {
-			profile.Data.rebirths = rebirths;
-		}
-		print(rebirths);
-
-		const cash = DataStore2<number>(PcsKey, player).Get();
-		if (cash !== undefined) {
-			profile.Data.cash = cash;
-		}
-		print(cash);
-
-		this.logger.Info(`Finished migrating data for ${player.Name} to ProfileStore`);
-
-		return profile;
-	}
-
+	/**
+	 *
+	 * @param player
+	 * @returns
+	 */
 	public async loadPlayerProfile(player: Player): Promise<Option<PlayerDataProfile>> {
 		const dataKey = tostring(player.UserId);
-		// const liveProfile = this.gameProfileStore.ViewProfileAsync(dataKey);
-
-		const profile = this.gameProfileStore.LoadProfileAsync(dataKey, "ForceLoad");
+		let profile = this.gameProfileStore.LoadProfileAsync(dataKey, "ForceLoad");
 		if (profile === undefined) {
-			this.removalService.removeForBug(player, KickCode.PlayerProfileUndefined);
+			this.removalService.removeForBug(player, PlayerKickReason.PlayerProfileUndefined);
 			return Option.none<PlayerDataProfile>();
 		}
 
@@ -78,19 +62,68 @@ export default class PlayerDataService {
 
 		profile.Reconcile();
 
-		// if (liveProfile === undefined) {
-		// 	// We currently don't have a store. Need to check if we have old data from DataStore2.
-		// 	profile = await this.migrateDataToProfileStore(player, profile);
-		// }
+		if (profile.Data.migrated === false) {
+			profile = await this.migrateDataToProfileStore(player, profile);
+		}
 
 		profile.ListenToRelease(() => {
 			if (!player.IsDescendantOf(game)) {
 				return Option.none<PlayerDataProfile>();
 			}
 
-			this.removalService.removeForBug(player, KickCode.PlayerProfileReleased);
+			this.removalService.removeForBug(player, PlayerKickReason.PlayerProfileReleased);
 		});
 
 		return Option.some<PlayerDataProfile>(profile);
+	}
+
+	/**
+	 * This function migrates data from the old datastores to ProfileService.
+	 *
+	 * Although most games will not need to do this, it is included here incase
+	 * of a future migration.
+	 *
+	 * @param player The player to migrate data for
+	 * @param profile The profileservice profile to migrate data to
+	 * @returns The profileservice profile with the migrated data
+	 */
+	private async migrateDataToProfileStore(player: Player, profile: PlayerDataProfile): Promise<PlayerDataProfile> {
+		this.logger.Info(`Migrating data for ${player.Name} to ProfileStore`);
+
+		const rebirths = DataStore2<number>(EloKey, player).Get();
+		if (rebirths !== undefined) {
+			profile.Data.rebirths = rebirths;
+		}
+
+		const cash = DataStore2<number>(CshKey, player).Get();
+		if (cash !== undefined) {
+			profile.Data.cash = cash;
+		}
+
+		const purchases = DataStore2<string>(PcsKey, player).Get();
+		if (purchases !== undefined) {
+			const decodedPurchases = HttpService.JSONDecode(purchases) as string;
+
+			const purchaseArray: Array<number> = [];
+			for (const purchase of decodedPurchases.split("$%")) {
+				const encodedPurchase = encoderPartIdentifiers[purchase as keyof EncodePartIdentifier];
+				if (encodedPurchase !== undefined) {
+					purchaseArray.push(encodedPurchase);
+				}
+			}
+
+			profile.Data.purchased = purchaseArray;
+		}
+
+		task.defer(() => {
+			const DataStore = DataStoreService.GetDataStore("DATA");
+			DataStore.RemoveAsync(tostring(player.UserId));
+		});
+
+		profile.Data.migrated = true;
+
+		this.logger.Info(`Finished migrating data for ${player.Name} to ProfileStore`);
+
+		return profile;
 	}
 }

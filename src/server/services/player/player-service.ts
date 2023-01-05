@@ -9,8 +9,9 @@ import { Events, Functions } from "server/network";
 import { IPlayerData } from "shared/meta/default-player-data";
 import { FlameworkUtil } from "shared/util/flamework-utils";
 import { NetResult } from "shared/util/networking";
-import KickCode from "types/enum/kick-reason";
+import PlayerKickReason from "types/enum/kick-reason";
 import { NetPlayerData, ServerError } from "types/interfaces/network-types";
+
 import PlayerDataService from "./player-data-service";
 import PlayerRemovalService from "./player-removal-service";
 
@@ -45,7 +46,7 @@ export class PlayerService implements OnInit, OnStart {
 	/** @hidden */
 	public onInit(): void {
 		Players.PlayerAdded.Connect((player) => {
-			this.onPlayerJoin(player);
+			this.onPlayerJoin(player).catch((err) => this.logger.Error(err));
 		});
 
 		Players.PlayerRemoving.Connect((player) => {
@@ -53,11 +54,11 @@ export class PlayerService implements OnInit, OnStart {
 		});
 
 		game.BindToClose(() => {
-			this.logger.Debug("Game closing, holding open until all player entities are removed.");
+			this.logger.Debug(`Game closing, holding open until all player entities are removed.`);
 			while (!this.playerEntities.isEmpty()) {
 				this.onEntityRemoving.Wait();
 			}
-			this.logger.Debug("All player entities removed, closing game.");
+			this.logger.Debug(`All player entities removed, closing game.`);
 		});
 	}
 
@@ -83,9 +84,9 @@ export class PlayerService implements OnInit, OnStart {
 			}
 		});
 
-		for (const player of Players.GetPlayers()) {
+		Players.GetPlayers().forEach((player) => {
 			task.spawn(() => this.onPlayerJoin(player));
-		}
+		});
 
 		this.setupOnPlayerJoinLifecycle();
 	}
@@ -131,10 +132,10 @@ export class PlayerService implements OnInit, OnStart {
 	 * Called internally when a player joins the game.
 	 * @hidden
 	 */
-	private async onPlayerJoin(player: Player): Promise<void> {
+	public async onPlayerJoin(player: Player): Promise<void> {
 		const playerProfile_opt = await this.playerDataService.loadPlayerProfile(player);
 		if (playerProfile_opt.isNone()) {
-			this.playerRemovalService.removeForBug(player, KickCode.PlayerEntityInstantiationError);
+			this.playerRemovalService.removeForBug(player, PlayerKickReason.PlayerEntityInstantiationError);
 			return;
 		}
 
@@ -165,6 +166,8 @@ export class PlayerService implements OnInit, OnStart {
 			debug.profilebegin(id);
 			Promise.defer(() => {
 				event.onPlayerJoin(playerEntity);
+			}).catch((err) => {
+				this.logger.Error(err);
 			});
 			debug.profileend();
 		}

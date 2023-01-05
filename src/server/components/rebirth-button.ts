@@ -2,8 +2,10 @@ import { BaseComponent, Component } from "@flamework/components";
 import { OnStart } from "@flamework/core";
 import { FormatCompact } from "@rbxts/format-number";
 import { Logger } from "@rbxts/log";
+import { LeaderstatsService } from "server/services/leaderstats-service";
 import { PlayerChatService } from "server/services/player/player-chat-service";
 import { PlayerService } from "server/services/player/player-service";
+import { MoneyService } from "server/services/stores/money-service";
 import { BASE_REBIRTH_PRICE, REBIRTH_ADDITIONAL_PRICE } from "shared/shared-constants";
 import { PlayerUtil } from "shared/util/player-util";
 import { Tag } from "types/enum/tags";
@@ -17,14 +19,16 @@ export class RebirthButton extends BaseComponent<IRebirthButtonAttributes, IRebi
 
 	constructor(
 		private readonly logger: Logger,
-		private readonly playerService: PlayerService,
+		private readonly leaderstatsService: LeaderstatsService,
+		private readonly moneyService: MoneyService,
 		private readonly playerChatService: PlayerChatService,
+		private readonly playerService: PlayerService,
 	) {
 		super();
 		this.debounce = false;
 	}
 
-	public onStart() {
+	public onStart(): void {
 		this.instance.TouchPart.Touched.Connect((part: BasePart) => {
 			this.onComponentTouched(part);
 		});
@@ -62,12 +66,22 @@ export class RebirthButton extends BaseComponent<IRebirthButtonAttributes, IRebi
 
 		if (playerData.cash >= BASE_REBIRTH_PRICE + totalRebirths + REBIRTH_ADDITIONAL_PRICE) {
 			this.logger.Info(`Player ${player} is rebirthing.`);
+
+			this.moneyService.updatePlayerMoney(true, playerEntity, 0);
 			playerEntity.updateData((data) => {
 				data.rebirths += 1;
-				data.cash = 0;
 				data.purchased = [];
 				return data;
 			});
+
+			this.leaderstatsService.getStatObject(playerEntity.player, "Rebirths").match(
+				(stat) => {
+					stat.Value = playerEntity.data.rebirths;
+				},
+				() => {
+					this.logger.Error(`Failed to update leaderstats for ${playerEntity.player}`);
+				},
+			);
 
 			this.playerChatService.sendSystemMessage(
 				player.Name +
@@ -85,9 +99,9 @@ export class RebirthButton extends BaseComponent<IRebirthButtonAttributes, IRebi
 
 			this.playerChatService.sendLocalSystemMessage(
 				player,
-				"You can only Rebirth when you have purchased all Droppers and Tycoon Objects, and can pay a Rebirth Fee of in-game ¥" +
+				"You can only Rebirth when you have purchased all Droppers and Tycoon Objects, and can pay a Rebirth Fee of in-game $" +
 					FormatCompact(BASE_REBIRTH_PRICE + totalRebirths + REBIRTH_ADDITIONAL_PRICE) +
-					". Rebirth will make your Yen Multiplier " +
+					". Rebirth will make your Cash Multiplier " +
 					string.format(
 						"%.1f",
 						(1 + totalRebirths / 5 + 0.2) * (playerData.gamePasses.doubleMoneyGamepass ? 1 : 2),

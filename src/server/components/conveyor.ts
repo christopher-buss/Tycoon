@@ -20,7 +20,7 @@ interface IConveyor extends BasePart {
 @Component({
 	tag: Tag.ConveyorBelt,
 })
-export class conveyor extends BaseComponent<IConveyorAttributes, IConveyor> implements OnStart {
+export class ConveyorComponent extends BaseComponent<IConveyorAttributes, IConveyor> implements OnStart {
 	public onStart(): void {
 		const direction = this.instance.AttEnd.WorldPosition.sub(this.instance.AttStart.WorldPosition);
 

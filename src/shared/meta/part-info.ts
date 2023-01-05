@@ -1,366 +1,417 @@
-export const PartInfo = {
-	["Robux Dropper"]: {
-		Price: 175,
-		Value: 3,
-		DropTime: 5,
-	},
-
-	["Robux Upgrader"]: {
-		Price: 175,
-		Value: 3,
-		DropTime: 5,
-	},
-
-	["Dumpling"]: {
-		Price: 0,
-		Value: 8,
-		DropTime: 5,
-	},
-
-	["Peppered Dumpling"]: {
-		Price: 25,
-		Value: 8,
-		DropTime: 6,
-	},
-
-	["Mint Dumpling"]: {
-		Price: 0,
-		Value: 8,
-		DropTime: 7,
-	},
-
-	["Cool Mint Dumpling"]: {
-		Price: 0,
-		Value: 8,
-		DropTime: 8,
-	},
-
-	["Sugar Dumpling"]: {
-		Price: 0,
-		Value: 9,
-		DropTime: 9,
-	},
-
-	["Sugar Cream Dumpling"]: {
-		Price: 0,
-		Value: 10,
-		DropTime: 10,
-	},
-
-	["Pineapple Dumpling"]: {
-		Price: 0,
-		Value: 11,
-		DropTime: 11,
-	},
-
-	["Cinnamon Dumpling"]: {
-		Price: 0,
-		Value: 12,
-		DropTime: 13,
-	},
-
-	["Cream Dumpling"]: {
-		Price: 0,
-		Value: 13,
-		DropTime: 14,
-	},
-
-	["Velvet Dumpling"]: {
-		Price: 0,
-		Value: 14,
-		DropTime: 15,
-	},
-
-	["Plum Dumpling"]: {
-		Price: 0,
-		Value: 15,
-		DropTime: 16,
-	},
-
-	["Chocolate Dumpling"]: {
-		Price: 0,
-		Value: 15,
-		DropTime: 17,
-	},
-
-	["Jelly Dumpling"]: {
-		Price: 0,
-		Value: 15,
-		DropTime: 18,
-	},
-
-	["Vegetable Dumpling"]: {
-		Price: 0,
-		Value: 15,
-		DropTime: 19,
-	},
-
-	["Sugar Vegetable Dumpling"]: {
-		Price: 0,
-		Value: 15,
-		DropTime: 20,
-	},
-
-	["Chocolate Spread Dumpling"]: {
-		Price: 0,
-		Value: 15,
-		DropTime: 21,
-	},
-
-	["Layered Velvet Dumpling"]: {
-		Price: 0,
-		Value: 15,
-		DropTime: 22,
-	},
-
-	["Strawberry Dumpling"]: {
-		Price: 0,
-		Value: 15,
-		DropTime: 23,
-	},
-
-	["Color Creamed Dumpling"]: {
-		Price: 0,
-		Value: 15,
-		DropTime: 24,
-	},
-
-	["Rose Scent Dumpling"]: {
-		Price: 0,
-		Value: 15,
-		DropTime: 25,
-	},
-
-	["Chili Pepper Dumpling"]: {
-		Price: 0,
-		Value: 15,
-		DropTime: 26,
-	},
-
-	["King Sugar Dumpling"]: {
-		Price: 0,
-		Value: 15,
-		DropTime: 27,
-	},
-
-	["Emperor Dumpling"]: {
-		Price: 0,
-		Value: 15,
-		DropTime: 28,
-	},
-
-	["Rose Crested Dumpling"]: {
-		Price: 0,
-		Value: 15,
-		DropTime: 29,
-	},
-
-	["Imperial Dumpling"]: {
-		Price: 0,
-		Value: 15,
-		DropTime: 30,
-	},
-	["Cabbage"]: {
-		Price: 0,
-		Value: 5,
-		DropTime: 5,
-	},
-
-	["Spring Onion"]: {
-		Price: 0,
-		Value: 6,
-		DropTime: 6,
-	},
-
-	["Blue Octopus"]: {
-		Price: 0,
-		Value: 7,
-		DropTime: 7,
-	},
-
-	["Blue Squid"]: {
-		Price: 0,
-		Value: 8,
-		DropTime: 8,
-	},
-
-	["Crab"]: {
-		Price: 0,
-		Value: 9,
-		DropTime: 9,
-	},
-
-	["Lobster"]: {
-		Price: 0,
-		Value: 10,
-		DropTime: 10,
-	},
-
-	["Filleted Salmon"]: {
-		Price: 0,
-		Value: 11,
-		DropTime: 11,
-	},
-
-	["Salmon Rice Cake"]: {
-		Price: 0,
-		Value: 12,
-		DropTime: 12,
-	},
-
-	["Seaweed Rice Cake"]: {
-		Price: 0,
-		Value: 13,
-		DropTime: 12,
-	},
-
-	["Pressure Washer"]: {
-		Price: 0,
-		Value: 10,
-	},
-
-	["Dumpling Oven"]: {
-		Price: 0,
-		Value: 10,
-	},
-
-	["Dumpling Packager"]: {
-		Price: 0,
-		Value: 30,
-	},
-
-	["Dumpling Scenter"]: {
-		Price: 0,
-		Value: 20,
-	},
-
-	["Dumpling Gold Standard"]: {
-		Price: 0,
-		Value: 40,
-	},
-
-	["Dumpling Tube Cleaner"]: {
-		Price: 0,
-		Value: 0,
-	},
-
-	["Dumpling Tube Upgrade"]: {
-		Price: 0,
-		Value: 0,
-	},
-
-	["Crate Net Machine"]: {
-		Price: 0,
-		Value: 20,
-	},
-
-	["Dumpling Boat Upgrade"]: {
-		Price: 0,
-		Value: 0,
-	},
-
-	["Fishery Boat Upgrade"]: {
-		Price: 0,
-		Value: 0,
-	},
-
-	["Fishery Chemical Wash"]: {
-		Price: 0,
-		Value: 0,
-	},
-
-	["Fishery Pressure Wash"]: {
-		Price: 0,
-		Value: 0,
-	},
+export type DropperKey = {
+	Price: number;
+	Value: number;
+	DropTime: number;
 };
 
-export type PartInfoKey = keyof typeof PartInfo;
-export type PartInfoValue = typeof PartInfo["Dumpling"];
+export type UpgraderKey = string & {
+	Price: number;
+	Additive: number;
+	Multiplier: number;
+};
+
+export type ItemKey = {
+	Price: 0;
+	Value: 0;
+};
+
+export type PartInfoKey = DropperKey | ItemKey;
+
+export type PartInfoType = keyof typeof PartInfo;
+export type PartInfoValue = typeof PartInfo["Perfume"];
+
+export type PartInfoUpgraderKey = keyof typeof PartInfo["Basic Upgrader1"];
+export type PartInfoUpgrader = typeof PartInfo["Basic Upgrader1"];
+
+export const PartInfo = {
+	//**************************************************************************
+	//** Droppers
+	//**************************************************************************
+	["Perfume"]: {
+		Price: 0,
+		Value: 1,
+		DropTime: 2,
+	} as DropperKey,
+
+	["Lipstick"]: {
+		Price: 0,
+		Value: 0,
+		DropTime: 2,
+	} as DropperKey,
+
+	["Beauty Set"]: {
+		Price: 0,
+		Value: 1,
+		DropTime: 2,
+	} as DropperKey,
+
+	["Eyeliner"]: {
+		Price: 0,
+		Value: 0,
+		DropTime: 2,
+	} as DropperKey,
+
+	["Brush"]: {
+		Price: 0,
+		Value: 0,
+		DropTime: 2,
+	} as DropperKey,
+
+	["Premium Perfume"]: {
+		Price: 0,
+		Value: 0,
+		DropTime: 2,
+	} as DropperKey,
+
+	["Shampoo"]: {
+		Price: 0,
+		Value: 0,
+		DropTime: 3,
+	} as DropperKey,
+
+	["Comb"]: {
+		Price: 0,
+		Value: 0,
+		DropTime: 3,
+	} as DropperKey,
+
+	["Conditioner"]: {
+		Price: 0,
+		Value: 0,
+		DropTime: 3,
+	} as DropperKey,
+
+	["Moisturizer"]: {
+		Price: 0,
+		Value: 0,
+		DropTime: 3,
+	} as DropperKey,
+
+	["Mirror"]: {
+		Price: 0,
+		Value: 0,
+		DropTime: 3,
+	} as DropperKey,
+
+	["Deluxe Hairspray"]: {
+		Price: 0,
+		Value: 0,
+		DropTime: 3,
+	} as DropperKey,
+
+	["Pet Toy"]: {
+		Price: 0,
+		Value: 0,
+		DropTime: 3,
+	} as DropperKey,
+
+	["Pet Food"]: {
+		Price: 0,
+		Value: 0,
+		DropTime: 3,
+	} as DropperKey,
+
+	["Pet Comb"]: {
+		Price: 0,
+		Value: 0,
+		DropTime: 3,
+	} as DropperKey,
+
+	["Pet Treats"]: {
+		Price: 0,
+		Value: 0,
+		DropTime: 3,
+	} as DropperKey,
+
+	["Pet Soap"]: {
+		Price: 0,
+		Value: 0,
+		DropTime: 3,
+	} as DropperKey,
+
+	["Pet House"]: {
+		Price: 0,
+		Value: 0,
+		DropTime: 3,
+	} as DropperKey,
+
+	["Water"]: {
+		Price: 0,
+		Value: 0,
+		DropTime: 3,
+	} as DropperKey,
+
+	//**************************************************************************
+	//** Upgraders
+	//**************************************************************************
+	["Basic Upgrader1"]: {
+		Price: 10,
+		Additive: 0,
+		Multiplier: 1,
+	} as UpgraderKey,
+
+	["Basic Upgrader2"]: {
+		Price: 10,
+		Additive: 0,
+		Multiplier: 1,
+	} as UpgraderKey,
+
+	["Basic Upgrader3"]: {
+		Price: 10,
+		Additive: 0,
+		Multiplier: 1,
+	} as UpgraderKey,
+
+	["Deluxe Upgrader1"]: {
+		Price: 10,
+		Additive: 0,
+		Multiplier: 1,
+	} as UpgraderKey,
+
+	["Deluxe Upgrader2"]: {
+		Price: 10,
+		Additive: 0,
+		Multiplier: 1,
+	} as UpgraderKey,
+
+	["Deluxe Upgrader3"]: {
+		Price: 10,
+		Additive: 0,
+		Multiplier: 1,
+	} as UpgraderKey,
+
+	["Rainbow Upgrader1"]: {
+		Price: 10,
+		Additive: 0,
+		Multiplier: 1,
+	} as UpgraderKey,
+
+	["Rainbow Upgrader2"]: {
+		Price: 10,
+		Additive: 0,
+		Multiplier: 1,
+	} as UpgraderKey,
+
+	["Rainbow Upgrader3"]: {
+		Price: 10,
+		Additive: 0,
+		Multiplier: 1,
+	} as UpgraderKey,
+
+	//**************************************************************************
+	//** Items
+	//**************************************************************************
+	["Beauty Desk1"]: {
+		Price: 0,
+		Value: 0,
+	} as ItemKey,
+
+	["Beauty Desk2"]: {
+		Price: 0,
+		Value: 0,
+	} as ItemKey,
+
+	["Beauty Desk3"]: {
+		Price: 0,
+		Value: 0,
+	} as ItemKey,
+
+	["Beauty Desk4"]: {
+		Price: 0,
+		Value: 0,
+	} as ItemKey,
+
+	["Salon"]: {
+		Price: 0,
+		Value: 0,
+	} as ItemKey,
+
+	["Receptionist"]: {
+		Price: 0,
+		Value: 0,
+	} as ItemKey,
+
+	["Reception Desk"]: {
+		Price: 0,
+		Value: 0,
+	} as ItemKey,
+
+	["Pet Bath2"]: {
+		Price: 0,
+		Value: 0,
+	} as ItemKey,
+
+	["Pet Bath3"]: {
+		Price: 0,
+		Value: 0,
+	} as ItemKey,
+
+	["Pet Bath1"]: {
+		Price: 0,
+		Value: 0,
+	} as ItemKey,
+
+	["Pet Bath4"]: {
+		Price: 0,
+		Value: 0,
+	} as ItemKey,
+
+	["Seating2"]: {
+		Price: 0,
+		Value: 0,
+	} as ItemKey,
+
+	["Conveyor Belt2"]: {
+		Price: 0,
+		Value: 0,
+	} as ItemKey,
+
+	["Pet Salon"]: {
+		Price: 0,
+		Value: 0,
+	} as ItemKey,
+
+	["Conveyor Belt1"]: {
+		Price: 0,
+		Value: 0,
+	} as ItemKey,
+
+	["Seating3"]: {
+		Price: 0,
+		Value: 0,
+	} as ItemKey,
+
+	["Roof"]: {
+		Price: 0,
+		Value: 0,
+	} as ItemKey,
+
+	["Seating4"]: {
+		Price: 0,
+		Value: 0,
+	} as ItemKey,
+
+	["Customer3"]: {
+		Price: 0,
+		Value: 0,
+	} as ItemKey,
+
+	["Cleansing Sink1"]: {
+		Price: 0,
+		Value: 0,
+	} as ItemKey,
+
+	["Customer4"]: {
+		Price: 0,
+		Value: 0,
+	} as ItemKey,
+
+	["Customer6"]: {
+		Price: 0,
+		Value: 0,
+	} as ItemKey,
+
+	["Customer8"]: {
+		Price: 0,
+		Value: 0,
+	} as ItemKey,
+
+	["Cleansing Sink2"]: {
+		Price: 0,
+		Value: 0,
+	} as ItemKey,
+
+	["Cleansing Sink3"]: {
+		Price: 0,
+		Value: 0,
+	} as ItemKey,
+
+	["Cleansing Sink4"]: {
+		Price: 0,
+		Value: 0,
+	} as ItemKey,
+
+	["Customer5"]: {
+		Price: 0,
+		Value: 0,
+	} as ItemKey,
+
+	["Customer2"]: {
+		Price: 0,
+		Value: 0,
+	} as ItemKey,
+
+	["Customer1"]: {
+		Price: 0,
+		Value: 0,
+	} as ItemKey,
+
+	["Customer7"]: {
+		Price: 0,
+		Value: 0,
+	} as ItemKey,
+
+	["Seating6"]: {
+		Price: 0,
+		Value: 0,
+	} as ItemKey,
+
+	["Seating5"]: {
+		Price: 0,
+		Value: 0,
+	} as ItemKey,
+
+	["Seating1"]: {
+		Price: 0,
+		Value: 0,
+	} as ItemKey,
+
+	["Frog"]: {
+		Price: 0,
+		Value: 0,
+	} as ItemKey,
+
+	["Fox"]: {
+		Price: 0,
+		Value: 0,
+	} as ItemKey,
+
+	["Lizard"]: {
+		Price: 0,
+		Value: 0,
+	} as ItemKey,
+
+	["Bunny"]: {
+		Price: 0,
+		Value: 0,
+	} as ItemKey,
+
+	["Cat"]: {
+		Price: 0,
+		Value: 0,
+	} as ItemKey,
+
+	["Dog"]: {
+		Price: 0,
+		Value: 0,
+	} as ItemKey,
+
+	["Water Bowl"]: {
+		Price: 0,
+		Value: 0,
+	} as ItemKey,
+
+	["Conveyor Belt3"]: {
+		Price: 0,
+		Value: 0,
+	} as ItemKey,
+};
 
 export const Progress = {
-	["Pressure Washer"]: {
-		PathType: "Dumpling",
-		Progress: 229,
-		Audio: "9112854440",
-	},
-
-	["Dumpling Oven"]: {
-		PathType: "Dumpling",
-		Progress: 265,
-		Audio: "171186876",
-	},
-
-	["Dumpling Packager"]: {
-		PathType: "Dumpling",
-		Progress: 348,
-		Audio: "9114054425",
-	},
-
-	["Dumpling Scenter"]: {
-		PathType: "Dumpling",
-		Progress: 385,
-		Audio: "186883063",
-	},
-
-	["Dumpling Gold Standard"]: {
-		PathType: "Dumpling",
-		Progress: 453,
-		Audio: "3378937315",
-	},
-
-	["Robux Dropper"]: {
-		PathType: "Dumpling",
-		Progress: 427,
-		Audio: "0",
-	},
-
-	["Robux Upgrader"]: {
-		PathType: "Dumpling",
-		Progress: 440,
-		Audio: "0",
-	},
-
-	["Dumpling Tube Cleaner"]: {
-		PathType: "Dumpling",
-		Progress: 488,
-		Audio: "0",
-	},
-
-	["Dumpling Tube Upgrade"]: {
-		PathType: "Dumpling",
-		Progress: 504,
-		Audio: "0",
-	},
-
-	["Crate Net Machine"]: {
-		PathType: "Dumpling",
-		Progress: 541,
-		Audio: "171186876",
-	},
-
-	["Dumpling Boat Upgrade"]: {
-		PathType: "Dumpling",
-		Progress: 555,
-		Audio: "0",
-	},
-
-	["Fishery Chemical Wash"]: {
-		PathType: "Fish",
-		Progress: 28,
-		Audio: "9112854440",
-	},
-
-	["Fishery Pressure Wash"]: {
-		PathType: "Fish",
-		Progress: 47,
-		Audio: "9112854440",
-	},
-
-	["Fishery Boat Upgrade"]: {
-		PathType: "Fish",
-		Progress: 60,
-		Audio: "0",
+	["Rainbow Upgrader1"]: {
+		Path: 0,
+		Progress: 11,
+		Audio: "1",
 	},
 };
 

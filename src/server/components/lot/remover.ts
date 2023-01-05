@@ -4,6 +4,7 @@ import { Logger } from "@rbxts/log";
 import { FlameworkUtil } from "shared/util/flamework-utils";
 import { Tag } from "types/enum/tags";
 import { ILotModel } from "types/interfaces/lots";
+
 import { IOnPurchaseButtonBought, PurchaseButton } from "./purchase-button";
 
 interface Attributes {
@@ -23,7 +24,7 @@ export class Remover extends BaseComponent<Attributes> implements OnStart, IOnPu
 		this.toRemove = {} as Model;
 	}
 
-	public onStart() {
+	public onStart(): void {
 		const owner = this.instance.Parent?.Parent as ILotModel;
 		assert(owner, "Owner is undefined");
 		this.owner = owner;
@@ -32,10 +33,14 @@ export class Remover extends BaseComponent<Attributes> implements OnStart, IOnPu
 		assert(toRemove, "Item to remove is undefined");
 		this.toRemove = toRemove;
 
-		FlameworkUtil.waitForComponentOnInstance<PurchaseButton>(this.instance).andThen((component) => {
-			assert(component !== undefined, "Button is undefined");
-			component.addListener(this);
-		});
+		FlameworkUtil.waitForComponentOnInstance<PurchaseButton>(this.instance)
+			.andThen((component) => {
+				assert(component !== undefined, "Button is undefined");
+				component.addListener(this);
+			})
+			.catch((err) => {
+				this.logger.Error(err);
+			});
 	}
 
 	public onPurchaseButtonBought(owner: Player): void {

@@ -61,7 +61,8 @@
 		"uitextsizeconstraint",
 		"Unassigning",
 		"Upgrader",
-		"Upgraders"
+		"Upgraders",
+		"wardency"
 	],
 	"files.eol": "\n",
 	"editor.stickyScroll.enabled": true,

@@ -8,17 +8,17 @@ export namespace FlameworkUtil {
 	export const DECORATOR_PREFIX = `flamework:decorators.`;
 
 	/** Returns if an `object` has a decorator with decorator id */
-	export function isDecoratorOf(id: string, obj: object) {
+	export function isDecoratorOf(id: string, obj: object): boolean {
 		return Reflect.hasMetadata(obj, DECORATOR_PREFIX + id);
 	}
 
 	/** Returns if an `object` is a Flamework Controller */
-	export function isController(obj: object) {
+	export function isController(obj: object): boolean {
 		return isDecoratorOf(Flamework.id<typeof Controller>(), obj);
 	}
 
 	/** Returns if an `object` is a Flamework service */
-	export function isService(obj: object) {
+	export function isService(obj: object): boolean {
 		return isDecoratorOf(Flamework.id<typeof Service>(), obj);
 	}
 
@@ -50,7 +50,7 @@ export namespace FlameworkUtil {
 	 *
 	 * Useful for shared Flamework modules
 	 */
-	export function isSingleton(obj: object) {
+	export function isSingleton(obj: object): boolean {
 		return isController(obj) || isService(obj);
 	}
 

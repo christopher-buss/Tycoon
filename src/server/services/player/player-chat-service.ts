@@ -3,7 +3,8 @@ import { ChatService, ChatSpeaker, ExtraData, GetLuaChatService } from "@rbxts/c
 import { Logger } from "@rbxts/log";
 import { default as PlayerEntity, default as playerEntity } from "server/modules/classes/player-entity";
 import { GROUP_ID } from "shared/shared-constants";
-import { OnPlayerJoin, PlayerService } from "./player-service";
+
+import { OnPlayerJoin } from "./player-service";
 
 interface IChatTagContainer {
 	TagText: string;
@@ -19,11 +20,11 @@ interface IChatTagEntry {
 @Service({})
 export class PlayerChatService implements OnInit, OnPlayerJoin {
 	private readonly ChatService: ChatService;
-	private tags: IChatTagEntry[];
-	private groupTags: IChatTagEntry[];
-	private playerCurrentTags: Map<Player, IChatTagContainer[]>;
+	private tags: Array<IChatTagEntry>;
+	private groupTags: Array<IChatTagEntry>;
+	private playerCurrentTags: Map<Player, Array<IChatTagContainer>>;
 
-	constructor(private readonly logger: Logger, private readonly playerService: PlayerService) {
+	constructor(private readonly logger: Logger) {
 		this.ChatService = GetLuaChatService();
 		this.tags = [];
 		this.groupTags = [];
@@ -32,48 +33,45 @@ export class PlayerChatService implements OnInit, OnPlayerJoin {
 
 	/** @hidden */
 	public onPlayerJoin(playerEntity: playerEntity): void {
-		playerEntity.player.SetAttribute("Vip", true);
-
 		const speaker = this.ChatService.GetSpeaker(playerEntity.player.Name);
+		this.logger.Debug(`Player ${playerEntity.player.Name} joined, adding chat speaker.`);
 		if (speaker) {
 			this.speakerAdded(playerEntity, speaker);
+			return;
 		}
+
+		const connection = this.ChatService.SpeakerAdded.Connect((name) => {
+			if (name === playerEntity.player.Name) {
+				const speaker = this.ChatService.GetSpeaker(name);
+				if (!speaker) {
+					this.logger.Error(`Speaker added for ${name} but speaker is undefined`);
+					return;
+				}
+				connection.Disconnect();
+				this.speakerAdded(playerEntity, speaker);
+			}
+		});
 	}
 
 	/** @hidden */
-	public onInit() {
+	public onInit(): void {
 		this.registerAttributeTag("Vip", {
 			TagText: "VIP",
 			TagColor: Color3.fromRGB(209, 197, 32),
 		});
 
 		this.registerGroupTag(GROUP_ID, 254, {
-			TagText: "Vice President & Shareholder",
+			TagText: "Owner",
 			TagColor: Color3.fromRGB(255, 0, 0),
-		});
-
-		this.registerGroupTag(GROUP_ID, 4, {
-			TagText: "Director",
-			TagColor: Color3.fromRGB(0, 77, 221),
-		});
-
-		this.registerGroupTag(GROUP_ID, 2, {
-			TagText: "Administrator",
-			TagColor: Color3.fromRGB(0, 77, 221),
 		});
 
 		this.registerGroupTag(GROUP_ID, 1, {
 			TagText: "Member",
 			TagColor: Color3.fromRGB(0, 77, 221),
 		});
-
-		// this.registerPremiumTag({
-		// 	TagText: "Premium",
-		// 	TagColor: Color3.fromRGB(206, 197, 197),
-		// });
 	}
 
-	private registerPremiumTag(tagInfo: IChatTagContainer) {
+	private registerPremiumTag(tagInfo: IChatTagContainer): void {
 		this.tags.push({
 			requirement: (player: Player) => player.MembershipType === Enum.MembershipType.Premium,
 			tagInfo: tagInfo,
@@ -106,7 +104,7 @@ export class PlayerChatService implements OnInit, OnPlayerJoin {
 	}
 
 	private speakerAdded(playerEntity: PlayerEntity, speaker: ChatSpeaker): void {
-		const playerTags: IChatTagContainer[] = [];
+		const playerTags: Array<IChatTagContainer> = [];
 		this.playerCurrentTags.set(playerEntity.player, playerTags);
 
 		// We only want to award the highest rank group tag.

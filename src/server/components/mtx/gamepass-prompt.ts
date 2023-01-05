@@ -27,12 +27,12 @@ export class GamepassPrompt extends BaseComponent<Attributes, IGamepassPromptMod
 		this.Janitor = new Janitor();
 	}
 
-	public onStart() {
+	public onStart(): void {
 		this.instance.TouchPart.CanTouch = true;
 		this.Janitor.Add(this.instance.TouchPart.Touched.Connect((...args) => this.onTouched(...args)));
 	}
 
-	private onTouched(part: BasePart) {
+	private onTouched(part: BasePart): void {
 		if (this.debounce) {
 			return;
 		}

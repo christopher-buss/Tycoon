@@ -3,7 +3,7 @@ import { initaliseClient } from "@rbxts/character-realism";
 
 @Controller({})
 export class CharacterController implements OnStart {
-	public onStart() {
+	public onStart(): void {
 		initaliseClient().Start({
 			Sounds: {
 				Dirt: 178054124,

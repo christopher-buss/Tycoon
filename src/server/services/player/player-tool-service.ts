@@ -1,6 +1,7 @@
 import { Service } from "@flamework/core";
 import { ServerStorage } from "@rbxts/services";
 import playerEntity from "server/modules/classes/player-entity";
+
 import { OnPlayerJoin } from "./player-service";
 
 @Service({})
@@ -15,7 +16,7 @@ export class PlayerToolService implements OnPlayerJoin {
 		});
 	}
 
-	private addOwnedTools(playerEntity: playerEntity) {
+	private addOwnedTools(playerEntity: playerEntity): void {
 		playerEntity.data.acquiredTools.forEach((toolName) => {
 			const backpack = playerEntity.player.FindFirstChildOfClass("Backpack");
 			if (backpack) {

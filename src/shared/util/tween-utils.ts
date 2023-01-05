@@ -1,11 +1,11 @@
 import { TweenService } from "@rbxts/services";
 
-// function apply<T extends Instance>(obj: T, props: Partial<ExtractMembers<T, Tweenable>>) {
-// 	// eslint-disable-next-line roblox-ts/no-array-pairs
-// 	for (const [key, value] of pairs(props)) {
-// 		obj[key as keyof Tweenable] = value;
-// 	}
-// }
+function apply<T extends Instance>(obj: T, props: Partial<ExtractMembers<T, Tweenable>>): void {
+	// eslint-disable-next-line roblox-ts/no-array-pairs
+	for (const [key, value] of pairs(props)) {
+		obj[key as WritablePropertyNames<T>] = value as WritableProperties<T>[WritablePropertyNames<T>];
+	}
+}
 
 export namespace TweenUtil {
 	export function tweenPromise<T>(
@@ -16,18 +16,19 @@ export namespace TweenUtil {
 		return new Promise((resolve, _reject, onCancel) => {
 			const tween = TweenService.Create(obj, tweenInfo, props);
 
-			// if (
-			// 	onCancel(() => {
-			// 		tween.Cancel();
-			// 		apply(obj, props);
-			// 	})
-			// ) {
-			// 	return;
-			// }
+			if (
+				onCancel(() => {
+					tween.Cancel();
+					apply(obj, props);
+				})
+			) {
+				return;
+			}
 
 			tween.Completed.Connect(() => {
 				resolve();
 			});
+
 			tween.Play();
 		});
 	}

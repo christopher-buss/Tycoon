@@ -1,11 +1,19 @@
 export interface ILotModel extends Folder {
-	// Primary: BasePart;
 	Buttons: Folder;
 	Essentials: Folder & {
 		Claim: BasePart & {
-			Gui: BillboardGui & {
-				PlayerName: TextBox;
-				TycoonName: TextBox;
+			Claimed: SurfaceGui & {
+				IconBox: Frame & {
+					PlayerIcon: ImageLabel;
+				};
+				TextBox: Frame & {
+					TextLabel: TextLabel;
+					Username: TextLabel;
+				};
+			};
+			Unclaimed: SurfaceGui & {
+				Label1: TextLabel;
+				Label2: TextLabel;
 			};
 		};
 	};
@@ -14,7 +22,6 @@ export interface ILotModel extends Folder {
 }
 
 export interface ILotAttributes {
-	ComponentId?: string;
 	OwnerId?: number;
 }
 
@@ -25,3 +32,5 @@ export const enum LotErrors {
 	InvalidLot = 4,
 	ClearOwnership = 5,
 }
+
+export type LotName = string;

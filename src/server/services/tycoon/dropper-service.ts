@@ -1,5 +1,6 @@
 import { OnInit, OnStart, OnTick, Service } from "@flamework/core";
 import { Logger } from "@rbxts/log";
+import { Option } from "@rbxts/rust-classes";
 import { Teams } from "@rbxts/services";
 import { IDropperInfo } from "server/components/lot/dropper";
 import { Lot } from "server/components/lot/lot";
@@ -7,9 +8,10 @@ import { IUpgraderInfo } from "server/components/lot/upgrader";
 import playerEntity from "server/modules/classes/player-entity";
 import { Events } from "server/network";
 import { EncodePartIdentifier, encoderPartIdentifiers } from "shared/meta/part-identifiers";
-import { PartInfo, PartInfoKey, PartInfoValue } from "shared/meta/part-info";
-import { NetworkedPathType, PathType, PathTypes } from "shared/meta/path-types";
-import { REPLICATION_DISTANCE, TOTAL_PROGRESS, TOTAL_TIME } from "shared/shared-constants";
+import { DropperKey, PartInfo, PartInfoKey, PartInfoType } from "shared/meta/part-info";
+import { NUMBER_OF_PATHS, PATH_INFO, REPLICATION_DISTANCE } from "shared/shared-constants";
+import { PathNumber } from "types/interfaces/droppers";
+
 import { OnPlayerJoin, PlayerService } from "../player/player-service";
 import { MoneyService } from "../stores/money-service";
 import { LotService, OnLotOwned } from "./lot-service";
@@ -29,15 +31,23 @@ interface IDropperSimulating {
 	Progress: number;
 }
 
+interface IOwnedUpgrader {
+	Additive: number;
+	Multiplier: number;
+}
+
+/**
+ * TODO: Can Map<PathNumber> be changed to Array<Index>?
+ */
 @Service({})
 export class DropperService implements OnInit, OnStart, OnTick, OnPlayerJoin, OnLotOwned {
-	private connections: Map<Player, Set<Promise<number | void>>>;
+	private connections: Map<Player, Set<Promise<void | number>>>;
 	private lotPositions: Map<LotName, Vector3>;
 	private lotToReplicateTo: Map<Player, LotName>;
-	private ownedDroppers: Map<Player, Map<PathType, Array<IDropperSimulatingInfo>>>;
-	private ownedUpgraders: Map<Player, Map<PathType, number[]>>;
-	private playersWithLot: Player[];
-	private simulatedDroppers: Map<LotName, Map<PathType, Array<IDropperSimulating>>>;
+	private ownedDroppers: Map<Player, Map<PathNumber, Array<IDropperSimulatingInfo>>>;
+	private ownedUpgraders: Map<Player, Map<PathNumber, Array<IOwnedUpgrader>>>;
+	private playersWithLot: Array<Player>;
+	private simulatedDroppers: Map<LotName, Map<PathNumber, Array<IDropperSimulating>>>;
 	private timeSinceLastPlayerInRangeUpdate: number;
 
 	constructor(
@@ -46,20 +56,20 @@ export class DropperService implements OnInit, OnStart, OnTick, OnPlayerJoin, On
 		private readonly moneyService: MoneyService,
 		private readonly playerService: PlayerService,
 	) {
-		this.connections = new Map<Player, Set<Promise<number | void>>>();
-		this.lotPositions = new Map<LotName, Vector3>();
-		this.lotToReplicateTo = new Map<Player, LotName>();
-		this.ownedDroppers = new Map<Player, Map<PathType, Array<IDropperSimulatingInfo>>>();
-		this.ownedUpgraders = new Map<Player, Map<PathType, number[]>>();
+		this.connections = new Map();
+		this.lotPositions = new Map();
+		this.lotToReplicateTo = new Map();
+		this.ownedDroppers = new Map();
+		this.ownedUpgraders = new Map();
 		this.playersWithLot = [];
-		this.simulatedDroppers = new Map<LotName, Map<PathType, Array<IDropperSimulating>>>();
+		this.simulatedDroppers = new Map();
 		this.timeSinceLastPlayerInRangeUpdate = 0;
 	}
 
-	public onInit() {
+	public onInit(): void {
 		for (const team of Teams.GetTeams()) {
-			this.simulatedDroppers.set(team.Name, new Map<PathType, Array<IDropperSimulating>>());
-			for (const path of PathTypes) {
+			this.simulatedDroppers.set(team.Name, new Map<PathNumber, Array<IDropperSimulating>>());
+			for (let path = 0; path < NUMBER_OF_PATHS + 1; path++) {
 				this.simulatedDroppers.get(team.Name)?.set(path, []);
 			}
 		}
@@ -72,15 +82,19 @@ export class DropperService implements OnInit, OnStart, OnTick, OnPlayerJoin, On
 		}
 	}
 
-	public addOwnedUpgrader(upgraderInfo: IUpgraderInfo) {
-		this.ownedUpgraders.get(upgraderInfo.Owner)?.get(upgraderInfo.PathType)?.push(upgraderInfo.Value);
+	public addOwnedUpgrader(upgraderInfo: IUpgraderInfo): void {
+		this.logger.Info(`Adding owned upgrader for ${upgraderInfo.Owner.Name}`);
+		this.ownedUpgraders.get(upgraderInfo.Owner)?.get(upgraderInfo.Path)?.push({
+			Additive: upgraderInfo.Additive,
+			Multiplier: upgraderInfo.Multiplier,
+		});
 	}
 
 	public onLotOwned(_lot: Lot, newOwner: Player): void {
 		this.playersWithLot.push(newOwner);
 
-		this.ownedUpgraders.set(newOwner, new Map<PathType, number[]>());
-		for (const path of PathTypes) {
+		this.ownedUpgraders.set(newOwner, new Map<PathNumber, Array<IOwnedUpgrader>>());
+		for (let path = 0; path < NUMBER_OF_PATHS; path++) {
 			this.ownedUpgraders.get(newOwner)?.set(path, []);
 		}
 
@@ -88,6 +102,8 @@ export class DropperService implements OnInit, OnStart, OnTick, OnPlayerJoin, On
 		if (entity_opt.isNone()) {
 			return;
 		}
+
+		this.connections.set(newOwner, new Set<Promise<number | void>>());
 
 		const playerEntity = entity_opt.unwrap();
 		playerEntity.playerRemoving.Add(() => {
@@ -99,9 +115,9 @@ export class DropperService implements OnInit, OnStart, OnTick, OnPlayerJoin, On
 	}
 
 	public onPlayerJoin(playerEntity: playerEntity): void {
-		this.ownedDroppers.set(playerEntity.player, new Map<PathType, Array<IDropperSimulatingInfo>>());
+		this.ownedDroppers.set(playerEntity.player, new Map<PathNumber, Array<IDropperSimulatingInfo>>());
 
-		for (const path of PathTypes) {
+		for (let path = 0; path < NUMBER_OF_PATHS + 1; path++) {
 			this.ownedDroppers.get(playerEntity.player)?.set(path, []);
 		}
 
@@ -120,24 +136,29 @@ export class DropperService implements OnInit, OnStart, OnTick, OnPlayerJoin, On
 			Name: info.DropperType,
 			Owner: info.Owner,
 			StartProgress: info.StartProgress,
-			Value: PartInfo[info.DropperType as PartInfoKey].Value,
+			Value: (PartInfo[info.DropperType as PartInfoType] as PartInfoKey).Value,
 		};
 
-		this.ownedDroppers.get(info.Owner)?.get(info.PathType)?.push(simulatingInfo);
+		this.ownedDroppers.get(info.Owner)?.get(info.Path)?.push(simulatingInfo);
 	}
 
 	public onTick(dt: number): void {
 		this.updatePlayersInRange(dt);
 
 		for (const [, ownedDroppers] of this.ownedDroppers) {
-			for (const [pathType, simulatingDroppers] of ownedDroppers) {
+			for (const [pathNumber, simulatingDroppers] of ownedDroppers) {
 				for (const dropper of simulatingDroppers) {
-					const partInfo = PartInfo[dropper.Name as PartInfoKey] as PartInfoValue;
+					const partInfo = PartInfo[dropper.Name as PartInfoType] as DropperKey;
 					if (os.clock() - dropper.LastDrop >= partInfo.DropTime) {
-						const lotName = this.getLotFromDropperOwner(dropper.Owner);
-						const newDropper = this.spawnDropper(lotName, pathType, dropper);
+						const lotName_opt = this.getLotFromDropperOwner(dropper.Owner);
+						if (lotName_opt.isNone()) {
+							continue;
+						}
+
+						const lotName = lotName_opt.unwrap();
+						const newDropper = this.spawnDropper(lotName, pathNumber, dropper);
 						if (newDropper) {
-							this.replicateDropper(lotName, NetworkedPathType[pathType], newDropper);
+							this.replicateDropper(lotName, pathNumber, newDropper);
 						}
 					}
 				}
@@ -145,14 +166,42 @@ export class DropperService implements OnInit, OnStart, OnTick, OnPlayerJoin, On
 		}
 	}
 
-	private getLotFromDropperOwner(owner: Player): LotName {
-		const lot = owner.GetAttribute("Lot") as string | undefined;
-		if (lot === undefined) {
-			this.logger.Error(`Could not find lot for player ${owner}`);
-			return "";
+	public onPlayerRebirthed(playerEntity: playerEntity): void {
+		this.connections.get(playerEntity.player)?.forEach((thread) => {
+			thread.cancel();
+		});
+
+		this.connections.set(playerEntity.player, new Set<Promise<number | void>>());
+
+		for (let path = 0; path < NUMBER_OF_PATHS + 1; path++) {
+			this.ownedDroppers.get(playerEntity.player)?.set(path, []);
 		}
 
-		return lot;
+		this.ownedUpgraders.get(playerEntity.player)?.forEach((_, pathType) => {
+			this.ownedUpgraders.get(playerEntity.player)?.set(pathType, []);
+		});
+
+		this.ownedUpgraders.set(playerEntity.player, new Map<PathNumber, Array<IOwnedUpgrader>>());
+
+		const playerLot_opt = this.getLotFromDropperOwner(playerEntity.player);
+		if (playerLot_opt.isNone()) {
+			return;
+		}
+
+		const playerLot = playerLot_opt.unwrap();
+		this.simulatedDroppers.get(playerLot)?.forEach((_, pathType) => {
+			this.simulatedDroppers.get(playerLot)?.set(pathType, []);
+		});
+	}
+
+	private getLotFromDropperOwner(owner: Player): Option<LotName> {
+		const lot = owner.GetAttribute("Lot") as string;
+		if (lot === undefined) {
+			this.logger.Fatal(`Could not find lot for player ${owner}`);
+			return Option.none();
+		}
+
+		return Option.some(lot);
 	}
 
 	private updatePlayersInRange(dt: number): void {
@@ -184,16 +233,17 @@ export class DropperService implements OnInit, OnStart, OnTick, OnPlayerJoin, On
 				this.lotToReplicateTo.set(player, lotName);
 				tycoonSet = true;
 
-				const dataToSend: Vector3int16[] = [];
-				this.simulatedDroppers.get(lotName)?.forEach((droppers, pathType) => {
+				const dataToSend: Array<Vector3int16> = [];
+				this.simulatedDroppers.get(lotName)?.forEach((droppers, pathNumber) => {
 					for (const dropper of droppers) {
 						const time = os.clock() - dropper.Dropper.LastDrop;
-						const currentProgress = (time / TOTAL_TIME[pathType]) * TOTAL_PROGRESS[pathType];
+						const currentProgress =
+							(time / PATH_INFO[pathNumber]!.TotalTime) * PATH_INFO[pathNumber]!.TotalProgress;
 
 						dataToSend.push(
 							new Vector3int16(
 								encoderPartIdentifiers[dropper.Dropper.Name as keyof EncodePartIdentifier],
-								NetworkedPathType[pathType],
+								pathNumber,
 								math.floor(currentProgress),
 							),
 						);
@@ -211,11 +261,7 @@ export class DropperService implements OnInit, OnStart, OnTick, OnPlayerJoin, On
 		}
 	}
 
-	private spawnDropper(
-		lot: LotName,
-		pathType: PathType,
-		dropper: IDropperSimulatingInfo,
-	): IDropperSimulating | undefined {
+	private spawnDropper(lot: LotName, pathNumber: PathNumber, dropper: IDropperSimulatingInfo): IDropperSimulating {
 		const progress = 0;
 
 		this.logger.Debug(`Spawning dropper ${dropper.Name} for ${dropper.Owner.Name}`);
@@ -227,17 +273,19 @@ export class DropperService implements OnInit, OnStart, OnTick, OnPlayerJoin, On
 			Progress: progress,
 		};
 
-		this.simulatedDroppers.get(lot)?.get(pathType)?.push(dropperInfo);
+		this.simulatedDroppers.get(lot)?.get(pathNumber)?.push(dropperInfo);
 
 		// Calculate the time it takes to reach the end of the path
-		const time = TOTAL_TIME[pathType] * (1 - dropper.StartProgress / TOTAL_PROGRESS[pathType]);
-		const thread = Promise.delay(time).andThen(() => {
-			this.awardCashToPlayer(pathType, dropper);
+		const time =
+			PATH_INFO[pathNumber]!.TotalTime * (1 - dropper.StartProgress / PATH_INFO[pathNumber]!.TotalProgress);
+
+		const thread: Promise<void | number> = Promise.delay(time).andThen(() => {
+			this.awardCashToPlayer(pathNumber, dropper);
 			this.connections.get(dropper.Owner)?.delete(thread);
 
-			const index = this.simulatedDroppers.get(lot)?.get(pathType)?.indexOf(dropperInfo);
+			const index = this.simulatedDroppers.get(lot)?.get(pathNumber)?.indexOf(dropperInfo);
 			if (index !== undefined && index !== -1) {
-				this.simulatedDroppers.get(lot)?.get(pathType)?.unorderedRemove(index);
+				this.simulatedDroppers.get(lot)?.get(pathNumber)?.unorderedRemove(index);
 			}
 		});
 
@@ -246,9 +294,9 @@ export class DropperService implements OnInit, OnStart, OnTick, OnPlayerJoin, On
 		return dropperInfo;
 	}
 
-	private replicateDropper(lot: LotName, pathType: NetworkedPathType, dropperInfo: IDropperSimulating): void {
+	private replicateDropper(lot: LotName, pathNumber: PathNumber, dropperInfo: IDropperSimulating): void {
 		const encodedDropperSimulating = new Vector2int16(
-			pathType,
+			pathNumber,
 			encoderPartIdentifiers[dropperInfo.Dropper.Name as keyof EncodePartIdentifier],
 		);
 
@@ -259,7 +307,7 @@ export class DropperService implements OnInit, OnStart, OnTick, OnPlayerJoin, On
 		});
 	}
 
-	private awardCashToPlayer(pathType: PathType, dropper: IDropperSimulatingInfo) {
+	private awardCashToPlayer(path: PathNumber, dropper: IDropperSimulatingInfo): void {
 		// Currently we're faking the simulation here by applying the cash to the player if they
 		// own an upgrader at the point of the dropper despawning. TODO: Can this be done better?
 		const entity_opt = this.playerService.getEntity(dropper.Owner);
@@ -270,18 +318,19 @@ export class DropperService implements OnInit, OnStart, OnTick, OnPlayerJoin, On
 
 		let value = dropper.Value;
 
-		const entity = entity_opt.unwrap();
-		const doubleMoneyGamepass = entity.data.gamePasses.doubleMoneyGamepass;
-		if (doubleMoneyGamepass) {
-			value *= 2;
-		}
-
-		const ownedUpgraders = this.ownedUpgraders.get(dropper.Owner)?.get(pathType);
+		const ownedUpgraders = this.ownedUpgraders.get(dropper.Owner)?.get(path);
 		if (ownedUpgraders) {
-			ownedUpgraders.forEach((upgraderValue) => {
-				value += upgraderValue;
+			ownedUpgraders.forEach((info) => {
+				value += info.Additive;
+				value *= info.Multiplier;
 			});
 		}
+
+		const playerEntity = entity_opt.unwrap();
+		const multiplier =
+			(1 + playerEntity.data.rebirths / 5) * (playerEntity.data.gamePasses.doubleMoneyGamepass ? 2 : 1);
+
+		value *= multiplier;
 
 		this.moneyService.givePlayerMoney(dropper.Owner, value);
 	}

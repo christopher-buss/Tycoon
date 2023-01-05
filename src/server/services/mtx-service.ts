@@ -1,13 +1,13 @@
-import { Components } from "@flamework/components";
-import { Dependency, OnInit, Service } from "@flamework/core";
+import { OnInit, Service } from "@flamework/core";
 import { Logger } from "@rbxts/log";
+import { ProfileMetaData } from "@rbxts/profileservice/globals";
 import { Option } from "@rbxts/rust-classes";
 import { MarketplaceService, Players, ServerStorage } from "@rbxts/services";
-import { PurchaseButton } from "server/components/lot/purchase-button";
 import Products from "server/meta/product-functions";
 import PlayerEntity from "server/modules/classes/player-entity";
 import { GamepassPlayerKey, PlayerDataProfile } from "shared/meta/default-player-data";
-import { encoderPartIdentifiers } from "shared/meta/part-identifiers";
+import { Gamepasses } from "shared/meta/gamepasses";
+
 import { OnPlayerJoin, PlayerService } from "./player/player-service";
 
 /**
@@ -22,21 +22,17 @@ export class MtxService implements OnInit, OnPlayerJoin {
 		this.purchaseIdLog = 50;
 
 		this.gamePasses = new Map<number, string>();
-		this.gamePasses.set(71804134, "cloudGamepass");
-		this.gamePasses.set(70168504, "speedCoilGamepass");
-		this.gamePasses.set(70167932, "doubleMoneyGamepass");
-		this.gamePasses.set(71225919, "sparklesEffect");
-		this.gamePasses.set(71225950, "fireEffect");
-		this.gamePasses.set(70168164, "robuxDropper");
+		this.gamePasses.set(Gamepasses.DoubleMoney, "doubleMoneyGamepass");
+		this.gamePasses.set(Gamepasses.Vip, "vipGamepass");
 	}
 
 	/** @hidden */
-	public onInit() {
-		MarketplaceService.PromptGamePassPurchaseFinished.Connect((...args): void =>
-			this.onGamePassPurchaseFinished(...args),
-		);
+	public onInit(): void {
+		MarketplaceService.PromptGamePassPurchaseFinished.Connect((...args): void => {
+			return this.onGamePassPurchaseFinished(...args);
+		});
 
-		MarketplaceService.ProcessReceipt = (...args) => {
+		MarketplaceService.ProcessReceipt = (...args): Enum.ProductPurchaseDecision => {
 			return this.processReceipt(...args).await() as unknown as Enum.ProductPurchaseDecision;
 		};
 	}
@@ -58,7 +54,7 @@ export class MtxService implements OnInit, OnPlayerJoin {
 		}
 
 		const metaData = playerData.MetaData;
-		const localPurchaseIds = metaData.MetaTags.get("ProfilePurchaseIds") as string[];
+		const localPurchaseIds = metaData.MetaTags.get("ProfilePurchaseIds") as Array<string>;
 		if (localPurchaseIds === undefined) {
 			metaData.MetaTags.set("ProfilePurchaseIds", []);
 		}
@@ -71,16 +67,7 @@ export class MtxService implements OnInit, OnPlayerJoin {
 			task.spawn(callback);
 		}
 
-		function checkLatestMetaTags(): Option<Enum.ProductPurchaseDecision> {
-			const savedPurchaseIds = metaData.MetaTagsLatest.get("ProfilePurchaseIds") as string[];
-			if (savedPurchaseIds !== undefined && savedPurchaseIds.includes(purchaseId)) {
-				return Option.some<Enum.ProductPurchaseDecision>(Enum.ProductPurchaseDecision.PurchaseGranted);
-			}
-
-			return Option.none<Enum.ProductPurchaseDecision>();
-		}
-
-		const result_opt = checkLatestMetaTags();
+		const result_opt = this.checkLatestMetaTags(metaData, purchaseId);
 		if (result_opt.isSome()) {
 			const result = result_opt.unwrap();
 			if (result === Enum.ProductPurchaseDecision.PurchaseGranted) {
@@ -90,7 +77,7 @@ export class MtxService implements OnInit, OnPlayerJoin {
 
 		return new Promise((resolve, _reject, onCancel) => {
 			const connection = playerData.MetaTagsUpdated.Connect(() => {
-				const result_opt = checkLatestMetaTags();
+				const result_opt = this.checkLatestMetaTags(metaData, purchaseId);
 				if (result_opt.isNone() && !playerData.IsActive()) {
 					resolve(Enum.ProductPurchaseDecision.NotProcessedYet);
 				}
@@ -100,6 +87,21 @@ export class MtxService implements OnInit, OnPlayerJoin {
 				connection.Disconnect();
 			});
 		});
+	}
+
+	/**
+	 *
+	 * @param metaData
+	 * @param purchaseId
+	 * @returns
+	 */
+	private checkLatestMetaTags(metaData: ProfileMetaData, purchaseId: string): Option<Enum.ProductPurchaseDecision> {
+		const savedPurchaseIds = metaData.MetaTagsLatest.get("ProfilePurchaseIds") as Array<string>;
+		if (savedPurchaseIds !== undefined && savedPurchaseIds.includes(purchaseId)) {
+			return Option.some<Enum.ProductPurchaseDecision>(Enum.ProductPurchaseDecision.PurchaseGranted);
+		}
+
+		return Option.none<Enum.ProductPurchaseDecision>();
 	}
 
 	/**
@@ -143,13 +145,13 @@ export class MtxService implements OnInit, OnPlayerJoin {
 	 * @hidden
 	 */
 	public onPlayerJoin(playerEntity: PlayerEntity): void {
-		for (const [id, gamepassFunctionName] of this.gamePasses) {
+		this.gamePasses.forEach((gamepassFunctionName, id) => {
 			// Give the player any already owned gamepasses.
 			if (playerEntity.data.gamePasses[gamepassFunctionName as never] === true) {
 				// Calls the relating gamepass function.
 				this.logger.Info(`Granting gamepass ${id} to ${playerEntity.player.Name}`);
 				(this[gamepassFunctionName as never] as Callback)(this, playerEntity);
-				continue;
+				return;
 			}
 
 			// Check if the player has purchased a non-owned gamepass since
@@ -170,13 +172,18 @@ export class MtxService implements OnInit, OnPlayerJoin {
 				.catch((err) => {
 					this.logger.Warn(`Failed to check for gamepass owned: {@Error}`, err);
 				});
-		}
-
-		// playerEntity.playerRemoving.Add(() => this.onPlayerRemoving(playerEntity.player));
+		});
 	}
 
-	// /** @hidden */
-	// private onPlayerRemoving(player: Player): void {}
+	public onPlayerRebirthed(playerEntity: PlayerEntity): void {
+		this.gamePasses.forEach((gamepassFunctionName, id) => {
+			if (playerEntity.data.gamePasses[gamepassFunctionName as never] === true) {
+				// Calls the relating gamepass function.
+				this.logger.Info(`Granting gamepass ${id} to ${playerEntity.player.Name}`);
+				(this[gamepassFunctionName as never] as Callback)(this, playerEntity);
+			}
+		});
+	}
 
 	/**
 	 * Checks if a player owns a given gamepass.
@@ -218,7 +225,7 @@ export class MtxService implements OnInit, OnPlayerJoin {
 	private addToolGamepass(playerEntity: PlayerEntity, toolName: string): void {
 		const player = playerEntity.player;
 
-		function addTool() {
+		function addTool(): void {
 			let tool = ServerStorage.Gamepasses.FindFirstChild(toolName) as Tool;
 			if (tool !== undefined) {
 				tool = tool.Clone();
@@ -246,47 +253,37 @@ export class MtxService implements OnInit, OnPlayerJoin {
 		playerEntity.player.SetAttribute("DoubleMoneyGamepass", true);
 	}
 
-	private sparklesEffect(playerEntity: PlayerEntity): void {
-		playerEntity.updateData((data) => {
-			data.gamePasses.sparkleEffectGamepass = true;
-			return data;
-		});
+	private vipGamepass(playerEntity: PlayerEntity): void {
+		playerEntity.player.SetAttribute("Vip", true);
 	}
 
-	private fireEffect(playerEntity: PlayerEntity): void {
-		playerEntity.updateData((data) => {
-			data.gamePasses.fireEffectGamepass = true;
-			return data;
-		});
-	}
+	// private robuxDropper(playerEntity: PlayerEntity): void {
+	// 	const robuxDropperEncoded = encoderPartIdentifiers["Robux Dropper"];
+	// 	if (playerEntity.data.purchased.includes(robuxDropperEncoded)) {
+	// 		return;
+	// 	}
 
-	private robuxDropper(playerEntity: PlayerEntity): void {
-		const robuxDropperEncoded = encoderPartIdentifiers["Robux Dropper"];
-		if (playerEntity.data.purchased.includes(robuxDropperEncoded)) {
-			return;
-		}
+	// 	playerEntity.updateData((data) => {
+	// 		data.purchased.push(robuxDropperEncoded);
+	// 		return data;
+	// 	});
 
-		playerEntity.updateData((data) => {
-			data.purchased.push(robuxDropperEncoded);
-			return data;
-		});
+	// 	const purchaseButtons = Dependency<Components>().getAllComponents<PurchaseButton>();
+	// 	purchaseButtons.forEach((purchaseButton) => {
+	// 		if (
+	// 			purchaseButton.instance.Name === "Robux Dropper" &&
+	// 			purchaseButton.checkIfPlayerOwnsButton(playerEntity.player)
+	// 		) {
+	// 			for (const listener of purchaseButton.listeners) {
+	// 				task.spawn(() => {
+	// 					listener.onPurchaseButtonBought(playerEntity.player);
+	// 				});
+	// 			}
 
-		const purchaseButtons = Dependency<Components>().getAllComponents<PurchaseButton>();
-		purchaseButtons.forEach((purchaseButton) => {
-			if (
-				purchaseButton.instance.Name === "Robux Dropper" &&
-				purchaseButton.checkIfPlayerOwnsButton(playerEntity.player)
-			) {
-				for (const listener of purchaseButton.listeners) {
-					task.spawn(() => {
-						listener.onPurchaseButtonBought(playerEntity.player);
-					});
-				}
-
-				purchaseButton.hideButton().finally(() => {
-					purchaseButton.unbindButtonTouched();
-				});
-			}
-		});
-	}
+	// 			purchaseButton.hideButton().finally(() => {
+	// 				purchaseButton.unbindButtonTouched();
+	// 			});
+	// 		}
+	// 	});
+	// }
 }

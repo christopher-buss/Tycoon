@@ -1,9 +1,9 @@
 import { BaseComponent, Component, Components } from "@flamework/components";
-import { Dependency, OnStart } from "@flamework/core";
+import { Dependency } from "@flamework/core";
 import { Logger } from "@rbxts/log";
 import { Option, Result } from "@rbxts/rust-classes";
-import { HttpService, Players, Teams } from "@rbxts/services";
-import { PlayerService } from "server/services/player/player-service";
+import { Players, Teams } from "@rbxts/services";
+import { default as PlayerEntity } from "server/modules/classes/player-entity";
 import { LotService } from "server/services/tycoon/lot-service";
 import {
 	DecodePartIdentifier,
@@ -11,53 +11,49 @@ import {
 	EncodePartIdentifier,
 	encoderPartIdentifiers,
 } from "shared/meta/part-identifiers";
+import { Tag } from "types/enum/tags";
 import { ILotAttributes, ILotModel, LotErrors } from "types/interfaces/lots";
+
 import { PurchaseButton } from "./purchase-button";
 
 /**
  * A component that is assigned to each lot in the game.
+ *
+ * This component is responsible for handling any functionality related to the
+ * setup and teardown of lots.
  */
-@Component({ tag: "Lot" })
-export class Lot extends BaseComponent<ILotAttributes, ILotModel> implements OnStart {
-	private readonly team: Team;
+@Component({
+	tag: Tag.Lot,
+})
+export class Lot extends BaseComponent<ILotAttributes, ILotModel> {
 	public readonly name: string;
 	public readonly position: Vector3;
 
-	private objectsWithDependencies: Array<PurchaseButton>;
+	private readonly team: Team;
 
-	public constructor(
-		private readonly logger: Logger,
-		private readonly lotService: LotService,
-		private readonly playerService: PlayerService,
-	) {
+	constructor(private readonly logger: Logger, private readonly lotService: LotService) {
 		super();
+
+		this.position = this.instance.Spawn.Position;
 
 		this.team = Teams.FindFirstChild(this.instance.Name) as Team;
 		assert(this.team !== undefined, `Team ${this.instance.Name} does not exist`);
 
 		this.name = this.team.Name;
-		this.position = this.instance.Spawn.Position;
-
-		this.objectsWithDependencies = [];
-	}
-
-	/** @hidden */
-	public onStart() {
-		// Generate an identifier for the lot.
-		this.attributes.ComponentId = HttpService.GenerateGUID(false);
 	}
 
 	/**
 	 * Attempts to assign a given player as the new owner of the lot.
 	 *
-	 * @param player Player instance to assign as the new owner.
+	 * @param playerEntity Player class to assign as the new owner.
 	 *
 	 * @returns True if the player was successfully assigned as the new owner,
 	 * else returns the reason why the player could not be assigned as the
 	 * owner.
 	 */
-	public assignOwner(player: Player): Result<true, LotErrors> {
-		this.logger.Info("Attempting to assign {@Player} to a new lot", player, this.attributes.ComponentId!);
+	public assignOwner(playerEntity: PlayerEntity): Result<true, LotErrors> {
+		const player = playerEntity.player;
+		this.logger.Info(`Attempting to assign ${player} to a new lot ${this.name}`);
 		return this.getOwner().match(
 			() => Result.err<true, LotErrors>(LotErrors.LotOwned),
 			() => {
@@ -67,7 +63,7 @@ export class Lot extends BaseComponent<ILotAttributes, ILotModel> implements OnS
 						this.attributes.OwnerId = player.UserId;
 						this.lotService.fireOnLotOwned(this);
 						task.spawn(() => {
-							this.setupOwner(player);
+							this.setupOwner(playerEntity);
 						});
 						return Result.ok<true, LotErrors>(true);
 					},
@@ -83,7 +79,7 @@ export class Lot extends BaseComponent<ILotAttributes, ILotModel> implements OnS
 	 * reason why the owner could not be removed.
 	 */
 	public clearOwner(): Result<true, LotErrors> {
-		this.logger.Info(`Attempting to clear owner of lot {@Lot}`, this.attributes.ComponentId!);
+		this.logger.Info(`Attempting to clear owner of lot ${this.name}`);
 		return this.getOwner().match(
 			() => {
 				this.attributes.OwnerId = undefined;
@@ -116,81 +112,134 @@ export class Lot extends BaseComponent<ILotAttributes, ILotModel> implements OnS
 		return Option.none<Player>();
 	}
 
+	/**
+	 * Initializes the owner of the lot after they have been assigned.
+	 *
+	 * @param player the new owner of the lot.
+	 */
+	private setupOwner(playerEntity: PlayerEntity): void {
+		const player = playerEntity.player;
+		player.RequestStreamAroundAsync(this.instance.Spawn.Position);
+		player.RespawnLocation = this.instance.Spawn;
+		player.Team = this.team;
+		player.SetAttribute("Lot", this.team.Name);
+		this.loadPurchaseButtons(playerEntity);
+		this.setupGui(player);
+		player.LoadCharacter();
+	}
+
+	/**
+	 *
+	 */
 	private clearOwnedButtons(): void {
 		const buttons = this.instance.Buttons.GetChildren();
 
 		buttons.forEach((button) => {
 			const buttonComponent = Dependency<Components>().getComponent<PurchaseButton>(button);
 			if (!buttonComponent) {
-				// this.logger.Error("Could not find purchase button component for {@Button}", button);
+				this.logger.Error(`Button ${button} does not have a PurchaseButton component`);
 				return;
 			}
 
-			buttonComponent.unbindButtonTouched();
+			buttonComponent.unbindButtonTouched(true);
 		});
 	}
 
 	/**
-	 * Initializes the owner of the lot after they have been assigned.
+	 * Sets up the GUI for the lot.
 	 *
-	 * @param player the new owner of the lot.
+	 * If the player is not provided, then the GUI will be set as "Unclaimed".
+	 * @param playerName The potential name of the player.
 	 */
-	private setupOwner(player: Player): void {
-		player.RequestStreamAroundAsync(this.instance.Spawn.Position);
-		player.RespawnLocation = this.instance.Spawn;
-		player.Team = this.team;
-		player.SetAttribute("Lot", this.team.Name);
-		this.loadPurchaseButtons(player);
-		this.setupGui(player);
-		player.LoadCharacter();
-	}
-
 	private setupGui(player?: Player): void {
-		this.instance.Essentials.Claim.Gui.PlayerName.Text = player?.Name ?? "Unclaimed";
+		const claimPart = this.instance.Essentials.Claim;
+
+		if (player !== undefined) {
+			claimPart.Unclaimed.Enabled = false;
+			claimPart.Claimed.Enabled = true;
+			claimPart.Claimed.TextBox.Username.Text = `${player.Name}'s`;
+			claimPart.Claimed.IconBox.PlayerIcon.Image = `rbxthumb://type=AvatarHeadShot&id=${player.UserId}&w=420&h=420`;
+		} else {
+			claimPart.Unclaimed.Enabled = true;
+			claimPart.Claimed.Enabled = false;
+		}
 	}
 
 	/**
 	 * Add any owned items for the player to the tycoon.
+	 * @param playerEntity
+	 */
+	private loadPurchaseButtons(playerEntity: PlayerEntity): void {
+		this.handleOwnedItems(playerEntity, playerEntity.player);
+
+		const buttons = this.instance.Buttons.GetChildren();
+		const nonOwnedButtons = this.getNonOwnedButtons(buttons, playerEntity);
+		const objectsWithDependencies = this.handleNonOwnedButtons(nonOwnedButtons);
+		objectsWithDependencies.forEach((buttonComponent) => {
+			const dependency = buttonComponent.attributes.Dependency;
+			for (const button of buttons) {
+				if (button.Name === dependency) {
+					const dependencyButton = Dependency<Components>().getComponent<PurchaseButton>(button);
+					if (!dependencyButton) {
+						this.logger.Error(`Could not find purchase button component for ${button}`);
+						return;
+					}
+
+					if (!dependencyButton.purchased) {
+						buttonComponent.unbindButtonTouched(true);
+					}
+
+					dependencyButton.addDependency(buttonComponent);
+					return;
+				}
+			}
+		});
+	}
+
+	/**
+	 *
+	 * @param playerEntity
 	 * @param player
 	 */
-	private loadPurchaseButtons(player: Player): void {
-		const entity_opt = this.playerService.getEntity(player);
-		if (!entity_opt.isSome()) {
-			return;
-		}
-
-		const playerEntity = entity_opt.unwrap();
+	private handleOwnedItems(playerEntity: PlayerEntity, player: Player): void {
 		playerEntity.data.purchased.forEach((encoded) => {
 			const decoded = decoderPartIdentifiers[encoded as keyof DecodePartIdentifier];
 			if (decoded === undefined) {
-				this.logger.Error("Could not decode part identifier {@Identifier}", encoded);
+				this.logger.Error(`Could not decode part identifier ${encoded}`);
 				return;
 			}
 
-			const button = this.instance.Buttons.FindFirstChild(decoded) as BasePart | undefined;
+			const button = this.instance.Buttons.FindFirstChild(decoded) as BasePart;
 			if (!button) {
 				return;
 			}
 
 			const buttonComponent = Dependency<Components>().getComponent<PurchaseButton>(button);
 			if (!buttonComponent) {
-				this.logger.Error("Could not find purchase button component for {@Button}", button);
+				this.logger.Error(`Could not find PurchaseButton component for ${button}`);
 				return;
 			}
 
 			buttonComponent.purchased = true;
 
 			// Add the corresponding item to the tycoon.
-			buttonComponent.unbindButtonTouched();
+			buttonComponent.unbindButtonTouched(true);
 			for (const listener of buttonComponent.listeners) {
 				task.spawn(() => {
-					listener.onPurchaseButtonBought(player);
+					listener.onPurchaseButtonBought(player, buttonComponent.janitor);
 				});
 			}
 		});
+	}
 
-		const buttons = this.instance.Buttons.GetChildren();
-		const nonOwnedButtons = buttons.filter((button) => {
+	/**
+	 *
+	 * @param buttons
+	 * @param playerEntity
+	 * @returns
+	 */
+	private getNonOwnedButtons(buttons: Array<Instance>, playerEntity: PlayerEntity): Array<Instance> {
+		return buttons.filter((button) => {
 			const encoded = encoderPartIdentifiers[button.Name as keyof EncodePartIdentifier];
 			if (encoded === undefined) {
 				this.logger.Warn("Could not encode part identifier {@Identifier}", button.Name);
@@ -199,40 +248,30 @@ export class Lot extends BaseComponent<ILotAttributes, ILotModel> implements OnS
 
 			return !playerEntity.data.purchased.includes(encoded);
 		});
+	}
 
+	/**
+	 *
+	 * @param nonOwnedButtons
+	 * @returns
+	 */
+	private handleNonOwnedButtons(nonOwnedButtons: Array<Instance>): Array<PurchaseButton> {
+		const objectsWithDependencies: Array<PurchaseButton> = [];
 		nonOwnedButtons.forEach((button) => {
 			const buttonComponent = Dependency<Components>().getComponent<PurchaseButton>(button);
 			if (!buttonComponent) {
-				this.logger.Error("Could not find purchase button component for {@Button}", button);
+				this.logger.Error(`Could not find purchase button component for ${button}`);
 				return;
 			}
 
 			const dependency = buttonComponent.attributes.Dependency;
 			if (dependency !== undefined && dependency !== "") {
-				this.objectsWithDependencies.push(buttonComponent);
+				objectsWithDependencies.push(buttonComponent);
 			}
 
-			buttonComponent.bindButtonTouched();
+			buttonComponent.bindButtonTouched(true);
 		});
 
-		this.objectsWithDependencies.forEach((buttonComponent) => {
-			const dependency = buttonComponent.attributes.Dependency;
-			for (const button of buttons) {
-				if (button.Name === dependency) {
-					const dependencyButton = Dependency<Components>().getComponent<PurchaseButton>(button);
-					if (!dependencyButton) {
-						this.logger.Error("Could not find purchase button component for {@Button}", button);
-						return;
-					}
-
-					if (!dependencyButton.purchased) {
-						buttonComponent.unbindButtonTouched();
-					}
-
-					dependencyButton.addDependency(buttonComponent);
-					return;
-				}
-			}
-		});
+		return objectsWithDependencies;
 	}
 }
