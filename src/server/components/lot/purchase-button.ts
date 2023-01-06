@@ -21,6 +21,7 @@ import { Lot } from "./lot";
 export interface IOnPurchaseButtonBought {
 	/** Called when this button is successfully purchased. */
 	onPurchaseButtonBought(owner: Player, janitor: Janitor): void;
+	onPurchaseButtonBought(owner: Player, janitor: Janitor): void;
 }
 
 /**
@@ -35,6 +36,7 @@ export class PurchaseButton extends BaseComponent<IPurchaseButtonAttributes, IPu
 	public listeners: Set<IOnPurchaseButtonBought>;
 	public lot!: Lot;
 	public purchased: boolean;
+	public janitor: Janitor<{ Visibility: string | RBXScriptConnection }>;
 
 	private identifier: string;
 	private debounce: boolean;
@@ -208,10 +210,7 @@ export class PurchaseButton extends BaseComponent<IPurchaseButtonAttributes, IPu
 		}
 
 		const rebirthCheck = (): boolean => {
-			print("PB: ", this.attributes.Rebirths);
-			print("PB: ", playerEntity.data.rebirths);
 			if (this.attributes.Rebirths !== undefined && this.attributes.Rebirths > 0) {
-				print("PB: ", playerEntity.data.rebirths >= this.attributes.Rebirths);
 				return playerEntity.data.rebirths >= this.attributes.Rebirths;
 			}
 			return true;

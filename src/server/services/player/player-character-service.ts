@@ -1,5 +1,4 @@
 import { OnStart, Service } from "@flamework/core";
-import { initaliseServer } from "@rbxts/character-realism";
 import { Logger } from "@rbxts/log";
 import promiseR15, { CharacterRigR6, CharacterRigR15, promiseR6 } from "@rbxts/promise-character";
 import { promiseChildOfClass } from "@rbxts/promise-child";
@@ -12,9 +11,10 @@ import { OnPlayerJoin } from "./player-service";
 @Service({})
 export class PlayerCharacterService implements OnStart, OnPlayerJoin {
 	constructor(private readonly logger: Logger) {}
+	constructor(private readonly logger: Logger) {}
 
 	public onStart(): void {
-		initaliseServer();
+		// initaliseServer();
 	}
 
 	public onPlayerJoin(playerEntity: playerEntity): void {
@@ -37,11 +37,11 @@ export class PlayerCharacterService implements OnStart, OnPlayerJoin {
 
 		if (rigType === "R15") {
 			const rig15 = await promiseR15(_c);
-			//this.characterR15(rig15);
+			this.characterR15(rig15);
 			this.characterShared(player, rig15);
 		} else if (rigType === "R6") {
 			const rig6 = await promiseR6(_c);
-			//this.characterR6(rig6);
+			this.characterR6(rig6);
 			this.characterShared(player, rig6);
 		} else {
 			throw error(`${_c.Name} has an unknown rig type! ${rigType}`);

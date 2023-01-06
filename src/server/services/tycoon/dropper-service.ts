@@ -14,7 +14,7 @@ import { PathNumber } from "types/interfaces/droppers";
 
 import { OnPlayerJoin, PlayerService } from "../player/player-service";
 import { MoneyService } from "../stores/money-service";
-import { LotService, OnLotOwned } from "./lot-service";
+import { LotService, OnLotOwned, OnPlayerRebirthed } from "./lot-service";
 
 type LotName = string;
 
@@ -40,8 +40,8 @@ interface IOwnedUpgrader {
  * TODO: Can Map<PathNumber> be changed to Array<Index>?
  */
 @Service({})
-export class DropperService implements OnInit, OnStart, OnTick, OnPlayerJoin, OnLotOwned {
-	private connections: Map<Player, Set<Promise<void | number>>>;
+export class DropperService implements OnInit, OnStart, OnTick, OnPlayerJoin, OnLotOwned, OnPlayerRebirthed {
+	private connections: Map<Player, Set<Promise<number | void>>>;
 	private lotPositions: Map<LotName, Vector3>;
 	private lotToReplicateTo: Map<Player, LotName>;
 	private ownedDroppers: Map<Player, Map<PathNumber, Array<IDropperSimulatingInfo>>>;
@@ -103,10 +103,17 @@ export class DropperService implements OnInit, OnStart, OnTick, OnPlayerJoin, On
 			return;
 		}
 
-		this.connections.set(newOwner, new Set<Promise<number | void>>());
+		this.connections.set(newOwner, new Set());
 
 		const playerEntity = entity_opt.unwrap();
 		playerEntity.playerRemoving.Add(() => {
+			const lotRemoving = playerEntity.player.GetAttribute("Lot") as LotName;
+			for (const [player, lot] of this.lotToReplicateTo) {
+				if (lot === lotRemoving) {
+					Events.playerOutOfRangeOfLot.fire(player);
+				}
+			}
+
 			const index = this.playersWithLot.indexOf(newOwner);
 			if (index !== -1) {
 				this.playersWithLot.unorderedRemove(index);
@@ -171,7 +178,7 @@ export class DropperService implements OnInit, OnStart, OnTick, OnPlayerJoin, On
 			thread.cancel();
 		});
 
-		this.connections.set(playerEntity.player, new Set<Promise<number | void>>());
+		this.connections.set(playerEntity.player, new Set());
 
 		for (let path = 0; path < NUMBER_OF_PATHS + 1; path++) {
 			this.ownedDroppers.get(playerEntity.player)?.set(path, []);

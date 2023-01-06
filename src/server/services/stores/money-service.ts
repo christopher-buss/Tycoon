@@ -104,6 +104,25 @@ export class MoneyService implements OnPlayerJoin, OnTick {
 		);
 	}
 
+	public setPlayerMoneyToZero(entity: PlayerEntity): void {
+		entity.updateData((data) => {
+			data.cash = 0;
+			return data;
+		});
+
+		entity.player.SetAttribute("Cash", entity.data.cash);
+
+		// Update the leaderboard with the new value
+		this.leaderstatsService.getStatObject(entity.player, "Yen").match(
+			(stat) => {
+				stat.Value = entity.data.cash;
+			},
+			() => {
+				this.logger.Error(`Failed to update leaderstats for ${entity.player}`);
+			},
+		);
+	}
+
 	/**
 	 *
 	 * @param entity

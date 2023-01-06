@@ -89,8 +89,8 @@ export class PlayerChatService implements OnInit, OnPlayerJoin {
 		this.tags.push({
 			requirement: (player: Player) => player.GetAttribute(attributeName) === true,
 			setupConnection: (player: Player) => {
-				return player.GetAttributeChangedSignal(attributeName).Connect((newValue: boolean) => {
-					if (newValue === true) {
+				return player.GetAttributeChangedSignal(attributeName).Connect(() => {
+					if (player.GetAttribute(attributeName) === true) {
 						this.playerCurrentTags.get(player)?.push(tagInfo);
 						const currentTags = this.playerCurrentTags.get(player);
 						if (currentTags) {
@@ -121,6 +121,7 @@ export class PlayerChatService implements OnInit, OnPlayerJoin {
 				this.logger.Info(`Adding tag ${entry.tagInfo.TagText} to ${playerEntity.player.Name}`);
 				playerTags.push(entry.tagInfo);
 			} else if (entry.setupConnection !== undefined) {
+				this.logger.Verbose(`Adding connection for ${playerEntity.player.Name} to ${entry.tagInfo.TagText}`);
 				playerEntity.playerRemoving.Add(entry.setupConnection(playerEntity.player));
 			}
 		});

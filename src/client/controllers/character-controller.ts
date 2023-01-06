@@ -1,7 +1,8 @@
 import { Controller, OnStart } from "@flamework/core";
-import { initaliseClient } from "@rbxts/character-realism";
 
-@Controller({})
+@Controller({
+	loadOrder: math.huge,
+})
 export class CharacterController implements OnStart {
 	public onStart(): void {
 		initaliseClient().Start({

@@ -38,7 +38,13 @@ export class MusicController implements OnStart, OnInit {
 			const song = this.backgroundMusic[this.songIndex];
 			song.Play();
 
-			this.songIndex = (this.songIndex % this.backgroundMusic.size()) + 1;
+			if (this.songIndex === this.backgroundMusic.size() - 1) {
+				this.songIndex = 0;
+			} else {
+				this.songIndex++;
+			}
+
+			// this.songIndex = (this.songIndex % this.backgroundMusic.size()) + 1;
 			task.wait(song.TimeLength);
 		}
 	}

@@ -40,6 +40,12 @@ export class Lot extends BaseComponent<ILotAttributes, ILotModel> {
 		assert(this.team !== undefined, `Team ${this.instance.Name} does not exist`);
 
 		this.name = this.team.Name;
+		this.position = this.instance.ReplicationPart.Position;
+	}
+
+	/** @hidden */
+	public onStart(): void {
+		this.clearOwnedButtons();
 	}
 
 	/**
@@ -169,7 +175,7 @@ export class Lot extends BaseComponent<ILotAttributes, ILotModel> {
 	 * Add any owned items for the player to the tycoon.
 	 * @param playerEntity
 	 */
-	private loadPurchaseButtons(playerEntity: PlayerEntity): void {
+	public loadPurchaseButtons(playerEntity: PlayerEntity): void {
 		this.handleOwnedItems(playerEntity, playerEntity.player);
 
 		const buttons = this.instance.Buttons.GetChildren();

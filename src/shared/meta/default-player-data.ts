@@ -8,7 +8,7 @@ const DefaultPlayerData = {
 
 	purchased: [] as Array<number>, // uses the part-identifiers rather than strings.
 
-	obbyLastCompleted: os.clock(),
+	obbyLastCompleted: os.time(),
 
 	gamePasses: {
 		// tools

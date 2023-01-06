@@ -94,5 +94,12 @@ export class Upgrader extends BaseComponent<IUpgraderAttributes> implements OnSt
 	public reset(): void {
 		this.logger.Debug(`Resetting upgrader ${this.instance.Name}`);
 		this.upgrader.Parent = ServerStorage.Upgraders;
+
+		janitor.Add(() => this.reset());
+	}
+
+	public reset(): void {
+		this.logger.Debug(`Resetting upgrader ${this.instance.Name}`);
+		this.upgrader.Parent = ServerStorage.Upgraders;
 	}
 }

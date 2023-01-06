@@ -145,7 +145,7 @@ export class DropperController implements OnStart, OnInit {
 				(PartInfo[partType] as PartInfoKey).Value *
 				(1 + data.rebirths / 5) *
 				(data.gamePasses.doubleMoneyGamepass ? 2 : 1);
-			ui.PriceLabel.Text = tostring("¥" + string.format("%.0f", partPrice));
+			ui.PriceLabel.Text = tostring("$" + string.format("%.0f", partPrice));
 
 			ui.SetAttribute("Price", partPrice);
 		}
@@ -353,7 +353,7 @@ export class DropperController implements OnStart, OnInit {
 			return;
 		}
 
-		for (const encoded of data) {
+		data.forEach((encoded) => {
 			const partType = decoderPartIdentifiers[
 				encoded.X as keyof DecodePartIdentifier
 			] as keyof EncodePartIdentifier;
@@ -364,7 +364,7 @@ export class DropperController implements OnStart, OnInit {
 			const part = this.partCache.get(partType)?.GetPart() as DropperPart;
 			if (!part) {
 				this.logger.Error(`Failed to get part of type ${partType}`);
-				continue;
+				return;
 			}
 
 			const ui = part.FindFirstChild("Price") as DropperBillboard;
@@ -381,6 +381,6 @@ export class DropperController implements OnStart, OnInit {
 
 			const time = PATH_INFO[pathNumber]!.TotalTime * (1 - progress / PATH_INFO[pathNumber]!.TotalProgress);
 			this.createTween(time, progress, pathNumber, partType, part);
-		}
+		});
 	}
 }
