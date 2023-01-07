@@ -1,4 +1,5 @@
 import { OnStart, Service } from "@flamework/core";
+import { initaliseServer } from "@rbxts/character-realism";
 import { Logger } from "@rbxts/log";
 import promiseR15, { CharacterRigR6, CharacterRigR15, promiseR6 } from "@rbxts/promise-character";
 import { promiseChildOfClass } from "@rbxts/promise-child";
@@ -11,10 +12,9 @@ import { OnPlayerJoin } from "./player-service";
 @Service({})
 export class PlayerCharacterService implements OnStart, OnPlayerJoin {
 	constructor(private readonly logger: Logger) {}
-	constructor(private readonly logger: Logger) {}
 
 	public onStart(): void {
-		// initaliseServer();
+		initaliseServer();
 	}
 
 	public onPlayerJoin(playerEntity: playerEntity): void {

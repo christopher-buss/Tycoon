@@ -39,7 +39,7 @@ export class PlayerHead extends BaseComponent<{}, IPlayerHeadModel> implements O
 
 	private createInterface(): Roact.Element {
 		return PlayerHeadUi({
-			Cash: "¥" + FormatCompact(this.player.GetAttribute("Cash") as number, 2),
+			Cash: "$" + FormatCompact(this.player.GetAttribute("Cash") as number, 2),
 			Rebirths: (this.player.GetAttribute("Rebirths") as number) + " rebirths",
 			Instance: this.instance,
 			Player: this.player,

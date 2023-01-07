@@ -13,10 +13,12 @@ import { ILotModel } from "types/interfaces/lots";
 import { IOnPurchaseButtonBought, PurchaseButton } from "./purchase-button";
 
 export interface IUpgraderAttributes {
+	Color?: Color3;
 	Path: number;
 }
 
 export interface IUpgraderInfo {
+	Color?: Color3;
 	Owner: Player;
 	Path: number;
 	Additive: number;
@@ -76,9 +78,15 @@ export class Upgrader extends BaseComponent<IUpgraderAttributes> implements OnSt
 
 		this.upgrader.Parent = this.owner.Objects;
 
-		Events.playerBoughtObject.broadcast(this.owner.Name, this.attributes.Path, this.instance.Name);
+		Events.playerBoughtObject.broadcast(
+			this.owner.Name,
+			this.attributes.Path,
+			this.instance.Name,
+			this.attributes.Color,
+		);
 
 		const upgraderInfo: IUpgraderInfo = {
+			Color: this.attributes.Color,
 			Path: this.attributes.Path,
 			Owner: player,
 			Additive: (PartInfo[this.instance.Name as PartInfoType] as UpgraderKey).Additive,
@@ -87,13 +95,6 @@ export class Upgrader extends BaseComponent<IUpgraderAttributes> implements OnSt
 
 		// Register upgrader as being purchased
 		this.dropperService.addOwnedUpgrader(upgraderInfo);
-
-		janitor.Add(() => this.reset());
-	}
-
-	public reset(): void {
-		this.logger.Debug(`Resetting upgrader ${this.instance.Name}`);
-		this.upgrader.Parent = ServerStorage.Upgraders;
 
 		janitor.Add(() => this.reset());
 	}

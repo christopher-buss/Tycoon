@@ -46,7 +46,7 @@ export class Dropper extends BaseComponent<IDropperAttributes> implements OnStar
 			DropperType: this.instance.Name,
 			Path: this.attributes.Path,
 			Owner: owner,
-			StartProgress: this.attributes.StartProgress ?? 0,
+			StartProgress: this.attributes.StartProgress ?? 1,
 		};
 
 		this.dropperService.addOwnedDropper(dropperInfo);

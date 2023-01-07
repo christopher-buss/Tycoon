@@ -38,7 +38,7 @@ interface ClientEvents {
 	playerOutOfRangeOfLot(): void;
 
 	/** Fired by the server when a player buys an object */
-	playerBoughtObject(lotName: string, pathNumber: PathNumber, objectName: string): void;
+	playerBoughtObject(lotName: string, pathNumber: PathNumber, objectName: string, textColor?: Color3): void;
 
 	/** Fired by the server when a player is teleported by a teleport */
 	playerTeleported(orientation: Vector3): void;

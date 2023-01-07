@@ -66,6 +66,9 @@ export class DropperService implements OnInit, OnStart, OnTick, OnPlayerJoin, On
 		this.timeSinceLastPlayerInRangeUpdate = 0;
 	}
 
+	/**
+	 *
+	 */
 	public onInit(): void {
 		for (const team of Teams.GetTeams()) {
 			this.simulatedDroppers.set(team.Name, new Map<PathNumber, Array<IDropperSimulating>>());
@@ -75,6 +78,9 @@ export class DropperService implements OnInit, OnStart, OnTick, OnPlayerJoin, On
 		}
 	}
 
+	/**
+	 *
+	 */
 	public onStart(): void {
 		const lots = this.lotService.getAllLots();
 		for (const lot of lots) {
@@ -82,6 +88,10 @@ export class DropperService implements OnInit, OnStart, OnTick, OnPlayerJoin, On
 		}
 	}
 
+	/**
+	 *
+	 * @param upgraderInfo
+	 */
 	public addOwnedUpgrader(upgraderInfo: IUpgraderInfo): void {
 		this.logger.Info(`Adding owned upgrader for ${upgraderInfo.Owner.Name}`);
 		this.ownedUpgraders.get(upgraderInfo.Owner)?.get(upgraderInfo.Path)?.push({
@@ -90,6 +100,12 @@ export class DropperService implements OnInit, OnStart, OnTick, OnPlayerJoin, On
 		});
 	}
 
+	/**
+	 *
+	 * @param _lot
+	 * @param newOwner
+	 * @returns
+	 */
 	public onLotOwned(_lot: Lot, newOwner: Player): void {
 		this.playersWithLot.push(newOwner);
 
@@ -121,6 +137,10 @@ export class DropperService implements OnInit, OnStart, OnTick, OnPlayerJoin, On
 		});
 	}
 
+	/**
+	 *
+	 * @param playerEntity
+	 */
 	public onPlayerJoin(playerEntity: playerEntity): void {
 		this.ownedDroppers.set(playerEntity.player, new Map<PathNumber, Array<IDropperSimulatingInfo>>());
 
@@ -137,6 +157,10 @@ export class DropperService implements OnInit, OnStart, OnTick, OnPlayerJoin, On
 		});
 	}
 
+	/**
+	 *
+	 * @param info
+	 */
 	public addOwnedDropper(info: IDropperInfo): void {
 		const simulatingInfo: IDropperSimulatingInfo = {
 			LastDrop: os.clock(),
@@ -149,30 +173,51 @@ export class DropperService implements OnInit, OnStart, OnTick, OnPlayerJoin, On
 		this.ownedDroppers.get(info.Owner)?.get(info.Path)?.push(simulatingInfo);
 	}
 
+	/**
+	 *
+	 * @param dt
+	 */
 	public onTick(dt: number): void {
 		this.updatePlayersInRange(dt);
 
-		for (const [, ownedDroppers] of this.ownedDroppers) {
-			for (const [pathNumber, simulatingDroppers] of ownedDroppers) {
-				for (const dropper of simulatingDroppers) {
+		this.ownedDroppers.forEach((ownedDroppers) => {
+			ownedDroppers.forEach((simulatingDroppers, pathNumber) => {
+				simulatingDroppers.forEach((dropper) => {
 					const partInfo = PartInfo[dropper.Name as PartInfoType] as DropperKey;
 					if (os.clock() - dropper.LastDrop >= partInfo.DropTime) {
-						const lotName_opt = this.getLotFromDropperOwner(dropper.Owner);
-						if (lotName_opt.isNone()) {
-							continue;
-						}
-
-						const lotName = lotName_opt.unwrap();
-						const newDropper = this.spawnDropper(lotName, pathNumber, dropper);
-						if (newDropper) {
-							this.replicateDropper(lotName, pathNumber, newDropper);
-						}
+						this.handleNewDropper(dropper, pathNumber);
 					}
-				}
-			}
+				});
+			});
+		});
+	}
+
+	// private checkIfShouldSpawnDropper(dropper: IDropperSimulatingInfo): boolean {}
+
+	/**
+	 *
+	 * @param dropper
+	 * @param pathNumber
+	 * @returns
+	 */
+	private handleNewDropper(dropper: IDropperSimulatingInfo, pathNumber: PathNumber): void {
+		const lotName_opt = this.getLotFromDropperOwner(dropper.Owner);
+		if (lotName_opt.isNone()) {
+			return;
+		}
+
+		const lotName = lotName_opt.unwrap();
+		const newDropper = this.spawnDropper(lotName, pathNumber, dropper);
+		if (newDropper) {
+			this.replicateDropper(lotName, pathNumber, newDropper);
 		}
 	}
 
+	/**
+	 *
+	 * @param playerEntity
+	 * @returns
+	 */
 	public onPlayerRebirthed(playerEntity: playerEntity): void {
 		this.connections.get(playerEntity.player)?.forEach((thread) => {
 			thread.cancel();
@@ -201,6 +246,11 @@ export class DropperService implements OnInit, OnStart, OnTick, OnPlayerJoin, On
 		});
 	}
 
+	/**
+	 *
+	 * @param owner
+	 * @returns
+	 */
 	private getLotFromDropperOwner(owner: Player): Option<LotName> {
 		const lot = owner.GetAttribute("Lot") as string;
 		if (lot === undefined) {
@@ -211,6 +261,11 @@ export class DropperService implements OnInit, OnStart, OnTick, OnPlayerJoin, On
 		return Option.some(lot);
 	}
 
+	/**
+	 *
+	 * @param dt
+	 * @returns
+	 */
 	private updatePlayersInRange(dt: number): void {
 		if (this.timeSinceLastPlayerInRangeUpdate < 1) {
 			this.timeSinceLastPlayerInRangeUpdate += dt;
@@ -268,12 +323,19 @@ export class DropperService implements OnInit, OnStart, OnTick, OnPlayerJoin, On
 		}
 	}
 
+	/**
+	 *
+	 * @param lot
+	 * @param pathNumber
+	 * @param dropper
+	 * @returns
+	 */
 	private spawnDropper(lot: LotName, pathNumber: PathNumber, dropper: IDropperSimulatingInfo): IDropperSimulating {
 		const progress = 0;
 
 		this.logger.Debug(`Spawning dropper ${dropper.Name} for ${dropper.Owner.Name}`);
 
-		dropper.LastDrop = os.clock();
+		dropper.LastDrop = os.clock(); // + this.ownedDroppers;
 
 		const dropperInfo: IDropperSimulating = {
 			Dropper: table.clone(dropper),
@@ -301,6 +363,12 @@ export class DropperService implements OnInit, OnStart, OnTick, OnPlayerJoin, On
 		return dropperInfo;
 	}
 
+	/**
+	 *
+	 * @param lot
+	 * @param pathNumber
+	 * @param dropperInfo
+	 */
 	private replicateDropper(lot: LotName, pathNumber: PathNumber, dropperInfo: IDropperSimulating): void {
 		const encodedDropperSimulating = new Vector2int16(
 			pathNumber,
@@ -314,6 +382,12 @@ export class DropperService implements OnInit, OnStart, OnTick, OnPlayerJoin, On
 		});
 	}
 
+	/**
+	 *
+	 * @param path
+	 * @param dropper
+	 * @returns
+	 */
 	private awardCashToPlayer(path: PathNumber, dropper: IDropperSimulatingInfo): void {
 		// Currently we're faking the simulation here by applying the cash to the player if they
 		// own an upgrader at the point of the dropper despawning. TODO: Can this be done better?

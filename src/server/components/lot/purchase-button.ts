@@ -36,7 +36,6 @@ export class PurchaseButton extends BaseComponent<IPurchaseButtonAttributes, IPu
 	public listeners: Set<IOnPurchaseButtonBought>;
 	public lot!: Lot;
 	public purchased: boolean;
-	public janitor: Janitor<{ Visibility: string | RBXScriptConnection }>;
 
 	private identifier: string;
 	private debounce: boolean;

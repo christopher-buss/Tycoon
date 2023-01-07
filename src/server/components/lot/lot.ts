@@ -1,5 +1,5 @@
 import { BaseComponent, Component, Components } from "@flamework/components";
-import { Dependency } from "@flamework/core";
+import { Dependency, OnStart } from "@flamework/core";
 import { Logger } from "@rbxts/log";
 import { Option, Result } from "@rbxts/rust-classes";
 import { Players, Teams } from "@rbxts/services";
@@ -25,7 +25,7 @@ import { PurchaseButton } from "./purchase-button";
 @Component({
 	tag: Tag.Lot,
 })
-export class Lot extends BaseComponent<ILotAttributes, ILotModel> {
+export class Lot extends BaseComponent<ILotAttributes, ILotModel> implements OnStart {
 	public readonly name: string;
 	public readonly position: Vector3;
 
@@ -34,13 +34,15 @@ export class Lot extends BaseComponent<ILotAttributes, ILotModel> {
 	constructor(private readonly logger: Logger, private readonly lotService: LotService) {
 		super();
 
+		print("STARTING LOT");
+
 		this.position = this.instance.Spawn.Position;
 
 		this.team = Teams.FindFirstChild(this.instance.Name) as Team;
 		assert(this.team !== undefined, `Team ${this.instance.Name} does not exist`);
 
 		this.name = this.team.Name;
-		this.position = this.instance.ReplicationPart.Position;
+		// this.position = this.instance.ReplicationPart.Position;
 	}
 
 	/** @hidden */
@@ -125,7 +127,7 @@ export class Lot extends BaseComponent<ILotAttributes, ILotModel> {
 	 */
 	private setupOwner(playerEntity: PlayerEntity): void {
 		const player = playerEntity.player;
-		player.RequestStreamAroundAsync(this.instance.Spawn.Position);
+		player.RequestStreamAroundAsync(this.position);
 		player.RespawnLocation = this.instance.Spawn;
 		player.Team = this.team;
 		player.SetAttribute("Lot", this.team.Name);

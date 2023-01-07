@@ -127,7 +127,7 @@ export class RebirthButton extends BaseComponent<IRebirthButtonAttributes, IRebi
 		// 	(item) =>
 		// 		item !== encoderPartIdentifiers["Robux Dropper"] || item !== encoderPartIdentifiers["Robux Upgrader"],
 		// );
-
+		const data = playerEntity.data.purchased;
 		return data.size() >= this.lotService.numberOfPurchaseableItems;
 	}
 }

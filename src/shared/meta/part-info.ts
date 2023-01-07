@@ -411,7 +411,19 @@ export const Progress = {
 	["Rainbow Upgrader1"]: {
 		Path: 0,
 		Progress: 11,
-		Audio: "1",
+		Audio: "0",
+	},
+
+	["Basic Upgrader1"]: {
+		Path: 0,
+		Progress: 5,
+		Audio: "0",
+	},
+
+	["Deluxe Upgrader1"]: {
+		Path: 0,
+		Progress: 21,
+		Audio: "0",
 	},
 };
 

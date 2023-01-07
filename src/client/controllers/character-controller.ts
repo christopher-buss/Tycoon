@@ -1,4 +1,5 @@
 import { Controller, OnStart } from "@flamework/core";
+import { initaliseClient } from "@rbxts/character-realism";
 
 @Controller({
 	loadOrder: math.huge,

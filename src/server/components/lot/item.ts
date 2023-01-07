@@ -71,23 +71,16 @@ export class Item extends BaseComponent<IItemAttributes> implements OnStart, IOn
 
 		this.item.Parent = this.owner.Objects;
 
+		// We want to be able to make an item spawn, but we don't want to use
+		// the money connection system for droppers as they have their own way
+		// of generating money for the player.
 		if (CollectionService.HasTag(this.instance, Tag.Dropper)) {
 			return;
 		}
 
 		// Events.playerBoughtObject.broadcast(this.owner.Name, this.attributes.Path, this.instance.Name);
 
-		print("ITEM");
 		const value = (PartInfo[this.instance.Name as PartInfoType] as ItemKey).Value;
 		this.moneyService.addMoneyConnection(player, value);
-
-		// const upgraderInfo: IUpgraderInfo = {
-		// 	Path: this.attributes.Path,
-		// 	Owner: player,
-		// 	Value: PartInfo[this.instance.Name as PartInfoKey].Value,
-		// };
-
-		// // Register upgrader as being purchased
-		// this.dropperService.addOwnedUpgrader(upgraderInfo);
 	}
 }

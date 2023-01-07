@@ -8,7 +8,7 @@ import SoundSystem from "client/modules/3d-sound-system";
 import { Events } from "client/network";
 import { ClientStore } from "client/rodux/rodux";
 import { IUpgraderInfo } from "server/components/lot/upgrader";
-import { DecodePartIdentifier, decoderPartIdentifiers, EncodePartIdentifier } from "shared/meta/part-identifiers";
+import { decoderPartIdentifiers } from "shared/meta/part-identifiers";
 import { PartInfo, PartInfoKey, PartInfoType, Progress, ProgressKey, UpgraderKey } from "shared/meta/part-info";
 import { DropperInfo } from "shared/network";
 import { LOT_NAMES, NUMBER_OF_PATHS, PATH_INFO } from "shared/shared-constants";
@@ -36,7 +36,7 @@ type ISimulationFunction = (
 @Controller({})
 export class DropperController implements OnStart, OnInit {
 	private cachedConveyorLocations: Map<string, Array<Array<Vector3>>>;
-	private currentlySimulating: Array<Janitor<{ NumConnection: string | RBXScriptConnection }>>;
+	private currentlySimulating: Set<Janitor<{ NumConnection: string | RBXScriptConnection }>>;
 	private nearestTycoon: string | undefined;
 	private partCache: Map<string, PartCache>;
 	private upgradersOwned: Map<LotName, Map<PathNumber, Map<DropperProgress, Partial<IUpgraderInfo>>>>;
@@ -47,7 +47,7 @@ export class DropperController implements OnStart, OnInit {
 
 	constructor(private readonly logger: Logger) {
 		this.audioFiles = new Map();
-		this.currentlySimulating = [];
+		this.currentlySimulating = new Set();
 		this.partCache = new Map();
 		this.partCacheLocation = new Instance("Folder");
 		this.simulationFunctions = new Map();
@@ -112,8 +112,9 @@ export class DropperController implements OnStart, OnInit {
 	 * @param pathNumber
 	 * @param objectName
 	 */
-	private boughtUpgrader(lotName: string, pathNumber: PathNumber, objectName: string): void {
+	private boughtUpgrader(lotName: string, pathNumber: PathNumber, objectName: string, textColor?: Color3): void {
 		const upgraderInfo: Partial<IUpgraderInfo> = {
+			Color: textColor,
 			Path: pathNumber,
 			Additive: (PartInfo[objectName as PartInfoType] as UpgraderKey).Additive,
 			Multiplier: (PartInfo[objectName as PartInfoType] as UpgraderKey).Multiplier,
@@ -128,7 +129,12 @@ export class DropperController implements OnStart, OnInit {
 	 * @param dropperInfo
 	 * @returns
 	 */
-	private dropItem(dropperInfo: DropperInfo): void {
+	private dropItem(dropperInfo: DropperInfo, progress = 1): void {
+		if (this.nearestTycoon === undefined) {
+			this.logger.Error(`No lot found for player ${Players.LocalPlayer.Name}`);
+			return;
+		}
+
 		const pathNumber = dropperInfo.X;
 		const partType = decoderPartIdentifiers[dropperInfo.Y as never] as PartInfoType;
 
@@ -140,26 +146,28 @@ export class DropperController implements OnStart, OnInit {
 
 		const ui = newPart.FindFirstChild("Price") as DropperBillboard;
 		if (ui) {
-			const data = ClientStore.getState().playerData;
-			const partPrice =
-				(PartInfo[partType] as PartInfoKey).Value *
-				(1 + data.rebirths / 5) *
-				(data.gamePasses.doubleMoneyGamepass ? 2 : 1);
-			ui.PriceLabel.Text = tostring("$" + string.format("%.0f", partPrice));
-
-			ui.SetAttribute("Price", partPrice);
+			this.updateUi(ui, this.calculatePartPrice(partType));
 		}
 
-		if (this.nearestTycoon === undefined) {
-			this.logger.Warn(`No lot found for player ${Players.LocalPlayer.Name}`);
-			return;
-		}
-
-		const progress = 0;
+		// const progress = currentProgress !== undefined ? currentProgress : 1;
 		newPart.PivotTo(new CFrame(this.cachedConveyorLocations.get(this.nearestTycoon)![pathNumber][progress]));
 
 		const time = PATH_INFO[pathNumber]!.TotalTime * (1 - progress / PATH_INFO[pathNumber]!.TotalProgress);
 		this.createTween(time, progress, pathNumber, partType, newPart);
+	}
+
+	/**
+	 *
+	 * @param partType
+	 * @returns
+	 */
+	private calculatePartPrice(partType: PartInfoType): number {
+		const data = ClientStore.getState().playerData;
+		return (
+			(PartInfo[partType] as PartInfoKey).Value *
+			(1 + data.rebirths / 5) *
+			(data.gamePasses.doubleMoneyGamepass ? 2 : 1)
+		);
 	}
 
 	/**
@@ -170,8 +178,8 @@ export class DropperController implements OnStart, OnInit {
 	 * @returns
 	 */
 	private calculateNewPosition(pathNumber: PathNumber, progress: number, step: number): Vector3 {
-		const previousPosition = this.cachedConveyorLocations.get(this.nearestTycoon!)![pathNumber][progress];
-		const nextPosition = this.cachedConveyorLocations.get(this.nearestTycoon!)![pathNumber][progress + 1];
+		const previousPosition = this.cachedConveyorLocations.get(this.nearestTycoon!)![pathNumber][progress - 1];
+		const nextPosition = this.cachedConveyorLocations.get(this.nearestTycoon!)![pathNumber][progress];
 		return previousPosition.Lerp(nextPosition, step);
 	}
 
@@ -190,12 +198,14 @@ export class DropperController implements OnStart, OnInit {
 		partType: string,
 		part: DropperPart,
 	): void {
+		const totalPoints = this.cachedConveyorLocations.get(this.nearestTycoon!)![pathNumber].size() - 1;
+
 		const numValue = new Instance("NumberValue");
-		numValue.Value = (1 / this.cachedConveyorLocations.get(this.nearestTycoon!)![pathNumber].size()) * progress;
+		numValue.Value = (1 / totalPoints) * progress;
 
 		const tweenInfo = new TweenInfo(totalTime, Enum.EasingStyle.Linear, Enum.EasingDirection.In, 0, false, 0);
 
-		const newTween = TweenService.Create(numValue, tweenInfo, { Value: 1 });
+		const newTween = TweenService.Create(numValue, tweenInfo, { Value: 0.99 });
 		const tweenJanitor = new Janitor<{ NumConnection: string | RBXScriptConnection }>();
 
 		tweenJanitor.Add(
@@ -204,24 +214,20 @@ export class DropperController implements OnStart, OnInit {
 
 				tweenJanitor.Add(
 					numValue.Changed.Connect((t) => {
-						const totalPoints = this.cachedConveyorLocations.get(this.nearestTycoon!)![pathNumber].size();
 						const currentProgress = math.floor(totalPoints * t) + 1;
-						if (currentProgress >= totalPoints - 1) {
-							tweenJanitor.Destroy();
-							return;
-						}
 						if (oldProgress !== currentProgress) {
 							if (this.simulateDroppers(pathNumber, currentProgress, part)) {
 								if (tweenJanitor) {
 									tweenJanitor.Destroy();
-									return;
 								}
+								return;
 							}
 							oldProgress = currentProgress;
 						}
 
-						const position = this.calculateNewPosition(pathNumber, currentProgress, (totalPoints * t) % 1);
-						part.PivotTo(new CFrame(position));
+						part.PivotTo(
+							new CFrame(this.calculateNewPosition(pathNumber, currentProgress, (totalPoints * t) % 1)),
+						);
 					}),
 					"Disconnect",
 					"NumConnection",
@@ -229,16 +235,18 @@ export class DropperController implements OnStart, OnInit {
 			}),
 		);
 
+		tweenJanitor.Add(
+			newTween.Completed.Connect(() => {
+				tweenJanitor.Destroy();
+			}),
+		);
+
 		tweenJanitor.Add(() => {
-			newTween.Cancel();
-
 			this.partCache.get(partType)?.ReturnPart(part);
-
-			const index = this.currentlySimulating.indexOf(tweenJanitor);
-			this.currentlySimulating.unorderedRemove(index);
+			this.currentlySimulating.delete(tweenJanitor);
 		});
 
-		this.currentlySimulating.push(tweenJanitor);
+		this.currentlySimulating.add(tweenJanitor);
 
 		newTween.Play();
 	}
@@ -265,9 +273,10 @@ export class DropperController implements OnStart, OnInit {
 	 * @param ui
 	 * @param value
 	 */
-	private updateUi(ui: DropperBillboard, value: number): void {
+	private updateUi(ui: DropperBillboard, value: number, color = Color3.fromRGB(137, 255, 101)): void {
 		ui.SetAttribute("Price", value);
 		ui.PriceLabel.Text = tostring("$" + string.format("%.0f", value));
+		ui.PriceLabel.TextColor3 = color;
 	}
 
 	/**
@@ -280,18 +289,19 @@ export class DropperController implements OnStart, OnInit {
 	private simulateDroppers(pathNumber: PathNumber, upgraderProgress: number, part: DropperPart): boolean {
 		const hasUpgrader = this.upgradersOwned.get(this.nearestTycoon!)?.get(pathNumber)?.get(upgraderProgress);
 		if (hasUpgrader !== undefined) {
-			const simulationFunction = this.simulationFunctions.get(pathNumber)?.get(upgraderProgress);
-			if (simulationFunction !== undefined) {
-				if (simulationFunction(part, pathNumber, upgraderProgress)) {
-					return true;
-				}
-			}
+			// const simulationFunction = this.simulationFunctions.get(pathNumber)?.get(upgraderProgress);
+			// if (simulationFunction !== undefined) {
+			// 	if (simulationFunction(part, pathNumber, upgraderProgress)) {
+			// 		return true;
+			// 	}
+			// }
 
 			let currentPrice = part.Price.GetAttribute("Price") as number;
 			currentPrice += hasUpgrader.Additive!;
 			currentPrice *= hasUpgrader.Multiplier!;
 
-			this.updateUi(part.Price, currentPrice);
+			print(hasUpgrader.Color);
+			this.updateUi(part.Price, currentPrice, hasUpgrader.Color);
 			// this.playAudio(NetworkedPathType[pathType], upgraderProgress);
 		}
 
@@ -323,12 +333,9 @@ export class DropperController implements OnStart, OnInit {
 	 *
 	 */
 	private stopSimulation(): void {
-		for (let i = this.currentlySimulating.size() - 1; i >= 0; i--) {
-			const janitor = this.currentlySimulating[i];
-			if (Janitor.Is(janitor)) {
-				janitor.Destroy();
-			}
-		}
+		this.currentlySimulating.forEach((janitor) => {
+			janitor.Destroy();
+		});
 
 		this.currentlySimulating.clear();
 	}
@@ -339,7 +346,7 @@ export class DropperController implements OnStart, OnInit {
 	 * @param data
 	 * @returns
 	 */
-	private receivePayload(lotName: string, data: Array<Vector3int16>): void {
+	private async receivePayload(lotName: string, data: Array<Vector3int16>): Promise<void> {
 		this.stopSimulation();
 
 		if (data === undefined) {
@@ -353,34 +360,11 @@ export class DropperController implements OnStart, OnInit {
 			return;
 		}
 
-		data.forEach((encoded) => {
-			const partType = decoderPartIdentifiers[
-				encoded.X as keyof DecodePartIdentifier
-			] as keyof EncodePartIdentifier;
-
-			const pathNumber = encoded.Y;
-			const progress = encoded.Z;
-
-			const part = this.partCache.get(partType)?.GetPart() as DropperPart;
-			if (!part) {
-				this.logger.Error(`Failed to get part of type ${partType}`);
-				return;
-			}
-
-			const ui = part.FindFirstChild("Price") as DropperBillboard;
-			if (ui) {
-				const data = ClientStore.getState().playerData;
-				const partPrice =
-					(PartInfo[partType] as PartInfoKey).Value *
-					(1 + data.rebirths / 5) *
-					(data.gamePasses.doubleMoneyGamepass ? 2 : 1);
-				ui.PriceLabel.Text = tostring("¥" + string.format("%.0f", partPrice));
-
-				ui.SetAttribute("Price", partPrice);
-			}
-
-			const time = PATH_INFO[pathNumber]!.TotalTime * (1 - progress / PATH_INFO[pathNumber]!.TotalProgress);
-			this.createTween(time, progress, pathNumber, partType, part);
+		return Promise.defer(() => {
+			data.forEach((encoded) => {
+				// path number, part type, progress
+				this.dropItem(new Vector2int16(encoded.Y, encoded.X), encoded.Z);
+			});
 		});
 	}
 }
