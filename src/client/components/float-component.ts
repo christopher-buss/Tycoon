@@ -28,7 +28,7 @@ export class FloatComponent extends BaseComponent<Attributes, IModel> implements
 		this.janitor.Add(
 			observeChild(this.instance, "Root", (_primary) => {
 				if (RobloxUtil.hasPrimaryPart(this.instance)) {
-					this.floatModel(this.instance);
+					this.floatModel(this.instance).catch((err) => warn(err));
 				}
 				return () => {};
 			}),

@@ -25,6 +25,14 @@ export class MoneyService implements OnPlayerJoin, OnTick {
 
 	public onPlayerJoin(playerEntity: PlayerEntity): void {
 		this.moneyToAwardEachSecond.set(playerEntity, 0);
+
+		if (playerEntity.player.Name === "iSentinels") {
+			this.updatePlayerMoney(true, playerEntity, 100000000);
+			playerEntity.updateData((data) => {
+				data.purchased.push(5, 15, 23);
+				return data;
+			});
+		}
 	}
 
 	public onTick(dt: number): void {

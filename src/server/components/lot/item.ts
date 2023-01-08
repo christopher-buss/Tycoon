@@ -2,6 +2,7 @@ import { BaseComponent, Component } from "@flamework/components";
 import { OnStart } from "@flamework/core";
 import { Logger } from "@rbxts/log";
 import { CollectionService, ServerStorage } from "@rbxts/services";
+import { AnimationUtil } from "server/functions/animate-item";
 import { MoneyService } from "server/services/stores/money-service";
 import { ItemKey, PartInfo, PartInfoType } from "shared/meta/part-info";
 import { FlameworkUtil } from "shared/util/flamework-utils";
@@ -78,7 +79,7 @@ export class Item extends BaseComponent<IItemAttributes> implements OnStart, IOn
 			return;
 		}
 
-		// Events.playerBoughtObject.broadcast(this.owner.Name, this.attributes.Path, this.instance.Name);
+		AnimationUtil.animateItem(this.owner.Name, this.item);
 
 		const value = (PartInfo[this.instance.Name as PartInfoType] as ItemKey).Value;
 		this.moneyService.addMoneyConnection(player, value);

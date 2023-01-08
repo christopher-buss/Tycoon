@@ -3,6 +3,7 @@ import { OnStart } from "@flamework/core";
 import { Janitor } from "@rbxts/janitor";
 import { Logger } from "@rbxts/log";
 import { ServerStorage } from "@rbxts/services";
+import { AnimationUtil } from "server/functions/animate-item";
 import { Events } from "server/network";
 import { DropperService } from "server/services/tycoon/dropper-service";
 import { PartInfo, PartInfoType, UpgraderKey } from "shared/meta/part-info";
@@ -78,12 +79,11 @@ export class Upgrader extends BaseComponent<IUpgraderAttributes> implements OnSt
 
 		this.upgrader.Parent = this.owner.Objects;
 
-		Events.playerBoughtObject.broadcast(
-			this.owner.Name,
-			this.attributes.Path,
-			this.instance.Name,
-			this.attributes.Color,
-		);
+		const lotName = this.owner.Name;
+
+		Events.playerBoughtObject.broadcast(lotName, this.attributes.Path, this.instance.Name, this.attributes.Color);
+
+		AnimationUtil.animateItem(lotName, this.upgrader);
 
 		const upgraderInfo: IUpgraderInfo = {
 			Color: this.attributes.Color,

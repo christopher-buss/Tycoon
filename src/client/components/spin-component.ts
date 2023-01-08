@@ -41,7 +41,7 @@ export class SpinComponent extends BaseComponent<IAttributes, IModel> implements
 		while (this.instance !== undefined) {
 			await this.janitor.AddPromise(
 				TweenUtil.tweenPromise(model.PrimaryPart, info, {
-					CFrame: model.PrimaryPart.CFrame.mul(CFrame.Angles(0, math.rad(120), 0)),
+					CFrame: model.PrimaryPart.CFrame.mul(CFrame.Angles(0, -math.rad(120), 0)),
 				}),
 			);
 		}

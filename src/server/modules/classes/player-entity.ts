@@ -49,6 +49,6 @@ export default class PlayerEntity {
 
 		// TODO: Only send changed keys
 		Events.playerDataChanged(this.player, newData);
-		Log.Debug("Player data for {Player} updated to {@Data}", this.player, newData);
+		Log.Verbose("Player data for {Player} updated to {@Data}", this.player, newData);
 	}
 }

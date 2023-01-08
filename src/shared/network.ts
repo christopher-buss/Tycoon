@@ -40,6 +40,8 @@ interface ClientEvents {
 	/** Fired by the server when a player buys an object */
 	playerBoughtObject(lotName: string, pathNumber: PathNumber, objectName: string, textColor?: Color3): void;
 
+	animateItem(numberOfDescendants: number, objectLocation: string): void;
+
 	/** Fired by the server when a player is teleported by a teleport */
 	playerTeleported(orientation: Vector3): void;
 }

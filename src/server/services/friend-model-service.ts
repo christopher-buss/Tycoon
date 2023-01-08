@@ -128,16 +128,43 @@ export class FriendModelService implements OnLotOwned {
 			return;
 		}
 
-		const randomFriendIndex = math.random(1, friends.size());
-		const friendId = friends[randomFriendIndex];
-		const playerDescription = Players.GetHumanoidDescriptionFromUserId(friendId);
-		playerDescription.BodyTypeScale = 0;
-		playerDescription.HeadScale = 1;
+		let randomFriendIndex: number;
+		let friendId: number;
 
-		friend.FindFirstChildWhichIsA("Humanoid")?.ApplyDescription(playerDescription);
+		const setFriend = (): Promise<void> => {
+			return Promise.try(() => {
+				return Players.GetHumanoidDescriptionFromUserId(friendId);
+			}).andThen((playerDescription) => {
+				playerDescription.BodyTypeScale = 0;
+				playerDescription.HeadScale = 1;
 
-		this.friendsInUse.get(player)?.set(friend, friendId);
-		this.friends.get(player)?.remove(randomFriendIndex);
+				friend.FindFirstChildWhichIsA("Humanoid")?.ApplyDescription(playerDescription);
+
+				this.disableShadowsOnFriend(friend);
+
+				this.friendsInUse.get(player)?.set(friend, friendId);
+				this.friends.get(player)?.remove(randomFriendIndex);
+			});
+		};
+
+		let attempts = 1;
+		// If there is an error, the player is likely banned or deleted. We
+		// should remove them from the list of friends, and try again.
+		return Promise.retry(async () => {
+			try {
+				if (attempts > 1) {
+					print(`Error setting friend, removing ${friendId} from list`);
+					this.friends.get(player)?.remove(randomFriendIndex);
+				}
+
+				randomFriendIndex = math.random(0, friends.size() - 1);
+				friendId = friends[randomFriendIndex];
+				attempts += 1;
+				return setFriend();
+			} catch (err) {
+				this.logger.Error(`Error setting friend: ${err}`);
+			}
+		}, 10);
 	}
 
 	private onFriendRemoved(player: Player, friend: Instance): void {
@@ -148,5 +175,13 @@ export class FriendModelService implements OnLotOwned {
 
 		this.friends.get(player)?.push(friendId);
 		this.friendsInUse.get(player)?.delete(friend);
+	}
+
+	private disableShadowsOnFriend(friend: Instance): void {
+		friend.GetDescendants().forEach((descendant) => {
+			if (descendant.IsA("BasePart") || descendant.IsA("UnionOperation") || descendant.IsA("MeshPart")) {
+				descendant.CastShadow = false;
+			}
+		});
 	}
 }

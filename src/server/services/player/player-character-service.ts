@@ -53,7 +53,9 @@ export class PlayerCharacterService implements OnStart, OnPlayerJoin {
 	private characterR15(_rig15: CharacterRigR15): void {}
 
 	private characterShared(player: Player, rig: CharacterRigR6 | CharacterRigR15): void {
-		CollectionService.AddTag(rig.Head, Tag.PlayerHead);
+		task.defer(() => {
+			CollectionService.AddTag(rig.Head, Tag.PlayerHead);
+		});
 
 		rig.Humanoid.Died.Connect(() => {
 			task.wait(Players.RespawnTime);

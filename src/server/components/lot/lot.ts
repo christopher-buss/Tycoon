@@ -133,7 +133,7 @@ export class Lot extends BaseComponent<ILotAttributes, ILotModel> implements OnS
 		player.SetAttribute("Lot", this.team.Name);
 		this.loadPurchaseButtons(playerEntity);
 		this.setupGui(player);
-		player.LoadCharacter();
+		// player.LoadCharacter();
 	}
 
 	/**

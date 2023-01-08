@@ -61,7 +61,7 @@ export class PurchaseButton extends BaseComponent<IPurchaseButtonAttributes, IPu
 			displayName = this.instance.Name;
 		}
 
-		let color = Color3.fromRGB(126, 126, 126);
+		let color = this.instance.TouchPart.Color;
 		let price = "$" + tostring(this.attributes.Price);
 		if (this.attributes.GamepassId !== undefined && this.attributes.GamepassId !== 0) {
 			color = Color3.fromRGB(38, 255, 0);

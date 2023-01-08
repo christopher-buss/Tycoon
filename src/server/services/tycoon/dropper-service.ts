@@ -41,14 +41,17 @@ interface IOwnedUpgrader {
  */
 @Service({})
 export class DropperService implements OnInit, OnStart, OnTick, OnPlayerJoin, OnLotOwned, OnPlayerRebirthed {
+	public lotToReplicateTo: Map<Player, LotName>;
+
 	private connections: Map<Player, Set<Promise<number | void>>>;
 	private lotPositions: Map<LotName, Vector3>;
-	private lotToReplicateTo: Map<Player, LotName>;
 	private ownedDroppers: Map<Player, Map<PathNumber, Array<IDropperSimulatingInfo>>>;
 	private ownedUpgraders: Map<Player, Map<PathNumber, Array<IOwnedUpgrader>>>;
 	private playersWithLot: Array<Player>;
 	private simulatedDroppers: Map<LotName, Map<PathNumber, Array<IDropperSimulating>>>;
 	private timeSinceLastPlayerInRangeUpdate: number;
+
+	private lastDrop: Map<Player, Map<PathNumber, number>>;
 
 	constructor(
 		private readonly logger: Logger,
@@ -64,6 +67,8 @@ export class DropperService implements OnInit, OnStart, OnTick, OnPlayerJoin, On
 		this.playersWithLot = [];
 		this.simulatedDroppers = new Map();
 		this.timeSinceLastPlayerInRangeUpdate = 0;
+
+		this.lastDrop = new Map();
 	}
 
 	/**
@@ -135,6 +140,11 @@ export class DropperService implements OnInit, OnStart, OnTick, OnPlayerJoin, On
 				this.playersWithLot.unorderedRemove(index);
 			}
 		});
+
+		this.lastDrop.set(newOwner, new Map<PathNumber, number>());
+		for (let path = 0; path < NUMBER_OF_PATHS; path++) {
+			this.lastDrop.get(newOwner)?.set(path, os.clock());
+		}
 	}
 
 	/**
@@ -184,7 +194,7 @@ export class DropperService implements OnInit, OnStart, OnTick, OnPlayerJoin, On
 			ownedDroppers.forEach((simulatingDroppers, pathNumber) => {
 				simulatingDroppers.forEach((dropper) => {
 					const partInfo = PartInfo[dropper.Name as PartInfoType] as DropperKey;
-					if (os.clock() - dropper.LastDrop >= partInfo.DropTime) {
+					if (this.checkIfShouldSpawnDropper(pathNumber, partInfo, dropper)) {
 						this.handleNewDropper(dropper, pathNumber);
 					}
 				});
@@ -192,7 +202,16 @@ export class DropperService implements OnInit, OnStart, OnTick, OnPlayerJoin, On
 		});
 	}
 
-	// private checkIfShouldSpawnDropper(dropper: IDropperSimulatingInfo): boolean {}
+	private checkIfShouldSpawnDropper(
+		pathNumber: PathNumber,
+		partInfo: DropperKey,
+		dropper: IDropperSimulatingInfo,
+	): boolean {
+		const lastDropTime = this.lastDrop.get(dropper.Owner)!.get(pathNumber)!;
+		const nextPotentialDropTime = lastDropTime + 2 / this.ownedDroppers.get(dropper.Owner)!.get(pathNumber)!.size();
+
+		return os.clock() - dropper.LastDrop >= partInfo.DropTime && os.clock() >= nextPotentialDropTime;
+	}
 
 	/**
 	 *
@@ -274,7 +293,7 @@ export class DropperService implements OnInit, OnStart, OnTick, OnPlayerJoin, On
 
 		this.timeSinceLastPlayerInRangeUpdate -= 1 - dt;
 
-		for (const player of this.playersWithLot) {
+		this.playersWithLot.forEach((player) => {
 			let tycoonSet = false;
 			for (const [lotName, lotPosition] of this.lotPositions) {
 				const humanoidRootPart = player.Character?.FindFirstChild("HumanoidRootPart") as BasePart;
@@ -320,7 +339,7 @@ export class DropperService implements OnInit, OnStart, OnTick, OnPlayerJoin, On
 				this.lotToReplicateTo.delete(player);
 				Events.playerOutOfRangeOfLot.fire(player);
 			}
-		}
+		});
 	}
 
 	/**
@@ -335,7 +354,8 @@ export class DropperService implements OnInit, OnStart, OnTick, OnPlayerJoin, On
 
 		this.logger.Debug(`Spawning dropper ${dropper.Name} for ${dropper.Owner.Name}`);
 
-		dropper.LastDrop = os.clock(); // + this.ownedDroppers;
+		dropper.LastDrop = os.clock();
+		this.lastDrop.get(dropper.Owner)!.set(pathNumber, os.clock());
 
 		const dropperInfo: IDropperSimulating = {
 			Dropper: table.clone(dropper),

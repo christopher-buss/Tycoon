@@ -98,12 +98,12 @@ export class DropperController implements OnStart, OnInit {
 	public onStart(): void {
 		this.storeCachedConveyorLocations();
 		const parts = ReplicatedStorage.PartInfo;
-		for (const part of parts.GetChildren()) {
+		parts.GetChildren().forEach((part) => {
 			task.spawn(() => {
-				const partCache = new PartCacheModule(part, 6, this.partCacheLocation);
+				const partCache = new PartCacheModule(part, 5, this.partCacheLocation);
 				this.partCache.set(part.Name, partCache);
 			});
-		}
+		});
 	}
 
 	/**
