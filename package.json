@@ -7,6 +7,7 @@
     "darklua": "darklua process out production",
     "build": "rbxtsc --rojo ./develop.project.json",
     "watch": "cross-env NODE_ENV=development rbxtsc -w --rojo ./develop.project.json",
+    "sync": "rojo serve ./develop.project.json",
     "deploy": "npm run build && npm run darklua",
     "postinstall": "patch-package"
   },

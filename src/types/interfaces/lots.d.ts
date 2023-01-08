@@ -1,22 +1,6 @@
 export interface ILotModel extends Folder {
 	Buttons: Folder;
-	Essentials: Folder & {
-		Claim: BasePart & {
-			Claimed: SurfaceGui & {
-				IconBox: Frame & {
-					PlayerIcon: ImageLabel;
-				};
-				TextBox: Frame & {
-					TextLabel: TextLabel;
-					Username: TextLabel;
-				};
-			};
-			Unclaimed: SurfaceGui & {
-				Label1: TextLabel;
-				Label2: TextLabel;
-			};
-		};
-	};
+	Essentials: Folder;
 	Objects: Folder;
 	Spawn: SpawnLocation;
 }

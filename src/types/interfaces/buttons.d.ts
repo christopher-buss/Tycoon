@@ -1,5 +1,4 @@
 export interface IPurchaseButtonAttributes {
-	ComponentId?: string;
 	Dependency?: string;
 	DisplayName?: string;
 	GamepassId?: number;

@@ -7,6 +7,7 @@ export const enum Tag {
 	"GamepassPrompt" = "GamepassPrompt",
 	"Item" = "Item",
 	"Lot" = "Lot",
+	"LotSign" = "LotSign",
 	"Pet" = "Pet",
 	"PlayerHead" = "PlayerHead",
 	"PurchaseButton" = "PurchaseButton",

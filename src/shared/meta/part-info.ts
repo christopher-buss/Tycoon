@@ -18,10 +18,10 @@ export type ItemKey = {
 export type PartInfoKey = DropperKey | ItemKey;
 
 export type PartInfoType = keyof typeof PartInfo;
-export type PartInfoValue = typeof PartInfo["Perfume"];
+export type PartInfoValue = (typeof PartInfo)["Perfume"];
 
-export type PartInfoUpgraderKey = keyof typeof PartInfo["Basic Upgrader1"];
-export type PartInfoUpgrader = typeof PartInfo["Basic Upgrader1"];
+export type PartInfoUpgraderKey = keyof (typeof PartInfo)["Basic Upgrader1"];
+export type PartInfoUpgrader = (typeof PartInfo)["Basic Upgrader1"];
 
 export const PartInfo = {
 	//**************************************************************************

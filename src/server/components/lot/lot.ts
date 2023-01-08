@@ -91,7 +91,7 @@ export class Lot extends BaseComponent<ILotAttributes, ILotModel> implements OnS
 		return this.getOwner().match(
 			() => {
 				this.attributes.OwnerId = undefined;
-				this.setupGui();
+				// this.setupGui();
 				task.spawn(() => this.clearOwnedButtons());
 				return Result.ok<true, LotErrors>(true);
 			},
@@ -132,8 +132,8 @@ export class Lot extends BaseComponent<ILotAttributes, ILotModel> implements OnS
 		player.Team = this.team;
 		player.SetAttribute("Lot", this.team.Name);
 		this.loadPurchaseButtons(playerEntity);
-		this.setupGui(player);
-		// player.LoadCharacter();
+		// this.setupGui(player);
+		player.LoadCharacter();
 	}
 
 	/**
@@ -159,19 +159,19 @@ export class Lot extends BaseComponent<ILotAttributes, ILotModel> implements OnS
 	 * If the player is not provided, then the GUI will be set as "Unclaimed".
 	 * @param playerName The potential name of the player.
 	 */
-	private setupGui(player?: Player): void {
-		const claimPart = this.instance.Essentials.Claim;
+	// private setupGui(player?: Player): void {
+	// 	const claimPart = this.instance.Essentials.Claim;
 
-		if (player !== undefined) {
-			claimPart.Unclaimed.Enabled = false;
-			claimPart.Claimed.Enabled = true;
-			claimPart.Claimed.TextBox.Username.Text = `${player.Name}'s`;
-			claimPart.Claimed.IconBox.PlayerIcon.Image = `rbxthumb://type=AvatarHeadShot&id=${player.UserId}&w=420&h=420`;
-		} else {
-			claimPart.Unclaimed.Enabled = true;
-			claimPart.Claimed.Enabled = false;
-		}
-	}
+	// 	if (player !== undefined) {
+	// 		claimPart.Unclaimed.Enabled = false;
+	// 		claimPart.Claimed.Enabled = true;
+	// 		claimPart.Claimed.TextBox.Username.Text = `${player.Name}'s`;
+	// 		claimPart.Claimed.IconBox.PlayerIcon.Image = `rbxthumb://type=AvatarHeadShot&id=${player.UserId}&w=420&h=420`;
+	// 	} else {
+	// 		claimPart.Unclaimed.Enabled = true;
+	// 		claimPart.Claimed.Enabled = false;
+	// 	}
+	// }
 
 	/**
 	 * Add any owned items for the player to the tycoon.

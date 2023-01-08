@@ -54,14 +54,11 @@ export class PlayerHead extends BaseComponent<{}, IPlayerHeadModel> implements O
 	 * @hidden
 	 */
 	private onStreamIn(): void {
-		print("HEAD: STREAMED IN");
 		const billboard = this.createInterface();
-		print("HEAD: BILLBOARD CREATED ", billboard);
 		this.setupInterface(billboard);
 	}
 
 	private createInterface(): Roact.Element {
-		print("HEAD: ", this.player.GetAttribute("Cash"), " ", this.player.GetAttribute("Rebirths"));
 		return PlayerHeadUi({
 			Cash: "$" + FormatCompact(this.player.GetAttribute("Cash") as number, 2),
 			Rebirths: (this.player.GetAttribute("Rebirths") as number) + " rebirths",

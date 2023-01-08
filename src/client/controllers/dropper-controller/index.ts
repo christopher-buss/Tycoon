@@ -300,7 +300,6 @@ export class DropperController implements OnStart, OnInit {
 			currentPrice += hasUpgrader.Additive!;
 			currentPrice *= hasUpgrader.Multiplier!;
 
-			print(hasUpgrader.Color);
 			this.updateUi(part.Price, currentPrice, hasUpgrader.Color);
 			// this.playAudio(NetworkedPathType[pathType], upgraderProgress);
 		}

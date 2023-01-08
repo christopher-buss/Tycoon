@@ -2,7 +2,7 @@ import { BaseComponent, Component } from "@flamework/components";
 import { OnStart } from "@flamework/core";
 import { Janitor } from "@rbxts/janitor";
 import { Logger } from "@rbxts/log";
-import { HttpService, MarketplaceService, RunService } from "@rbxts/services";
+import { MarketplaceService, RunService } from "@rbxts/services";
 import Spring from "@rbxts/spring";
 import PlayerEntity from "server/modules/classes/player-entity";
 import { MtxService } from "server/services/mtx-service";
@@ -58,7 +58,6 @@ export class PurchaseButton extends BaseComponent<IPurchaseButtonAttributes, IPu
 		this.purchased = false;
 
 		this.identifier = this.instance.Name;
-		this.attributes.ComponentId = HttpService.GenerateGUID(false);
 		this.debounce = false;
 		this.dependencies = [];
 		this.janitor = new Janitor();
@@ -123,7 +122,7 @@ export class PurchaseButton extends BaseComponent<IPurchaseButtonAttributes, IPu
 	public bindButtonTouched(force: boolean): void {
 		// TODO :this would probably be better as a buyJanitor and a removeJanitor for easier understanding
 		this.janitor.Cleanup();
-		this.logger.Debug(`Binding button touched for ${this.attributes.ComponentId}`);
+		this.logger.Debug(`Binding button touched for ${this.instance.Name}`);
 		this.purchased = false;
 		this.touchPart.CanTouch = true;
 		if (force) {
@@ -139,7 +138,7 @@ export class PurchaseButton extends BaseComponent<IPurchaseButtonAttributes, IPu
 	 * @param force
 	 */
 	public unbindButtonTouched(force: boolean): void {
-		this.logger.Debug(`Binding button touched for ${this.attributes.ComponentId}`);
+		this.logger.Debug(`Unbinding button touched for ${this.instance.Name}`);
 		this.touchPart.CanTouch = false;
 		if (force) {
 			this.forceButtonHidden().catch((err) => this.logger.Warn(err));
@@ -245,7 +244,7 @@ export class PurchaseButton extends BaseComponent<IPurchaseButtonAttributes, IPu
 			return data;
 		});
 
-		this.logger.Info(`${this.attributes.ComponentId} purchased by ${player}`);
+		this.logger.Info(`${this.instance.Name} purchased by ${player}`);
 
 		this.purchased = true;
 		this.dependencies.forEach((dependency) => dependency.bindButtonTouched(false));
@@ -269,7 +268,7 @@ export class PurchaseButton extends BaseComponent<IPurchaseButtonAttributes, IPu
 	 * @returns
 	 */
 	private buyWithMoney(playerEntity: PlayerEntity): boolean {
-		this.logger.Info(`${this.attributes.ComponentId} attempting to be purchased by ${playerEntity.player}`);
+		this.logger.Info(`${this.instance.Name} attempting to be purchased by ${playerEntity.player}`);
 		return this.moneyService.spendMoneyForEntity(playerEntity, this.attributes.Price!);
 	}
 

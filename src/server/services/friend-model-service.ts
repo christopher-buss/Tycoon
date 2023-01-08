@@ -50,7 +50,6 @@ export class FriendModelService implements OnLotOwned {
 		this.janitors.get(lot)?.Add(
 			friend.AncestryChanged.Connect((_, parent) => {
 				if (parent && friend.IsDescendantOf(Workspace)) {
-					print("CHANGED");
 					if (friend.Parent?.Parent !== lot.instance) {
 						return;
 					}
@@ -153,7 +152,7 @@ export class FriendModelService implements OnLotOwned {
 		return Promise.retry(async () => {
 			try {
 				if (attempts > 1) {
-					print(`Error setting friend, removing ${friendId} from list`);
+					this.logger.Warn(`Error setting friend, removing ${friendId} from list`);
 					this.friends.get(player)?.remove(randomFriendIndex);
 				}
 
