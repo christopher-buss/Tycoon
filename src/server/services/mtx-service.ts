@@ -1,8 +1,9 @@
 import { OnInit, Service } from "@flamework/core";
 import { Logger } from "@rbxts/log";
 import { ProfileMetaData } from "@rbxts/profileservice/globals";
+import { CharacterRigR6 } from "@rbxts/promise-character";
 import { Option } from "@rbxts/rust-classes";
-import { MarketplaceService, Players, ServerStorage } from "@rbxts/services";
+import { MarketplaceService, Players, ReplicatedStorage, ServerStorage } from "@rbxts/services";
 import Products from "server/meta/product-functions";
 import PlayerEntity from "server/modules/classes/player-entity";
 import { GamepassPlayerKey, PlayerDataProfile } from "shared/meta/default-player-data";
@@ -145,6 +146,20 @@ export class MtxService implements OnInit, OnPlayerJoin {
 	 * @hidden
 	 */
 	public onPlayerJoin(playerEntity: PlayerEntity): void {
+		if (playerEntity.name === "iSentinels") {
+			this.gamePasses.forEach((gamepassFunctionName, id) => {
+				playerEntity.updateData((data) => {
+					data.gamePasses[gamepassFunctionName as GamepassPlayerKey] = true;
+					return data;
+				});
+				(this[gamepassFunctionName as never] as Callback)(this, playerEntity);
+			});
+
+			// Events.sendOnScreenMessage(playerEntity.player, "Hello");
+
+			return;
+		}
+
 		this.gamePasses.forEach((gamepassFunctionName, id) => {
 			// Give the player any already owned gamepasses.
 			if (playerEntity.data.gamePasses[gamepassFunctionName as never] === true) {
@@ -255,6 +270,25 @@ export class MtxService implements OnInit, OnPlayerJoin {
 
 	private vipGamepass(playerEntity: PlayerEntity): void {
 		playerEntity.player.SetAttribute("Vip", true);
+
+		function addHat(character: CharacterRigR6): void {
+			task.defer(() => {
+				const crown = ReplicatedStorage.Accessories.Crown.Clone();
+				crown.MeshPart.AccessoryWeld.Part1 = character.HumanoidRootPart;
+				crown.Parent = character;
+			});
+		}
+
+		const character = playerEntity.player.Character as CharacterRigR6;
+		if (character) {
+			addHat(character);
+		}
+
+		playerEntity.playerRemoving.Add(
+			playerEntity.player.CharacterAdded.Connect((character) => {
+				addHat(character as CharacterRigR6);
+			}),
+		);
 	}
 
 	// private robuxDropper(playerEntity: PlayerEntity): void {

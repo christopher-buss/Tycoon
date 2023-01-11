@@ -20,7 +20,7 @@ interface IStateProps extends IPassedProps {
 	},
 })
 class RebirthButton extends Roact.PureComponent<IStateProps> {
-	public render() {
+	public render(): Roact.Element {
 		return (
 			<billboardgui
 				Key={Tag.RebirthButton}

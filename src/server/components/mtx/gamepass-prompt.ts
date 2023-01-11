@@ -12,7 +12,7 @@ interface Attributes {
 }
 
 export interface IGamepassPromptModel extends Model {
-	TouchPart: BasePart;
+	Root: BasePart;
 }
 
 @Component({
@@ -28,8 +28,8 @@ export class GamepassPrompt extends BaseComponent<Attributes, IGamepassPromptMod
 	}
 
 	public onStart(): void {
-		this.instance.TouchPart.CanTouch = true;
-		this.Janitor.Add(this.instance.TouchPart.Touched.Connect((...args) => this.onTouched(...args)));
+		this.instance.Root.CanTouch = true;
+		this.Janitor.Add(this.instance.Root.Touched.Connect((...args) => this.onTouched(...args)));
 	}
 
 	private onTouched(part: BasePart): void {

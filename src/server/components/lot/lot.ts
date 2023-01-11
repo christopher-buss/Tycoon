@@ -34,8 +34,6 @@ export class Lot extends BaseComponent<ILotAttributes, ILotModel> implements OnS
 	constructor(private readonly logger: Logger, private readonly lotService: LotService) {
 		super();
 
-		print("STARTING LOT");
-
 		this.position = this.instance.Spawn.Position;
 
 		this.team = Teams.FindFirstChild(this.instance.Name) as Team;
@@ -133,7 +131,7 @@ export class Lot extends BaseComponent<ILotAttributes, ILotModel> implements OnS
 		player.SetAttribute("Lot", this.team.Name);
 		this.loadPurchaseButtons(playerEntity);
 		// this.setupGui(player);
-		player.LoadCharacter();
+		// player.LoadCharacter();
 	}
 
 	/**

@@ -96,7 +96,7 @@ export class TimerButton extends BaseComponent<Attributes, IPurchaseButtonModel>
 		this.janitor.Add(() => {
 			if (this.tree_opt.isSome()) {
 				Roact.unmount(this.tree_opt.unwrap());
-				this.logger.Debug(`Successfully unmounted purchase button for ${this.instance.Name}`);
+				this.logger.Verbose(`Successfully unmounted purchase button for ${this.instance.Name}`);
 			}
 		});
 	}

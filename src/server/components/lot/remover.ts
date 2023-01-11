@@ -3,6 +3,8 @@ import { OnStart } from "@flamework/core";
 import { Janitor } from "@rbxts/janitor";
 import { Logger } from "@rbxts/log";
 import { ServerStorage } from "@rbxts/services";
+import PlayerEntity from "server/modules/classes/player-entity";
+import { OnPlayerRebirthed } from "server/services/tycoon/lot-service";
 import { FlameworkUtil } from "shared/util/flamework-utils";
 import { Tag } from "types/enum/tags";
 import { ILotModel } from "types/interfaces/lots";
@@ -16,7 +18,7 @@ interface Attributes {
 @Component({
 	tag: Tag.Remover,
 })
-export class Remover extends BaseComponent<Attributes> implements OnStart, IOnPurchaseButtonBought {
+export class Remover extends BaseComponent<Attributes> implements OnStart, IOnPurchaseButtonBought, OnPlayerRebirthed {
 	private owner: ILotModel;
 	private toRemove: Model;
 
@@ -52,23 +54,22 @@ export class Remover extends BaseComponent<Attributes> implements OnStart, IOnPu
 		janitor.Add(() => this.reset());
 	}
 
+	public onPlayerRebirthed(playerEntity: PlayerEntity): void {
+		const lot = playerEntity.player.GetAttribute("Lot") as string | undefined;
+		if (lot === undefined) {
+			this.logger.Error(`Could not find lot for player ${playerEntity.player}`);
+			return;
+		}
+
+		if (lot !== this.owner.Name) {
+			return;
+		}
+
+		this.toRemove.Parent = this.owner.Objects;
+	}
+
 	public reset(): void {
 		this.logger.Debug(`Resetting remover ${this.instance.Name}`);
 		this.toRemove.Parent = this.owner.Objects;
 	}
-
-	// public onPlayerRebirthed(playerEntity: playerEntity): void {
-	// 	const lot = playerEntity.player.GetAttribute("Lot") as string | undefined;
-	// 	if (lot === undefined) {
-	// 		this.logger.Error(`Could not find lot for player ${playerEntity.player}`);
-	// 		return;
-	// 	}
-
-	// 	print("Lot: " + lot, "Owner: " + this.owner.Name);
-	// 	if (lot !== this.owner.Name) {
-	// 		return;
-	// 	}
-
-	// 	this.toRemove.Parent = this.owner.Objects;
-	// }
 }

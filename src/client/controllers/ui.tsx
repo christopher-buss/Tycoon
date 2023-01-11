@@ -1,4 +1,4 @@
-import { Controller, Flamework, Modding, OnStart, Reflect } from "@flamework/core";
+import { Controller, Flamework, Modding, OnInit, Reflect } from "@flamework/core";
 import { Logger } from "@rbxts/log";
 import Roact from "@rbxts/roact";
 import RoactRodux, { StoreProvider } from "@rbxts/roact-rodux";
@@ -9,9 +9,9 @@ import { DecoratorMetadata } from "types/interfaces/flamework";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type ClassDecorator = (ctor: any) => any;
-type Constructor<T = Roact.Component> = new (...args: never[]) => T;
+type Constructor<T = Roact.Component> = new (...args: Array<never>) => T;
 
-const noop = () => {};
+const noop = (): void => {};
 
 export type StoreDispatch = Rodux.Dispatch<StoreActions>;
 
@@ -49,15 +49,16 @@ export interface IPassedProps {
 export const App = Modding.createMetaDecorator<[IAppConfig]>("Class");
 
 @Controller({})
-export class UserInterfaceController implements OnStart {
+export class UserInterfaceController implements OnInit {
 	private appHandles = new Map<Constructor, Roact.Tree>();
 	private apps = new Map<Constructor, AppInfo>();
+	private notification!: AppInfo;
 	private playerGui = Players.LocalPlayer.FindFirstChildOfClass("PlayerGui")!;
 	private tagConnections = new Set<string>();
 
 	constructor(private readonly logger: Logger) {}
 
-	public onStart(): void {
+	public onInit(): void {
 		for (const [ctor, identifier] of Reflect.objToId) {
 			const app = Reflect.getOwnMetadata<DecoratorMetadata<IAppConfig>>(
 				ctor,
@@ -78,12 +79,31 @@ export class UserInterfaceController implements OnStart {
 				} else if (config.displayOnStart) {
 					this.showApp(ctor as Constructor);
 				}
+
+				if (config.name === "Notification") {
+					this.notification = {
+						ctor: ctor as Constructor,
+						config,
+						identifier,
+					};
+				}
+			}
+		}
+	}
+
+	public showNotification(show: boolean): void {
+		if (show) {
+			this.showApp(this.notification.ctor);
+		} else {
+			const handle = this.appHandles.get(this.notification.ctor);
+			if (handle) {
+				Roact.unmount(handle);
 			}
 		}
 	}
 
 	/** Setup CollectionService connections for a specific tag. */
-	private setupTagConnections(tag: string) {
+	private setupTagConnections(tag: string): void {
 		if (this.tagConnections.has(tag)) {
 			return;
 		}
@@ -105,7 +125,7 @@ export class UserInterfaceController implements OnStart {
 	}
 
 	/** When an instance is added to a tag, we want to find out which apps render onto it. */
-	private onTagAdded(tag: string, instance: Instance) {
+	private onTagAdded(tag: string, instance: Instance): void {
 		if (!instance.IsA("BasePart")) {
 			return;
 		}
@@ -123,7 +143,7 @@ export class UserInterfaceController implements OnStart {
 	}
 
 	/** Unmount any apps which are connected to a dead instance. */
-	private onTagRemoved(tag: string, instance: Instance) {
+	private onTagRemoved(tag: string, instance: Instance): void {
 		this.logger.Debug(`Instance "${instance.GetFullName()}" removed from tag "${tag}"`);
 		this.tagConnections.delete(tag);
 	}

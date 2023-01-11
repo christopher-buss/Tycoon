@@ -12,6 +12,6 @@ export interface IPurchaseButtonModel extends Model {
 
 export interface IRebirthButtonAttributes {}
 
-export interface IRebirthButtonModel extends BasePart {
+export interface IRebirthButtonModel extends Model {
 	TouchPart: BasePart;
 }

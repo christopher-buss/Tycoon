@@ -1,5 +1,6 @@
 import Rodux from "@rbxts/rodux";
 import DefaultPlayerData, { IPlayerData } from "shared/meta/default-player-data";
+
 import { ActionSetPlayerData } from "../actions/data-actions";
 
 export type IDataReducer = IPlayerData;

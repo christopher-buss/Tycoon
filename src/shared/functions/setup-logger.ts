@@ -50,7 +50,7 @@ class LogEventSFTOutputSink implements ILogEventSink {
 export function setupLogger(): void {
 	Log.SetLogger(
 		Logger.configure()
-			.SetMinLogLevel(RunService.IsStudio() ? LogLevel.Verbose : LogLevel.Information)
+			.SetMinLogLevel(RunService.IsStudio() ? LogLevel.Debugging : LogLevel.Information)
 			.EnrichWithProperty("Version", $package.version)
 			// .WriteTo(Log.RobloxOutput({ TagFormat: "full" }))
 			.WriteTo(new LogEventSFTOutputSink())

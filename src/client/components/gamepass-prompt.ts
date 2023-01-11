@@ -4,21 +4,23 @@ import { Janitor } from "@rbxts/janitor";
 import { Logger } from "@rbxts/log";
 import Roact from "@rbxts/roact";
 import { Option } from "@rbxts/rust-classes";
-import { CollectionService, Players } from "@rbxts/services";
+import { Players } from "@rbxts/services";
 import { observeChild } from "@rbxts/streamable";
-import purchaseButton from "shared/ui/world/purchase-button";
+import { IGamepassPromptModel } from "server/components/mtx/gamepass-prompt";
+import GamepassBillboard from "shared/ui/world/gamepass";
 import { Tag } from "types/enum/tags";
-import { IPurchaseButtonAttributes, IPurchaseButtonModel } from "types/interfaces/buttons";
+
+interface Attributes {
+	Color?: Color3;
+	DisplayName?: string;
+}
 
 const noop = (): void => {};
 
-/**
- * A component that players in the game can touch to purchase corresponding
- * objects in the game. This client component is responsible for rendering ui
- * related to the purchase button.
- */
-@Component({ tag: Tag.PurchaseButton })
-export class PurchaseButton extends BaseComponent<IPurchaseButtonAttributes, IPurchaseButtonModel> implements OnStart {
+@Component({
+	tag: Tag.GamepassPrompt,
+})
+export class GamepassPrompt extends BaseComponent<Attributes, IGamepassPromptModel> implements OnStart {
 	private readonly janitor: Janitor<void>;
 	private tree_opt: Option<Roact.Tree>;
 
@@ -29,51 +31,31 @@ export class PurchaseButton extends BaseComponent<IPurchaseButtonAttributes, IPu
 	}
 
 	public onStart(): void {
-		if (CollectionService.HasTag(this.instance, Tag.TimerButton)) {
-			return;
-		}
-
 		this.janitor.Add(
-			observeChild(this.instance, "TouchPart", () => {
+			observeChild(this.instance, "Root", () => {
 				this.onStreamIn();
 				return noop;
 			}),
 		);
 	}
 
-	/**
-	 * Called internally when the purchase button is streamed in.
-	 *
-	 * @hidden
-	 */
 	private onStreamIn(): void {
 		const billboard = this.createInterface();
 		this.setupInterface(billboard);
 	}
 
-	/**
-	 * Creates the user interface object for the purchase button.
-	 * @returns the ui object.
-	 */
 	private createInterface(): Roact.Element {
 		let displayName = this.attributes.DisplayName as string;
 		if (displayName === undefined || displayName === "") {
 			displayName = this.instance.Name;
 		}
 
-		let color = this.instance.TouchPart.Color;
-		let price = "$" + tostring(this.attributes.Price);
-		if (this.attributes.GamepassId !== undefined && this.attributes.GamepassId !== 0) {
-			color = Color3.fromRGB(38, 255, 0);
-			price = this.attributes.Price + "R$";
-		}
+		const color = this.attributes.Color ?? Color3.fromRGB(255, 255, 255);
 
-		return purchaseButton({
-			Adornee: this.instance.TouchPart,
+		return GamepassBillboard({
+			Adornee: this.instance.Root,
 			Color: color,
 			DisplayName: displayName,
-			Janitor: this.janitor,
-			Price: price,
 		});
 	}
 

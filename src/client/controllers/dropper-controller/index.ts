@@ -23,7 +23,7 @@ type DropperBillboard = BillboardGui & {
 
 type DropperProgress = number;
 
-export type DropperPart = (BasePart | MeshPart | Model) & {
+export type DropperPart = Model & {
 	Price: DropperBillboard;
 };
 
@@ -144,13 +144,10 @@ export class DropperController implements OnStart, OnInit {
 			return;
 		}
 
-		const ui = newPart.FindFirstChild("Price") as DropperBillboard;
-		if (ui) {
-			this.updateUi(ui, this.calculatePartPrice(partType));
-		}
+		this.updateUi(newPart.Price, this.calculatePartPrice(partType));
 
-		// const progress = currentProgress !== undefined ? currentProgress : 1;
-		newPart.PivotTo(new CFrame(this.cachedConveyorLocations.get(this.nearestTycoon)![pathNumber][progress]));
+		const position = this.cachedConveyorLocations.get(this.nearestTycoon)![pathNumber][progress];
+		newPart.PivotTo(new CFrame(position.X, position.Y + newPart.GetExtentsSize().Y / 2, position.Z));
 
 		const time = PATH_INFO[pathNumber]!.TotalTime * (1 - progress / PATH_INFO[pathNumber]!.TotalProgress);
 		this.createTween(time, progress, pathNumber, partType, newPart);
@@ -177,9 +174,17 @@ export class DropperController implements OnStart, OnInit {
 	 * @param step
 	 * @returns
 	 */
-	private calculateNewPosition(pathNumber: PathNumber, progress: number, step: number): Vector3 {
-		const previousPosition = this.cachedConveyorLocations.get(this.nearestTycoon!)![pathNumber][progress - 1];
-		const nextPosition = this.cachedConveyorLocations.get(this.nearestTycoon!)![pathNumber][progress];
+	private calculateNewPosition(
+		pathNumber: PathNumber,
+		progress: number,
+		step: number,
+		currentHeight: number,
+	): Vector3 {
+		const path = this.cachedConveyorLocations.get(this.nearestTycoon!)![pathNumber];
+		const pathPreviousPosition = path[progress - 1];
+		const pathNextPosition = path[progress];
+		const previousPosition = new Vector3(pathPreviousPosition.X, currentHeight, pathPreviousPosition.Z);
+		const nextPosition = new Vector3(pathNextPosition.X, currentHeight, pathNextPosition.Z);
 		return previousPosition.Lerp(nextPosition, step);
 	}
 
@@ -226,7 +231,14 @@ export class DropperController implements OnStart, OnInit {
 						}
 
 						part.PivotTo(
-							new CFrame(this.calculateNewPosition(pathNumber, currentProgress, (totalPoints * t) % 1)),
+							new CFrame(
+								this.calculateNewPosition(
+									pathNumber,
+									currentProgress,
+									(totalPoints * t) % 1,
+									part.GetPivot().Y,
+								),
+							),
 						);
 					}),
 					"Disconnect",

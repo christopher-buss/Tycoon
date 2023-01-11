@@ -3,6 +3,7 @@ import { OnStart } from "@flamework/core";
 import { FormatCompact } from "@rbxts/format-number";
 import { Logger } from "@rbxts/log";
 import PlayerEntity from "server/modules/classes/player-entity";
+import { Events } from "server/network";
 import { PlayerChatService } from "server/services/player/player-chat-service";
 import { PlayerService } from "server/services/player/player-service";
 import { MoneyService } from "server/services/stores/money-service";
@@ -73,7 +74,7 @@ export class RebirthButton extends BaseComponent<IRebirthButtonAttributes, IRebi
 				return data;
 			});
 
-			for (const [id, event] of this.lotService.onPlayerRebirthedEvents) {
+			this.lotService.onPlayerRebirthedEvents.forEach((event, id) => {
 				debug.profilebegin(id);
 				Promise.try(() => {
 					event.onPlayerRebirthed(playerEntity);
@@ -81,8 +82,9 @@ export class RebirthButton extends BaseComponent<IRebirthButtonAttributes, IRebi
 					this.logger.Error(`Error in onPlayerRebirthed event ${id}: ${err}`);
 				});
 				debug.profilebegin(id);
-			}
+			});
 
+			// TODO: Convert this into an overhead ui
 			this.playerChatService.sendSystemMessage(
 				player.Name +
 					" is rebirthing! They have rebirthed " +
@@ -100,22 +102,36 @@ export class RebirthButton extends BaseComponent<IRebirthButtonAttributes, IRebi
 			task.wait(0.5);
 			this.debounce.set(player, false);
 		} else {
+			const purchased = 5;
+			const totalItems = 15;
+
 			this.logger.Info(`Player ${player} does not meet the requirements to rebirth.`);
 
-			this.playerChatService.sendLocalSystemMessage(
-				player,
-				"You can only Rebirth when you have purchased all Droppers and Tycoon Objects, and can pay a Rebirth Fee of in-game $" +
+			Events.sendOnScreenMessage(
+				playerEntity.player,
+				"You may only Rebirth after you have purchased everything and can pay " +
 					FormatCompact(BASE_REBIRTH_PRICE * totalRebirths + REBIRTH_ADDITIONAL_PRICE) +
-					". Rebirth will make your Cash Multiplier " +
-					string.format(
-						"%.1f",
-						(1 + totalRebirths / 5 + 0.2) * (playerData.gamePasses.doubleMoneyGamepass ? 2 : 1),
-					) +
-					"X.",
-				{
-					ChatColor: Color3.fromRGB(255, 0, 4),
-				},
+					".\n You have purchased " +
+					purchased +
+					"/" +
+					totalItems +
+					" items so far.",
 			);
+
+			// this.playerChatService.sendLocalSystemMessage(
+			// 	player,
+			// 	"You can only Rebirth when you have purchased all Droppers and Tycoon Objects, and can pay a Rebirth Fee of in-game $" +
+			// 		FormatCompact(BASE_REBIRTH_PRICE * totalRebirths + REBIRTH_ADDITIONAL_PRICE) +
+			// 		". Rebirth will make your Cash Multiplier " +
+			// 		string.format(
+			// 			"%.1f",
+			// 			(1 + totalRebirths / 5 + 0.2) * (playerData.gamePasses.doubleMoneyGamepass ? 2 : 1),
+			// 		) +
+			// 		"X.",
+			// 	{
+			// 		ChatColor: Color3.fromRGB(255, 0, 4),
+			// 	},
+			// );
 
 			task.wait(0.5);
 			this.debounce.set(player, false);

@@ -31,6 +31,9 @@ interface ClientEvents {
 	/** Fired by the server when a notification should be displayed on the client. */
 	sendNotification(notificationData: INotificationEntry): void;
 
+	/** Fired by the server when a GUI notification should be displayed on the client. */
+	sendOnScreenMessage(message: string): void;
+
 	/** Fired by the server when a player is in range of a tycoon and doesn't have it's data. */
 	playerInRangeOfLot(lotName: string, data: Array<Vector3int16>): void;
 

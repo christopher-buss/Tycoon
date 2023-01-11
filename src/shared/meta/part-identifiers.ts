@@ -68,6 +68,9 @@ export const encoderPartIdentifiers = {
 	["Deluxe Upgrader2"]: 67,
 	["Deluxe Upgrader3"]: 68,
 	["Water"]: 69,
+	["Dragon"]: 70,
+	["Bull"]: 71,
+	["Magic Unicorn"]: 72,
 };
 
 export const decoderPartIdentifiers = {
@@ -140,6 +143,9 @@ export const decoderPartIdentifiers = {
 	[67]: "Deluxe Upgrader2",
 	[68]: "Deluxe Upgrader3",
 	[69]: "Water",
+	[70]: "Dragon",
+	[71]: "Bull",
+	[72]: "Magic Unicorn",
 };
 
 export type EncodePartIdentifier = typeof encoderPartIdentifiers;
