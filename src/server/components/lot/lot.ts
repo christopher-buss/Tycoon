@@ -2,7 +2,7 @@ import { BaseComponent, Component, Components } from "@flamework/components";
 import { Dependency, OnStart } from "@flamework/core";
 import { Logger } from "@rbxts/log";
 import { Option, Result } from "@rbxts/rust-classes";
-import { Players, Teams } from "@rbxts/services";
+import { CollectionService, Players, ServerStorage, Teams } from "@rbxts/services";
 import { default as PlayerEntity } from "server/modules/classes/player-entity";
 import { LotService } from "server/services/tycoon/lot-service";
 import {
@@ -12,7 +12,7 @@ import {
 	encoderPartIdentifiers,
 } from "shared/meta/part-identifiers";
 import { Tag } from "types/enum/tags";
-import { ILotAttributes, ILotModel, LotErrors } from "types/interfaces/lots";
+import { ILotAttributes, ILotModel, ILotSignModel, LotErrors } from "types/interfaces/lots";
 
 import { PurchaseButton } from "./purchase-button";
 
@@ -29,18 +29,24 @@ export class Lot extends BaseComponent<ILotAttributes, ILotModel> implements OnS
 	public readonly name: string;
 	public readonly position: Vector3;
 
+	public itemsOwnedByOwner: number;
+	public purchaseableItemsForOwner: number;
+
 	private readonly team: Team;
 
 	constructor(private readonly logger: Logger, private readonly lotService: LotService) {
 		super();
 
-		this.position = this.instance.Spawn.Position;
+		// this.position = this.instance.Spawn.Position;
+
+		this.purchaseableItemsForOwner = 0;
+		this.itemsOwnedByOwner = 0;
 
 		this.team = Teams.FindFirstChild(this.instance.Name) as Team;
 		assert(this.team !== undefined, `Team ${this.instance.Name} does not exist`);
 
 		this.name = this.team.Name;
-		// this.position = this.instance.ReplicationPart.Position;
+		this.position = this.instance.ReplicationCenter.Position;
 	}
 
 	/** @hidden */
@@ -69,7 +75,9 @@ export class Lot extends BaseComponent<ILotAttributes, ILotModel> implements OnS
 						this.attributes.OwnerId = player.UserId;
 						this.lotService.fireOnLotOwned(this);
 						task.spawn(() => {
-							this.setupOwner(playerEntity);
+							this.setupOwner(playerEntity).catch((err) => {
+								this.logger.Error(`Error setting up owner: ${err}`);
+							});
 						});
 						return Result.ok<true, LotErrors>(true);
 					},
@@ -121,17 +129,18 @@ export class Lot extends BaseComponent<ILotAttributes, ILotModel> implements OnS
 	/**
 	 * Initializes the owner of the lot after they have been assigned.
 	 *
-	 * @param player the new owner of the lot.
+	 * @param playerEntity the new owner of the lot.
 	 */
-	private setupOwner(playerEntity: PlayerEntity): void {
+	private async setupOwner(playerEntity: PlayerEntity): Promise<void> {
 		const player = playerEntity.player;
 		player.RequestStreamAroundAsync(this.position);
 		player.RespawnLocation = this.instance.Spawn;
 		player.Team = this.team;
 		player.SetAttribute("Lot", this.team.Name);
+		this.setupGui(player);
+		this.storePossiblePurchaseObjects(playerEntity);
 		this.loadPurchaseButtons(playerEntity);
-		// this.setupGui(player);
-		// player.LoadCharacter();
+		player.LoadCharacter();
 	}
 
 	/**
@@ -157,26 +166,60 @@ export class Lot extends BaseComponent<ILotAttributes, ILotModel> implements OnS
 	 * If the player is not provided, then the GUI will be set as "Unclaimed".
 	 * @param playerName The potential name of the player.
 	 */
-	// private setupGui(player?: Player): void {
-	// 	const claimPart = this.instance.Essentials.Claim;
+	private setupGui(player?: Player): void {
+		const signs = (ServerStorage.Upgraders[this.team.Name as never] as Folder)
+			.GetDescendants()
+			.filter((model): model is ILotSignModel => {
+				return model.IsA("Model") && CollectionService.HasTag(model, Tag.LotSign);
+			});
 
-	// 	if (player !== undefined) {
-	// 		claimPart.Unclaimed.Enabled = false;
-	// 		claimPart.Claimed.Enabled = true;
-	// 		claimPart.Claimed.TextBox.Username.Text = `${player.Name}'s`;
-	// 		claimPart.Claimed.IconBox.PlayerIcon.Image = `rbxthumb://type=AvatarHeadShot&id=${player.UserId}&w=420&h=420`;
-	// 	} else {
-	// 		claimPart.Unclaimed.Enabled = true;
-	// 		claimPart.Claimed.Enabled = false;
-	// 	}
-	// }
+		signs.push(this.instance.Objects.OutdoorSign);
+
+		signs.forEach((sign) => {
+			const claimPart = sign.Claim;
+			if (player !== undefined) {
+				claimPart.Unclaimed.Enabled = false;
+				claimPart.Claimed.Enabled = true;
+				claimPart.Claimed.TextBox.Username.Text = `${player.Name}'s`;
+				claimPart.Claimed.IconBox.PlayerIcon.Image = `rbxthumb://type=AvatarHeadShot&id=${player.UserId}&w=420&h=420`;
+			} else {
+				claimPart.Unclaimed.Enabled = true;
+				claimPart.Claimed.Enabled = false;
+			}
+		});
+	}
+
+	public storePossiblePurchaseObjects(playerEntity: PlayerEntity): void {
+		this.itemsOwnedByOwner = 0;
+
+		let purchasableButtons = 0;
+		this.instance.Buttons.GetChildren().forEach((object) => {
+			if (!CollectionService.HasTag(object, Tag.PurchaseButton)) {
+				return;
+			}
+
+			if (object.GetAttribute("GamepassId") !== undefined && (object.GetAttribute("GamepassId") as number) > 0) {
+				return;
+			}
+
+			const rebirths = object.GetAttribute("Rebirths") as number;
+			if (rebirths !== undefined && (rebirths > 0 || playerEntity.data.rebirths < rebirths)) {
+				return;
+			}
+
+			purchasableButtons += 1;
+		});
+
+		this.purchaseableItemsForOwner = purchasableButtons;
+		playerEntity.player.SetAttribute("ButtonsToBuy", purchasableButtons);
+	}
 
 	/**
 	 * Add any owned items for the player to the tycoon.
 	 * @param playerEntity
 	 */
 	public loadPurchaseButtons(playerEntity: PlayerEntity): void {
-		this.handleOwnedItems(playerEntity, playerEntity.player);
+		this.handleOwnedItems(playerEntity);
 
 		const buttons = this.instance.Buttons.GetChildren();
 		const nonOwnedButtons = this.getNonOwnedButtons(buttons, playerEntity);
@@ -205,9 +248,8 @@ export class Lot extends BaseComponent<ILotAttributes, ILotModel> implements OnS
 	/**
 	 *
 	 * @param playerEntity
-	 * @param player
 	 */
-	private handleOwnedItems(playerEntity: PlayerEntity, player: Player): void {
+	private handleOwnedItems(playerEntity: PlayerEntity): void {
 		playerEntity.data.purchased.forEach((encoded) => {
 			const decoded = decoderPartIdentifiers[encoded as keyof DecodePartIdentifier];
 			if (decoded === undefined) {
@@ -232,9 +274,11 @@ export class Lot extends BaseComponent<ILotAttributes, ILotModel> implements OnS
 			buttonComponent.unbindButtonTouched(true);
 			for (const listener of buttonComponent.listeners) {
 				task.spawn(() => {
-					listener.onPurchaseButtonBought(player, buttonComponent.janitor);
+					listener.onPurchaseButtonBought(playerEntity, buttonComponent.janitor);
 				});
 			}
+
+			buttonComponent.addOwnedItemForOwner(playerEntity.data.rebirths, playerEntity.player);
 		});
 	}
 

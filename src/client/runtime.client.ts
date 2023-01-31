@@ -16,8 +16,6 @@ Flamework.addPaths("src/client/components");
 Flamework.addPaths("src/client/controllers");
 Flamework.addPaths("src/shared/components");
 
-ZirconClient.Init({
-	Keys: [Enum.KeyCode.F10],
-});
+ZirconClient.Init({});
 
 Flamework.ignite();

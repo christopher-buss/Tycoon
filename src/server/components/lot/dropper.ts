@@ -1,6 +1,7 @@
 import { BaseComponent, Component } from "@flamework/components";
 import { OnStart } from "@flamework/core";
 import { Logger } from "@rbxts/log";
+import PlayerEntity from "server/modules/classes/player-entity";
 import { DropperService } from "server/services/tycoon/dropper-service";
 import { FlameworkUtil } from "shared/util/flamework-utils";
 import { Tag } from "types/enum/tags";
@@ -39,13 +40,13 @@ export class Dropper extends BaseComponent<IDropperAttributes> implements OnStar
 			});
 	}
 
-	public onPurchaseButtonBought(owner: Player): void {
-		this.logger.Info(`Dropper ${this.instance.Name} was bought by ${owner.Name}`);
+	public onPurchaseButtonBought(playerEntity: PlayerEntity): void {
+		this.logger.Info(`Dropper ${this.instance.Name} was bought by ${playerEntity.name}`);
 
 		const dropperInfo: IDropperInfo = {
 			DropperType: this.instance.Name,
 			Path: this.attributes.Path,
-			Owner: owner,
+			Owner: playerEntity.player,
 			StartProgress: this.attributes.StartProgress ?? 1,
 		};
 

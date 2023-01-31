@@ -1,21 +1,24 @@
 import { Dependency } from "@flamework/core";
 import PlayerEntity from "server/modules/classes/player-entity";
+import { MtxService } from "server/services/mtx-service";
 import { MoneyService } from "server/services/stores/money-service";
+import { DeveloperProducts } from "shared/meta/gamepasses";
 
 const Products = {
-	/** 5k Cash Purchase */
-	[1294743751]: (playerEntity: PlayerEntity) => {
-		Dependency<MoneyService>().givePlayerMoney(playerEntity.player, 5000);
+	[DeveloperProducts["1000Cash"]]: (playerEntity: PlayerEntity): void => {
+		Dependency<MoneyService>().updatePlayerMoney(true, playerEntity, 1000);
 	},
 
-	/** 25k Cash Purchase */
-	[1294743752]: (playerEntity: PlayerEntity) => {
-		Dependency<MoneyService>().givePlayerMoney(playerEntity.player, 25000);
+	[DeveloperProducts["5000Cash"]]: (playerEntity: PlayerEntity): void => {
+		Dependency<MoneyService>().updatePlayerMoney(true, playerEntity, 5000);
 	},
 
-	/** 50k Cash Purchase */
-	[1296359145]: (playerEntity: PlayerEntity) => {
-		Dependency<MoneyService>().givePlayerMoney(playerEntity.player, 50000);
+	[DeveloperProducts["10000Cash"]]: (playerEntity: PlayerEntity): void => {
+		Dependency<MoneyService>().updatePlayerMoney(true, playerEntity, 10000);
+	},
+
+	[DeveloperProducts.InstantRebirth]: (playerEntity: PlayerEntity): void => {
+		Dependency<MtxService>().instantRebirthProduct(playerEntity);
 	},
 };
 

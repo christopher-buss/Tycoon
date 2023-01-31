@@ -47,8 +47,8 @@ export class Remover extends BaseComponent<Attributes> implements OnStart, IOnPu
 			});
 	}
 
-	public onPurchaseButtonBought(owner: Player, janitor: Janitor): void {
-		this.logger.Info(`Remover ${this.instance.Name} was bought by ${owner.Name}`);
+	public onPurchaseButtonBought(owner: PlayerEntity, janitor: Janitor): void {
+		this.logger.Info(`Remover ${this.instance.Name} was bought by ${owner.player.Name}`);
 		this.toRemove.Parent = ServerStorage;
 
 		janitor.Add(() => this.reset());

@@ -9,6 +9,7 @@ import { observeChild } from "@rbxts/streamable";
 import timerButtonBillboard from "shared/ui/world/timer-button";
 import { Tag } from "types/enum/tags";
 import { IPurchaseButtonAttributes, IPurchaseButtonModel } from "types/interfaces/buttons";
+import { ILotModel } from "types/interfaces/lots";
 
 const noop = (): void => {};
 
@@ -21,7 +22,9 @@ interface Attributes extends IPurchaseButtonAttributes {
  * objects in the game. This client component is responsible for rendering ui
  * related to the purchase button.
  */
-@Component({ tag: Tag.TimerButton })
+@Component({
+	tag: Tag.TimerButton,
+})
 export class TimerButton extends BaseComponent<Attributes, IPurchaseButtonModel> implements OnStart {
 	private readonly janitor: Janitor<void>;
 	private tree_opt: Option<Roact.Tree>;
@@ -32,13 +35,37 @@ export class TimerButton extends BaseComponent<Attributes, IPurchaseButtonModel>
 		this.tree_opt = Option.none<Roact.Tree>();
 	}
 
-	public onStart(): void {
+	public async onStart(): Promise<void> {
+		if (!(await this.instantiationCheck())) {
+			this.destroy();
+			return;
+		}
+
 		this.janitor.Add(
 			observeChild(this.instance, "TouchPart", () => {
 				this.onStreamIn();
 				return noop;
 			}),
 		);
+	}
+
+	private async instantiationCheck(): Promise<boolean> {
+		return new Promise((resolve) => {
+			const owner = this.instance.Parent?.Parent as ILotModel;
+			assert(owner, "Owner is undefined");
+
+			const lot = Players.LocalPlayer.GetAttribute("Lot") as string;
+			if (lot !== undefined) {
+				resolve(owner.Name === lot);
+				return;
+			}
+
+			this.janitor.Add(
+				Players.LocalPlayer.GetAttributeChangedSignal("Lot").Once(() => {
+					resolve(owner.Name === (Players.LocalPlayer.GetAttribute("Lot") as string));
+				}),
+			);
+		});
 	}
 
 	/**

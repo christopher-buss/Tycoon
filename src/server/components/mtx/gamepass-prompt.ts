@@ -9,6 +9,7 @@ import { Tag } from "types/enum/tags";
 
 interface Attributes {
 	GamepassId: number;
+	DeveloperProduct?: boolean;
 }
 
 export interface IGamepassPromptModel extends Model {
@@ -38,7 +39,7 @@ export class GamepassPrompt extends BaseComponent<Attributes, IGamepassPromptMod
 		}
 
 		this.debounce = true;
-		task.delay(0.5, () => {
+		task.delay(1, () => {
 			this.debounce = false;
 		});
 
@@ -48,6 +49,11 @@ export class GamepassPrompt extends BaseComponent<Attributes, IGamepassPromptMod
 		}
 
 		const player = player_opt.unwrap();
+
+		if (this.attributes.DeveloperProduct !== undefined && this.attributes.DeveloperProduct) {
+			MarketplaceService.PromptProductPurchase(player, this.attributes.GamepassId);
+			return;
+		}
 
 		this.mtxService
 			.checkForGamepassOwned(player, this.attributes.GamepassId)

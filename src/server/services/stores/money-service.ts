@@ -26,13 +26,14 @@ export class MoneyService implements OnPlayerJoin, OnTick {
 	public onPlayerJoin(playerEntity: PlayerEntity): void {
 		this.moneyToAwardEachSecond.set(playerEntity, 0);
 
-		if (playerEntity.player.Name === "iSentinels") {
-			this.updatePlayerMoney(true, playerEntity, 100000000);
-			playerEntity.updateData((data) => {
-				data.purchased.push(5, 13, 28);
-				return data;
-			});
-		}
+		// if (playerEntity.player.Name === "iSentinels") {
+		// 	// this.updatePlayerMoney(true, playerEntity, 100000000);
+		// 	// playerEntity.updateData((data) => {
+		// 	// 	data.purchased = [5, 13, 28];
+		// 	// 	return data;
+		// 	// });
+		// 	(playerEntity.player.Character?.WaitForChild("Humanoid") as Humanoid).WalkSpeed = 50;
+		// }
 	}
 
 	public onTick(dt: number): void {
@@ -170,27 +171,20 @@ export class MoneyService implements OnPlayerJoin, OnTick {
 		);
 	}
 
-	public addMoneyConnection(player: Player, value: number): void {
-		const playerEntity_opt = this.playerService.getEntity(player);
-		if (playerEntity_opt.isNone()) {
-			this.logger.Error(`Player entity for ${player} could not be found`);
-			return;
-		}
-
+	public addMoneyConnection(playerEntity: PlayerEntity, value: number): void {
 		let moneyToGive = value;
 
-		const entity = playerEntity_opt.unwrap();
-		const doubleMoneyGamepass = entity.data.gamePasses.doubleMoneyGamepass;
+		const doubleMoneyGamepass = playerEntity.data.gamePasses.doubleMoneyGamepass;
 		if (doubleMoneyGamepass) {
 			moneyToGive *= 2;
 		}
 
-		const currentMoney = this.moneyToAwardEachSecond.get(entity);
+		const currentMoney = this.moneyToAwardEachSecond.get(playerEntity);
 		if (currentMoney === undefined) {
-			this.logger.Fatal(`Failed to get money for ${player}`);
+			this.logger.Fatal(`Failed to get money for ${playerEntity.player.Name}`);
 			return;
 		}
 
-		this.moneyToAwardEachSecond.set(entity, currentMoney + moneyToGive);
+		this.moneyToAwardEachSecond.set(playerEntity, currentMoney + moneyToGive);
 	}
 }

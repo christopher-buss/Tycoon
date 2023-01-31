@@ -47,23 +47,31 @@ export class FriendModelService implements OnLotOwned {
 	}
 
 	private startWatchingInstance(player: Player, friend: Instance, lot: Lot): void {
+		const friendAdded = (): void => {
+			if (friend.Parent?.Parent !== lot.instance) {
+				return;
+			}
+
+			this.friendModels.get(lot)?.push(friend);
+			this.onFriendAdded(player, friend).catch((err) => {
+				this.logger.Error(err);
+			});
+		};
+
+		if (friend.IsDescendantOf(Workspace)) {
+			friendAdded();
+		}
+
 		this.janitors.get(lot)?.Add(
 			friend.AncestryChanged.Connect((_, parent) => {
 				if (parent && friend.IsDescendantOf(Workspace)) {
-					if (friend.Parent?.Parent !== lot.instance) {
-						return;
-					}
-
-					this.friendModels.get(lot)?.push(friend);
-					this.onFriendAdded(player, friend).catch((err) => {
-						this.logger.Error(err);
-					});
+					friendAdded();
 				} else {
 					this.onFriendRemoved(player, friend);
 				}
 			}),
 			"Disconnect",
-			friend.Name,
+			friend.Name + lot.name,
 		);
 	}
 
@@ -110,9 +118,9 @@ export class FriendModelService implements OnLotOwned {
 			}),
 		);
 
-		for (const friend of friends) {
+		friends.forEach((friend) => {
 			this.startWatchingInstance(player, friend, lot);
-		}
+		});
 	}
 
 	private onPlayerLeaving(player: Player, lot: Lot): void {

@@ -1,15 +1,18 @@
-import { OnInit, Service } from "@flamework/core";
+import { Components } from "@flamework/components";
+import { Dependency, OnInit, Service } from "@flamework/core";
 import { Logger } from "@rbxts/log";
 import { ProfileMetaData } from "@rbxts/profileservice/globals";
 import { CharacterRigR6 } from "@rbxts/promise-character";
 import { Option } from "@rbxts/rust-classes";
 import { MarketplaceService, Players, ReplicatedStorage, ServerStorage } from "@rbxts/services";
+import { PurchaseButton } from "server/components/lot/purchase-button";
 import Products from "server/meta/product-functions";
 import PlayerEntity from "server/modules/classes/player-entity";
 import { GamepassPlayerKey, PlayerDataProfile } from "shared/meta/default-player-data";
 import { Gamepasses } from "shared/meta/gamepasses";
 
 import { OnPlayerJoin, PlayerService } from "./player/player-service";
+import { LotService } from "./tycoon/lot-service";
 
 /**
  * Service for handling microtransactions.
@@ -19,12 +22,17 @@ export class MtxService implements OnInit, OnPlayerJoin {
 	private readonly gamePasses: Map<number, string>;
 	private readonly purchaseIdLog: number;
 
-	constructor(private readonly logger: Logger, private readonly playerService: PlayerService) {
+	constructor(
+		private readonly logger: Logger,
+		private readonly playerService: PlayerService,
+		private readonly lotService: LotService,
+	) {
 		this.purchaseIdLog = 50;
 
 		this.gamePasses = new Map<number, string>();
 		this.gamePasses.set(Gamepasses.DoubleMoney, "doubleMoneyGamepass");
 		this.gamePasses.set(Gamepasses.Vip, "vipGamepass");
+		this.gamePasses.set(Gamepasses.BuyAllPets, "buyAllPetsGamepass");
 	}
 
 	/** @hidden */
@@ -291,6 +299,39 @@ export class MtxService implements OnInit, OnPlayerJoin {
 		);
 	}
 
+	public buyAllPetsGamepass(playerEntity: PlayerEntity): void {
+		/** Check if we own the pet house */
+		if (playerEntity.data.purchased.includes(58)) {
+			const lot_opt = this.lotService.getLotFromPlayer(playerEntity.player);
+			if (lot_opt.isNone()) {
+				return;
+			}
+
+			const lot = lot_opt.unwrap();
+			lot.instance.Buttons.GetChildren().forEach((child) => {
+				if (child.GetAttribute("Pet") === undefined) {
+					return;
+				}
+
+				const purchaseButton = Dependency<Components>().getComponent<PurchaseButton>(child);
+				if (!purchaseButton) {
+					return;
+				}
+
+				purchaseButton.listeners.forEach((listener) => {
+					task.spawn(() => {
+						listener.onPurchaseButtonBought(playerEntity, purchaseButton.janitor);
+					});
+				});
+
+				purchaseButton.unbindButtonTouched(false);
+			});
+			// Dog, Cat, Lizard, Frog, Bull, Dragon
+			// data.purchased.push(51, 50, 48, 46, 71, 70);
+			// return data;
+		}
+	}
+
 	// private robuxDropper(playerEntity: PlayerEntity): void {
 	// 	const robuxDropperEncoded = encoderPartIdentifiers["Robux Dropper"];
 	// 	if (playerEntity.data.purchased.includes(robuxDropperEncoded)) {
@@ -320,4 +361,8 @@ export class MtxService implements OnInit, OnPlayerJoin {
 	// 		}
 	// 	});
 	// }
+
+	public instantRebirthProduct(playerEntity: PlayerEntity): void {
+		print("Instant rebirth product purchased");
+	}
 }

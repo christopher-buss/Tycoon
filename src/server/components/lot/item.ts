@@ -3,6 +3,7 @@ import { OnStart } from "@flamework/core";
 import { Logger } from "@rbxts/log";
 import { CollectionService, ServerStorage } from "@rbxts/services";
 import { AnimationUtil } from "server/functions/animate-item";
+import PlayerEntity from "server/modules/classes/player-entity";
 import { MoneyService } from "server/services/stores/money-service";
 import { ItemKey, PartInfo, PartInfoType } from "shared/meta/part-info";
 import { FlameworkUtil } from "shared/util/flamework-utils";
@@ -65,10 +66,10 @@ export class Item extends BaseComponent<IItemAttributes> implements OnStart, IOn
 	/**
 	 * Called when the linked purchase button is successfully purchased.
 	 *
-	 * @param player The player who purchased the button.
+	 * @param owner The player who purchased the button.
 	 */
-	public onPurchaseButtonBought(player: Player): void {
-		this.logger.Info(`Item ${this.instance.Name} was bought by ${player.Name}`);
+	public onPurchaseButtonBought(owner: PlayerEntity): void {
+		this.logger.Info(`Item ${this.instance.Name} was bought by ${owner.name}`);
 
 		this.item.Parent = this.owner.Objects;
 
@@ -82,6 +83,6 @@ export class Item extends BaseComponent<IItemAttributes> implements OnStart, IOn
 		AnimationUtil.animateItem(this.owner.Name, this.item);
 
 		const value = (PartInfo[this.instance.Name as PartInfoType] as ItemKey).Value;
-		this.moneyService.addMoneyConnection(player, value);
+		this.moneyService.addMoneyConnection(owner, value);
 	}
 }

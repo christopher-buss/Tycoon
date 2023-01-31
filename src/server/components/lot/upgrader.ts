@@ -4,6 +4,7 @@ import { Janitor } from "@rbxts/janitor";
 import { Logger } from "@rbxts/log";
 import { ServerStorage } from "@rbxts/services";
 import { AnimationUtil } from "server/functions/animate-item";
+import PlayerEntity from "server/modules/classes/player-entity";
 import { Events } from "server/network";
 import { DropperService } from "server/services/tycoon/dropper-service";
 import { PartInfo, PartInfoType, UpgraderKey } from "shared/meta/part-info";
@@ -74,8 +75,8 @@ export class Upgrader extends BaseComponent<IUpgraderAttributes> implements OnSt
 	 *
 	 * @param player The player who purchased the button.
 	 */
-	public onPurchaseButtonBought(player: Player, janitor: Janitor): void {
-		this.logger.Info(`Upgrader ${this.instance.Name} was bought by ${player.Name}`);
+	public onPurchaseButtonBought(playerEntity: PlayerEntity, janitor: Janitor): void {
+		this.logger.Info(`Upgrader ${this.instance.Name} was bought by ${playerEntity.name}`);
 
 		this.upgrader.Parent = this.owner.Objects;
 
@@ -88,7 +89,7 @@ export class Upgrader extends BaseComponent<IUpgraderAttributes> implements OnSt
 		const upgraderInfo: IUpgraderInfo = {
 			Color: this.attributes.Color,
 			Path: this.attributes.Path,
-			Owner: player,
+			Owner: playerEntity.player,
 			Additive: (PartInfo[this.instance.Name as PartInfoType] as UpgraderKey).Additive,
 			Multiplier: (PartInfo[this.instance.Name as PartInfoType] as UpgraderKey).Multiplier,
 		};

@@ -27,7 +27,7 @@ export class ConveyorComponent extends BaseComponent<IConveyorAttributes, IConve
 		const velocity = direction.Unit.mul(this.attributes.ConveyorSpeed);
 		this.instance.AssemblyLinearVelocity = velocity;
 
-		this.destroy();
+		task.defer(() => this.destroy());
 	}
 
 	public destroy(): void {

@@ -129,11 +129,12 @@ export class DropperService implements OnInit, OnStart, OnTick, OnPlayerJoin, On
 		const playerEntity = entity_opt.unwrap();
 		playerEntity.playerRemoving.Add(() => {
 			const lotRemoving = playerEntity.player.GetAttribute("Lot") as LotName;
-			for (const [player, lot] of this.lotToReplicateTo) {
+
+			this.lotToReplicateTo.forEach((lot, player) => {
 				if (lot === lotRemoving) {
 					Events.playerOutOfRangeOfLot.fire(player);
 				}
-			}
+			});
 
 			const index = this.playersWithLot.indexOf(newOwner);
 			if (index !== -1) {

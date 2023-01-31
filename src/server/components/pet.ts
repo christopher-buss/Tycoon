@@ -55,7 +55,7 @@ export class Pet extends BaseComponent<Attributes, IPetModel> implements OnStart
 			CollectionService.RemoveTag(this.instance, Tag.Animate);
 		}
 
-		task.spawn(() => this.playEffects());
+		this.playEffects();
 
 		// We want to ensure that the Animate collection tag has been removed
 		// before we start the petting animation.

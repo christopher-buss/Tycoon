@@ -1,14 +1,14 @@
 import { BaseComponent, Component } from "@flamework/components";
 import { OnStart } from "@flamework/core";
-import { FormatCompact } from "@rbxts/format-number";
 import { Logger } from "@rbxts/log";
+import { MarketplaceService } from "@rbxts/services";
 import PlayerEntity from "server/modules/classes/player-entity";
-import { Events } from "server/network";
+import { MtxService } from "server/services/mtx-service";
 import { PlayerChatService } from "server/services/player/player-chat-service";
 import { PlayerService } from "server/services/player/player-service";
 import { MoneyService } from "server/services/stores/money-service";
 import { LotService } from "server/services/tycoon/lot-service";
-import { BASE_REBIRTH_PRICE, REBIRTH_ADDITIONAL_PRICE } from "shared/shared-constants";
+import { DeveloperProducts } from "shared/meta/gamepasses";
 import { PlayerUtil } from "shared/util/player-util";
 import { Tag } from "types/enum/tags";
 import { IRebirthButtonAttributes, IRebirthButtonModel } from "types/interfaces/buttons";
@@ -23,6 +23,7 @@ export class RebirthButton extends BaseComponent<IRebirthButtonAttributes, IRebi
 		private readonly logger: Logger,
 		private readonly lotService: LotService,
 		private readonly moneyService: MoneyService,
+		private readonly mtxService: MtxService,
 		private readonly playerChatService: PlayerChatService,
 		private readonly playerService: PlayerService,
 	) {
@@ -63,8 +64,7 @@ export class RebirthButton extends BaseComponent<IRebirthButtonAttributes, IRebi
 		const playerData = playerEntity.data;
 		const totalRebirths = playerData.rebirths;
 
-		const rebirthPrice = BASE_REBIRTH_PRICE + totalRebirths + REBIRTH_ADDITIONAL_PRICE;
-		if (playerData.cash >= rebirthPrice && this.checkIfPlayerOwnsAllItems(playerEntity)) {
+		if (this.checkIfPlayerOwnsAllItems(playerEntity)) {
 			this.logger.Info(`Player ${player} is rebirthing.`);
 
 			this.moneyService.setPlayerMoneyToZero(playerEntity);
@@ -102,21 +102,28 @@ export class RebirthButton extends BaseComponent<IRebirthButtonAttributes, IRebi
 			task.wait(0.5);
 			this.debounce.set(player, false);
 		} else {
-			const purchased = 5;
-			const totalItems = 15;
+			// const lot_opt = this.lotService.getLotFromPlayer(playerEntity.player);
+			// if (lot_opt.isNone()) {
+			// 	return;
+			// }
+
+			// const lot = lot_opt.unwrap();
+
+			// const purchased = lot.itemsOwnedByOwner;
+			// const totalItems = lot.purchaseableItemsForOwner;
 
 			this.logger.Info(`Player ${player} does not meet the requirements to rebirth.`);
-
-			Events.sendOnScreenMessage(
-				playerEntity.player,
-				"You may only Rebirth after you have purchased everything and can pay " +
-					FormatCompact(BASE_REBIRTH_PRICE * totalRebirths + REBIRTH_ADDITIONAL_PRICE) +
-					".\n You have purchased " +
-					purchased +
-					"/" +
-					totalItems +
-					" items so far.",
-			);
+			MarketplaceService.PromptProductPurchase(player, DeveloperProducts.InstantRebirth);
+			// Events.sendOnScreenMessage(
+			// 	playerEntity.player,
+			// 	"You may only Rebirth after you have purchased everything and can pay " +
+			// 		FormatCompact(BASE_REBIRTH_PRICE * totalRebirths + REBIRTH_ADDITIONAL_PRICE) +
+			// 		".\n You have purchased " +
+			// 		purchased +
+			// 		"/" +
+			// 		totalItems +
+			// 		" items so far.",
+			// );
 
 			// this.playerChatService.sendLocalSystemMessage(
 			// 	player,
@@ -139,11 +146,12 @@ export class RebirthButton extends BaseComponent<IRebirthButtonAttributes, IRebi
 	}
 
 	private checkIfPlayerOwnsAllItems(playerEntity: PlayerEntity): boolean {
-		// const data = playerEntity.data.purchased.filter(
-		// 	(item) =>
-		// 		item !== encoderPartIdentifiers["Robux Dropper"] || item !== encoderPartIdentifiers["Robux Upgrader"],
-		// );
-		const data = playerEntity.data.purchased;
-		return data.size() >= this.lotService.numberOfPurchaseableItems;
+		const lot_opt = this.lotService.getLotFromPlayer(playerEntity.player);
+		if (lot_opt.isNone()) {
+			return false;
+		}
+
+		const lot = lot_opt.unwrap();
+		return lot.purchaseableItemsForOwner === lot.itemsOwnedByOwner;
 	}
 }

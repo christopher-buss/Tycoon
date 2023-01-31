@@ -3,13 +3,14 @@ import { Players, SocialService } from "@rbxts/services";
 import Icon from "@rbxts/topbar-plus";
 import { Events } from "client/network";
 import { ClientStore } from "client/rodux/rodux";
+
 import { MusicController } from "./music-controller";
 
 @Controller({})
 export class TopbarController implements OnStart {
 	constructor(private readonly musicController: MusicController) {}
 
-	public onStart() {
+	public onStart(): void {
 		this.setupMusicButton();
 		this.setupInviteFriendsButton();
 	}

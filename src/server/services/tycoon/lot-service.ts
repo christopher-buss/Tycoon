@@ -77,7 +77,7 @@ export class LotService implements OnStart, OnPlayerJoin, OnPlayerRebirthed {
 
 		const assign_res = this.assignRandomLotToPlayer(playerEntity);
 		if (assign_res.isErr()) {
-			this.logger.Error("There are no available lots in this server!");
+			this.logger.Error(`There are no available lots in this server!`);
 			this.playerRemovalService.removeForBug(player, PlayerKickReason.PlayerFullServer);
 		}
 	}

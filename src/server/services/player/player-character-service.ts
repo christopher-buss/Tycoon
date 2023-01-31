@@ -1,5 +1,4 @@
 import { OnStart, Service } from "@flamework/core";
-import { initaliseServer } from "@rbxts/character-realism";
 import { Logger } from "@rbxts/log";
 import promiseR15, { CharacterRigR6, CharacterRigR15, promiseR6 } from "@rbxts/promise-character";
 import { promiseChildOfClass } from "@rbxts/promise-child";
@@ -14,7 +13,7 @@ export class PlayerCharacterService implements OnStart, OnPlayerJoin {
 	constructor(private readonly logger: Logger) {}
 
 	public onStart(): void {
-		initaliseServer();
+		// initaliseServer();
 	}
 
 	public onPlayerJoin(playerEntity: playerEntity): void {
@@ -54,6 +53,7 @@ export class PlayerCharacterService implements OnStart, OnPlayerJoin {
 
 	private characterShared(player: Player, rig: CharacterRigR6 | CharacterRigR15): void {
 		task.defer(() => {
+			rig.Humanoid.DisplayDistanceType = Enum.HumanoidDisplayDistanceType.None;
 			CollectionService.AddTag(rig.Head, Tag.PlayerHead);
 		});
 
@@ -61,5 +61,7 @@ export class PlayerCharacterService implements OnStart, OnPlayerJoin {
 			task.wait(Players.RespawnTime);
 			player.LoadCharacter();
 		});
+
+		rig.Humanoid.WalkSpeed = 50;
 	}
 }

@@ -20,8 +20,7 @@ import { Lot } from "./lot";
 
 export interface IOnPurchaseButtonBought {
 	/** Called when this button is successfully purchased. */
-	onPurchaseButtonBought(owner: Player, janitor: Janitor): void;
-	onPurchaseButtonBought(owner: Player, janitor: Janitor): void;
+	onPurchaseButtonBought(owner: PlayerEntity, janitor: Janitor): void;
 }
 
 /**
@@ -66,12 +65,7 @@ export class PurchaseButton extends BaseComponent<IPurchaseButtonAttributes, IPu
 
 		this.canCollideMap = new Map();
 		this.transparencyMap = new Map();
-		this.instance.GetChildren().forEach((child) => {
-			if (child.IsA("BasePart")) {
-				this.canCollideMap.set(child, child.CanCollide);
-				this.transparencyMap.set(child, child.Transparency);
-			}
-		});
+		this.storeButtonProperties();
 
 		const part = PartInfo[this.instance.Name as PartInfoType];
 		if (part === undefined) {
@@ -85,6 +79,15 @@ export class PurchaseButton extends BaseComponent<IPurchaseButtonAttributes, IPu
 		}
 
 		this.attributes.Price = price;
+	}
+
+	private storeButtonProperties(): void {
+		this.instance.GetChildren().forEach((child) => {
+			if (child.IsA("BasePart")) {
+				this.canCollideMap.set(child, child.CanCollide);
+				this.transparencyMap.set(child, child.Transparency);
+			}
+		});
 	}
 
 	/** @hidden */
@@ -122,7 +125,7 @@ export class PurchaseButton extends BaseComponent<IPurchaseButtonAttributes, IPu
 	public bindButtonTouched(force: boolean): void {
 		// TODO :this would probably be better as a buyJanitor and a removeJanitor for easier understanding
 		this.janitor.Cleanup();
-		this.logger.Debug(`Binding button touched for ${this.instance.Name}`);
+		this.logger.Verbose(`Binding button touched for ${this.instance.Name}`);
 		this.purchased = false;
 		this.touchPart.CanTouch = true;
 		if (force) {
@@ -138,7 +141,7 @@ export class PurchaseButton extends BaseComponent<IPurchaseButtonAttributes, IPu
 	 * @param force
 	 */
 	public unbindButtonTouched(force: boolean): void {
-		this.logger.Debug(`Unbinding button touched for ${this.instance.Name}`);
+		this.logger.Verbose(`Unbinding button touched for ${this.instance.Name}`);
 		this.touchPart.CanTouch = false;
 		if (force) {
 			this.forceButtonHidden().catch((err) => this.logger.Warn(err));
@@ -194,7 +197,6 @@ export class PurchaseButton extends BaseComponent<IPurchaseButtonAttributes, IPu
 
 		if (this.attributes.Rebirths !== undefined && this.attributes.Rebirths > 0) {
 			if (playerEntity.data.rebirths < this.attributes.Rebirths) {
-				// dont have enough rebirths
 				if (this.attributes.GamepassId !== undefined && this.attributes.GamepassId > 0) {
 					const result = await this.buyWithRobux(player);
 					if (result !== true) {
@@ -215,14 +217,13 @@ export class PurchaseButton extends BaseComponent<IPurchaseButtonAttributes, IPu
 		};
 
 		if (this.attributes.GamepassId !== undefined && this.attributes.GamepassId > 0) {
-			if (!rebirthCheck()) {
-				const result = await this.buyWithRobux(player);
-				if (result !== true) {
-					task.delay(0.5, () => {
-						this.debounce = false;
-					});
-					return;
-				}
+			// if (!rebirthCheck()) {
+			const result = await this.buyWithRobux(player);
+			if (result !== true) {
+				task.delay(0.5, () => {
+					this.debounce = false;
+				});
+				return;
 			}
 		} else {
 			if (!rebirthCheck() || !this.buyWithMoney(playerEntity)) {
@@ -233,6 +234,33 @@ export class PurchaseButton extends BaseComponent<IPurchaseButtonAttributes, IPu
 			}
 		}
 
+		this.updatePlayerData(playerEntity);
+
+		this.logger.Info(`${this.instance.Name} purchased by ${player}`);
+
+		this.purchased = true;
+		this.dependencies.forEach((dependency) => dependency.bindButtonTouched(false));
+		this.unbindButtonTouched(false);
+
+		this.listeners.forEach((listener) => {
+			task.spawn(() => {
+				listener.onPurchaseButtonBought(playerEntity, this.janitor);
+			});
+		});
+
+		this.addOwnedItemForOwner(playerEntity.data.rebirths, player);
+
+		// GameAnalytics.addProgressionEvent(player.UserId, {
+		// 	progressionStatus: GameAnalytics.EGAProgressionStatus.Complete,
+		// 	progression01: this.instance.Name,
+		// });
+	}
+
+	/**
+	 *
+	 * @param playerEntity
+	 */
+	private updatePlayerData(playerEntity: PlayerEntity): void {
 		playerEntity.updateData((data) => {
 			const identifier = encoderPartIdentifiers[this.instance.Name as keyof EncodePartIdentifier];
 			if (identifier === undefined) {
@@ -243,28 +271,25 @@ export class PurchaseButton extends BaseComponent<IPurchaseButtonAttributes, IPu
 			data.purchased.push(identifier);
 			return data;
 		});
+	}
 
-		this.logger.Info(`${this.instance.Name} purchased by ${player}`);
+	public addOwnedItemForOwner(playerRebirths: number, player: Player): void {
+		if (this.attributes.GamepassId !== undefined && this.attributes.GamepassId > 0) {
+			return;
+		}
 
-		this.purchased = true;
-		this.dependencies.forEach((dependency) => dependency.bindButtonTouched(false));
-		this.unbindButtonTouched(false);
+		const rebirths = this.attributes.Rebirths;
+		if (rebirths !== undefined && (rebirths > 0 || playerRebirths < rebirths)) {
+			return;
+		}
 
-		this.listeners.forEach((listener) => {
-			task.spawn(() => {
-				listener.onPurchaseButtonBought(player, this.janitor);
-			});
-		});
-
-		// GameAnalytics.addProgressionEvent(player.UserId, {
-		// 	progressionStatus: GameAnalytics.EGAProgressionStatus.Complete,
-		// 	progression01: this.instance.Name,
-		// });
+		this.lot.itemsOwnedByOwner += 1;
+		player.SetAttribute("ButtonsOwned", this.lot.itemsOwnedByOwner);
 	}
 
 	/**
 	 *
-	 * @param player
+	 * @param playerEntity
 	 * @returns
 	 */
 	private buyWithMoney(playerEntity: PlayerEntity): boolean {

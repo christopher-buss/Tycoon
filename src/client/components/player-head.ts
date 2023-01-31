@@ -6,6 +6,7 @@ import { Logger } from "@rbxts/log";
 import Roact from "@rbxts/roact";
 import { Option } from "@rbxts/rust-classes";
 import { Players } from "@rbxts/services";
+import { observeChild } from "@rbxts/streamable";
 import { PlayerHeadUi } from "shared/ui/world/player-head";
 import { PlayerUtil } from "shared/util/player-util";
 import { Tag } from "types/enum/tags";
@@ -37,15 +38,12 @@ export class PlayerHead extends BaseComponent<{}, IPlayerHeadModel> implements O
 	}
 
 	public onStart(): void {
-		// this.janitor.Add(
-		// 	obser
-
-		// 	observeChild(this.instance, "Head", () => {
-		// 		this.onStreamIn();
-		// 		return (): void => {};
-		// 	}),
-		// );
-		this.onStreamIn();
+		this.janitor.Add(
+			observeChild(this.instance, "Head", () => {
+				this.onStreamIn();
+				return (): void => {};
+			}),
+		);
 	}
 
 	/**

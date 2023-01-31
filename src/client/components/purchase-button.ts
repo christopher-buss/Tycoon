@@ -9,6 +9,7 @@ import { observeChild } from "@rbxts/streamable";
 import purchaseButton from "shared/ui/world/purchase-button";
 import { Tag } from "types/enum/tags";
 import { IPurchaseButtonAttributes, IPurchaseButtonModel } from "types/interfaces/buttons";
+import { ILotModel } from "types/interfaces/lots";
 
 const noop = (): void => {};
 
@@ -17,7 +18,9 @@ const noop = (): void => {};
  * objects in the game. This client component is responsible for rendering ui
  * related to the purchase button.
  */
-@Component({ tag: Tag.PurchaseButton })
+@Component({
+	tag: Tag.PurchaseButton,
+})
 export class PurchaseButton extends BaseComponent<IPurchaseButtonAttributes, IPurchaseButtonModel> implements OnStart {
 	private readonly janitor: Janitor<void>;
 	private tree_opt: Option<Roact.Tree>;
@@ -28,7 +31,12 @@ export class PurchaseButton extends BaseComponent<IPurchaseButtonAttributes, IPu
 		this.tree_opt = Option.none<Roact.Tree>();
 	}
 
-	public onStart(): void {
+	public async onStart(): Promise<void> {
+		if (!(await this.instantiationCheck())) {
+			this.destroy();
+			return;
+		}
+
 		if (CollectionService.HasTag(this.instance, Tag.TimerButton)) {
 			return;
 		}
@@ -39,6 +47,25 @@ export class PurchaseButton extends BaseComponent<IPurchaseButtonAttributes, IPu
 				return noop;
 			}),
 		);
+	}
+
+	private async instantiationCheck(): Promise<boolean> {
+		return new Promise((resolve) => {
+			const owner = this.instance.Parent?.Parent as ILotModel;
+			assert(owner, "Owner is undefined");
+
+			const lot = Players.LocalPlayer.GetAttribute("Lot") as string;
+			if (lot !== undefined) {
+				resolve(owner.Name === lot);
+				return;
+			}
+
+			this.janitor.Add(
+				Players.LocalPlayer.GetAttributeChangedSignal("Lot").Once(() => {
+					resolve(owner.Name === (Players.LocalPlayer.GetAttribute("Lot") as string));
+				}),
+			);
+		});
 	}
 
 	/**
@@ -62,7 +89,7 @@ export class PurchaseButton extends BaseComponent<IPurchaseButtonAttributes, IPu
 		}
 
 		let color = this.instance.TouchPart.Color;
-		let price = "$" + tostring(this.attributes.Price);
+		let price = this.attributes.Price === 0 ? "FREE" : "$" + tostring(this.attributes.Price);
 		if (this.attributes.GamepassId !== undefined && this.attributes.GamepassId !== 0) {
 			color = Color3.fromRGB(38, 255, 0);
 			price = this.attributes.Price + "R$";

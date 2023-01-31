@@ -4,7 +4,6 @@ import { Logger } from "@rbxts/log";
 import PartCacheModule from "@rbxts/partcache";
 import { PartCache } from "@rbxts/partcache/out/class";
 import { Players, ReplicatedStorage, TweenService, Workspace } from "@rbxts/services";
-import SoundSystem from "client/modules/3d-sound-system";
 import { Events } from "client/network";
 import { ClientStore } from "client/rodux/rodux";
 import { IUpgraderInfo } from "server/components/lot/upgrader";
@@ -41,12 +40,12 @@ export class DropperController implements OnStart, OnInit {
 	private partCache: Map<string, PartCache>;
 	private upgradersOwned: Map<LotName, Map<PathNumber, Map<DropperProgress, Partial<IUpgraderInfo>>>>;
 	private simulationFunctions: Map<PathNumber, Map<number, ISimulationFunction>>;
-	private audioFiles = new Map<PathNumber, Map<number, string>>();
+	// private audioFiles = new Map<PathNumber, Map<number, string>>();
 
 	private readonly partCacheLocation: Folder;
 
 	constructor(private readonly logger: Logger) {
-		this.audioFiles = new Map();
+		// this.audioFiles = new Map();
 		this.currentlySimulating = new Set();
 		this.partCache = new Map();
 		this.partCacheLocation = new Instance("Folder");
@@ -63,13 +62,13 @@ export class DropperController implements OnStart, OnInit {
 
 	/** @hidden */
 	public onInit(): void {
-		for (let path = 0; path < NUMBER_OF_PATHS + 1; path++) {
-			this.audioFiles.set(path, new Map());
-		}
+		// for (let path = 0; path < NUMBER_OF_PATHS + 1; path++) {
+		// 	this.audioFiles.set(path, new Map());
+		// }
 
-		for (const [, value] of pairs(Progress)) {
-			this.audioFiles.get(value.Path)?.set(value.Progress, value.Audio);
-		}
+		// for (const [, value] of pairs(Progress)) {
+		// 	this.audioFiles.get(value.Path)?.set(value.Progress, value.Audio);
+		// }
 
 		for (const lotName of LOT_NAMES) {
 			this.upgradersOwned.set(lotName, new Map());
@@ -97,8 +96,8 @@ export class DropperController implements OnStart, OnInit {
 	/** @hidden */
 	public onStart(): void {
 		this.storeCachedConveyorLocations();
-		const parts = ReplicatedStorage.PartInfo;
-		parts.GetChildren().forEach((part) => {
+
+		ReplicatedStorage.PartInfo.GetChildren().forEach((part) => {
 			task.spawn(() => {
 				const partCache = new PartCacheModule(part, 5, this.partCacheLocation);
 				this.partCache.set(part.Name, partCache);
@@ -327,17 +326,17 @@ export class DropperController implements OnStart, OnInit {
 	 */
 	private playAudio(pathNumber: PathNumber, progress: number): void {
 		const position = this.cachedConveyorLocations.get(this.nearestTycoon!)![pathNumber][progress];
-		const sound = this.audioFiles.get(pathNumber)?.get(progress);
-		if (sound === undefined || sound === "0") {
-			return;
-		}
+		// const sound = this.audioFiles.get(pathNumber)?.get(progress);
+		// if (sound === undefined || sound === "0") {
+		// 	return;
+		// }
 
-		if (Workspace.Camera.FindFirstChild("SoundContainer")?.FindFirstChild(tostring(sound))) {
-			return;
-		}
+		// if (Workspace.Camera.FindFirstChild("SoundContainer")?.FindFirstChild(tostring(sound))) {
+		// 	return;
+		// }
 
-		this.logger.Debug(`Playing sound ${sound} at ${position}`);
-		SoundSystem.Create(sound, position, tostring(sound), false);
+		// this.logger.Debug(`Playing sound ${sound} at ${position}`);
+		// SoundSystem.Create(sound, position, tostring(sound), false);
 	}
 
 	/**

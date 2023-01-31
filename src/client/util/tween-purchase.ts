@@ -1,15 +1,15 @@
 import { TweenService } from "@rbxts/services";
 
-const RNG = new Random();
-const OFFSET = 2;
+// const RNG = new Random();
+// const OFFSET = 2;
 
 function getDescendantsWhichAreA<T extends keyof Instances>(ancestor: Instance, className: T): Array<Instance> {
 	const result: Array<Instance> = [];
-	for (const descendant of ancestor.GetDescendants()) {
+	ancestor.GetDescendants().forEach((descendant) => {
 		if (descendant.IsA(className)) {
 			result.push(descendant);
 		}
-	}
+	});
 	return result;
 }
 
@@ -18,12 +18,12 @@ function instanceListToPropertyMap<T extends BasePart, K extends keyof Partial<W
 	propertyList: Array<K>,
 ): Map<BasePart, Map<K, T[K]>> {
 	const result = new Map<BasePart, Map<K, T[K]>>();
-	for (const instance of instances) {
+	instances.forEach((instance) => {
 		result.set(instance, new Map<K, T[K]>());
-		for (const property of propertyList) {
+		propertyList.forEach((property) => {
 			result.get(instance)?.set(property, instance[property]);
-		}
-	}
+		});
+	});
 	return result;
 }
 

@@ -4,14 +4,12 @@ import { ClientStore } from "client/rodux/rodux";
 import CoreCall from "client/util/core-call";
 import { INotificationEntry } from "server/meta/notification-data";
 
-import { UserInterfaceController } from "./ui";
-
 @Controller({})
 export class NotificationController implements OnInit {
 	/**
 	 *
 	 */
-	constructor(private readonly userInterfaceController: UserInterfaceController) {}
+	constructor() {}
 
 	public onInit(): void {
 		Events.sendNotification.connect((data: INotificationEntry) => this.showNotification(data));

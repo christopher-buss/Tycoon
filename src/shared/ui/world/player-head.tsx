@@ -1,5 +1,6 @@
 import { FormatCompact } from "@rbxts/format-number";
 import Roact from "@rbxts/roact";
+import { Players } from "@rbxts/services";
 import { Tag } from "types/enum/tags";
 
 export interface IPlayerHeadProps {
@@ -29,18 +30,34 @@ function PlayerHeadUi(props: IPlayerHeadProps): Roact.Element {
 			LightInfluence={0}
 			MaxDistance={75}
 			ResetOnSpawn={true}
-			Size={new UDim2(5, 0, 1.5, 0)}
-			SizeOffset={new Vector2(0, 1)}
+			Size={new UDim2(5, 0, 2.25, 0)}
+			SizeOffset={new Vector2(0, 0.6)}
 			StudsOffset={new Vector3(0, 0.5, 0)}
 		>
+			<textbox
+				Key="Cash"
+				AnchorPoint={new Vector2(0.5, 0)}
+				BackgroundTransparency={1}
+				Font={Enum.Font.FredokaOne}
+				PlaceholderColor3={Color3.fromRGB(255, 255, 255)}
+				Position={new UDim2(0.5, 0, 0, 0)}
+				Size={new UDim2(1, 0, 0.33, 0)}
+				Text={cashBinding}
+				TextColor3={Color3.fromRGB(255, 255, 255)}
+				TextScaled={true}
+				TextSize={25}
+				TextStrokeTransparency={0.3}
+				TextWrapped={true}
+				TextYAlignment={Enum.TextYAlignment.Bottom}
+			/>
 			<textbox
 				Key="Rebirths"
 				AnchorPoint={new Vector2(0.5, 0)}
 				BackgroundTransparency={1}
 				Font={Enum.Font.FredokaOne}
 				PlaceholderColor3={Color3.fromRGB(255, 255, 255)}
-				Position={new UDim2(0.5, 0, 0, 0)}
-				Size={new UDim2(2, 0, 0.5, 0)}
+				Position={new UDim2(0.5, 0, 0.33, 0)}
+				Size={new UDim2(1, 0, 0.33, 0)}
 				Text={rebirthsBinding}
 				TextColor3={Color3.fromRGB(147, 152, 255)}
 				TextScaled={true}
@@ -51,15 +68,15 @@ function PlayerHeadUi(props: IPlayerHeadProps): Roact.Element {
 			/>
 
 			<textbox
-				Key="Cash"
+				Key="PlayerName"
 				AnchorPoint={new Vector2(0.5, 0)}
 				BackgroundTransparency={1}
 				Font={Enum.Font.FredokaOne}
 				PlaceholderColor3={Color3.fromRGB(255, 255, 255)}
-				Position={new UDim2(0.5, 0, 0.5, 0)}
-				Size={new UDim2(2, 0, 0.5, 0)}
-				Text={cashBinding}
-				TextColor3={Color3.fromRGB(255, 255, 255)}
+				Position={new UDim2(0.5, 0, 0.66, 0)}
+				Size={new UDim2(1, 0, 0.33, 0)}
+				Text={props.Player === Players.LocalPlayer ? "" : props.Player.Name}
+				TextColor3={props.Player.TeamColor.Color}
 				TextScaled={true}
 				TextSize={25}
 				TextStrokeTransparency={0.3}

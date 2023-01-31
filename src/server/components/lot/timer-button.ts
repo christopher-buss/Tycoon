@@ -2,6 +2,7 @@ import { BaseComponent, Component } from "@flamework/components";
 import { OnStart } from "@flamework/core";
 import { Janitor } from "@rbxts/janitor";
 import { Logger } from "@rbxts/log";
+import PlayerEntity from "server/modules/classes/player-entity";
 import { PlayerService } from "server/services/player/player-service";
 import { OnLotOwned } from "server/services/tycoon/lot-service";
 import { EncodePartIdentifier, encoderPartIdentifiers } from "shared/meta/part-identifiers";
@@ -66,7 +67,7 @@ export class TimerButton
 				}),
 			);
 		} else {
-			this.onPurchaseButtonBought(newOwner);
+			this.onPurchaseButtonBought(playerEntity);
 		}
 
 		playerEntity.playerRemoving.Add(() => {
@@ -74,5 +75,5 @@ export class TimerButton
 		});
 	}
 
-	public onPurchaseButtonBought(owner: Player): void {}
+	public onPurchaseButtonBought(owner: PlayerEntity): void {}
 }

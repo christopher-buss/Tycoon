@@ -1,5 +1,6 @@
 export const enum Tag {
 	"Animate" = "Animate",
+	"BuyAllPets" = "BuyAllPets",
 	"ConveyorBelt" = "ConveyorBelt",
 	"Dropper" = "Dropper",
 	"Float" = "Float",

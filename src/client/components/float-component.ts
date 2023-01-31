@@ -45,15 +45,16 @@ export class FloatComponent extends BaseComponent<Attributes, IModel> implements
 			0,
 		);
 
-		const x = model.PrimaryPart.Position.X;
-		const z = model.PrimaryPart.Position.Z;
-
 		// const info = new TweenInfo(this.attributes.FloatTime / 3, Enum.EasingStyle.Linear);
 
 		while (this.instance !== undefined) {
 			await this.janitor.AddPromise(
 				TweenUtil.tweenPromise(model.PrimaryPart, info, {
-					CFrame: new CFrame(x, model.PrimaryPart.Position.Y + this.attributes.Height, z),
+					CFrame: new CFrame(
+						model.PrimaryPart.Position.X,
+						model.PrimaryPart.Position.Y + this.attributes.Height,
+						model.PrimaryPart.Position.Z,
+					),
 				}),
 			);
 		}
