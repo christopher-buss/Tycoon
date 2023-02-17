@@ -41,9 +41,8 @@ interface IOwnedUpgrader {
  */
 @Service({})
 export class DropperService implements OnInit, OnStart, OnTick, OnPlayerJoin, OnLotOwned, OnPlayerRebirthed {
-	public lotToReplicateTo: Map<Player, LotName>;
-
 	private connections: Map<Player, Set<Promise<number | void>>>;
+	private lastDrop: Map<Player, Map<PathNumber, number>>;
 	private lotPositions: Map<LotName, Vector3>;
 	private ownedDroppers: Map<Player, Map<PathNumber, Array<IDropperSimulatingInfo>>>;
 	private ownedUpgraders: Map<Player, Map<PathNumber, Array<IOwnedUpgrader>>>;
@@ -51,7 +50,7 @@ export class DropperService implements OnInit, OnStart, OnTick, OnPlayerJoin, On
 	private simulatedDroppers: Map<LotName, Map<PathNumber, Array<IDropperSimulating>>>;
 	private timeSinceLastPlayerInRangeUpdate: number;
 
-	private lastDrop: Map<Player, Map<PathNumber, number>>;
+	public lotToReplicateTo: Map<Player, LotName>;
 
 	constructor(
 		private readonly logger: Logger,
@@ -73,24 +72,18 @@ export class DropperService implements OnInit, OnStart, OnTick, OnPlayerJoin, On
 
 	/**
 	 *
+	 * @param info
 	 */
-	public onInit(): void {
-		for (const team of Teams.GetTeams()) {
-			this.simulatedDroppers.set(team.Name, new Map<PathNumber, Array<IDropperSimulating>>());
-			for (let path = 0; path < NUMBER_OF_PATHS + 1; path++) {
-				this.simulatedDroppers.get(team.Name)?.set(path, []);
-			}
-		}
-	}
+	public addOwnedDropper(info: IDropperInfo): void {
+		const simulatingInfo: IDropperSimulatingInfo = {
+			LastDrop: os.clock(),
+			Name: info.DropperType,
+			Owner: info.Owner,
+			StartProgress: info.StartProgress,
+			Value: (PartInfo[info.DropperType as PartInfoType] as PartInfoKey).Value,
+		};
 
-	/**
-	 *
-	 */
-	public onStart(): void {
-		const lots = this.lotService.getAllLots();
-		for (const lot of lots) {
-			this.lotPositions.set(lot.name, lot.position);
-		}
+		this.ownedDroppers.get(info.Owner)?.get(info.Path)?.push(simulatingInfo);
 	}
 
 	/**
@@ -103,6 +96,18 @@ export class DropperService implements OnInit, OnStart, OnTick, OnPlayerJoin, On
 			Additive: upgraderInfo.Additive,
 			Multiplier: upgraderInfo.Multiplier,
 		});
+	}
+
+	/**
+	 *
+	 */
+	public onInit(): void {
+		for (const team of Teams.GetTeams()) {
+			this.simulatedDroppers.set(team.Name, new Map<PathNumber, Array<IDropperSimulating>>());
+			for (let path = 0; path < NUMBER_OF_PATHS + 1; path++) {
+				this.simulatedDroppers.get(team.Name)?.set(path, []);
+			}
+		}
 	}
 
 	/**
@@ -170,71 +175,6 @@ export class DropperService implements OnInit, OnStart, OnTick, OnPlayerJoin, On
 
 	/**
 	 *
-	 * @param info
-	 */
-	public addOwnedDropper(info: IDropperInfo): void {
-		const simulatingInfo: IDropperSimulatingInfo = {
-			LastDrop: os.clock(),
-			Name: info.DropperType,
-			Owner: info.Owner,
-			StartProgress: info.StartProgress,
-			Value: (PartInfo[info.DropperType as PartInfoType] as PartInfoKey).Value,
-		};
-
-		this.ownedDroppers.get(info.Owner)?.get(info.Path)?.push(simulatingInfo);
-	}
-
-	/**
-	 *
-	 * @param dt
-	 */
-	public onTick(dt: number): void {
-		this.updatePlayersInRange(dt);
-
-		this.ownedDroppers.forEach((ownedDroppers) => {
-			ownedDroppers.forEach((simulatingDroppers, pathNumber) => {
-				simulatingDroppers.forEach((dropper) => {
-					const partInfo = PartInfo[dropper.Name as PartInfoType] as DropperKey;
-					if (this.checkIfShouldSpawnDropper(pathNumber, partInfo, dropper)) {
-						this.handleNewDropper(dropper, pathNumber);
-					}
-				});
-			});
-		});
-	}
-
-	private checkIfShouldSpawnDropper(
-		pathNumber: PathNumber,
-		partInfo: DropperKey,
-		dropper: IDropperSimulatingInfo,
-	): boolean {
-		const lastDropTime = this.lastDrop.get(dropper.Owner)!.get(pathNumber)!;
-		const nextPotentialDropTime = lastDropTime + 2 / this.ownedDroppers.get(dropper.Owner)!.get(pathNumber)!.size();
-
-		return os.clock() - dropper.LastDrop >= partInfo.DropTime && os.clock() >= nextPotentialDropTime;
-	}
-
-	/**
-	 *
-	 * @param dropper
-	 * @param pathNumber
-	 * @returns
-	 */
-	private handleNewDropper(dropper: IDropperSimulatingInfo, pathNumber: PathNumber): void {
-		const lotName_opt = this.getLotFromDropperOwner(dropper.Owner);
-		if (lotName_opt.isNone()) {
-			return;
-		}
-
-		const lotName = lotName_opt.unwrap();
-		const newDropper = this.spawnDropper(lotName, pathNumber, dropper);
-		if (newDropper) {
-			this.replicateDropper(lotName, pathNumber, newDropper);
-		}
-	}
-
-	/**
-	 *
 	 * @param playerEntity
 	 * @returns
 	 */
@@ -268,6 +208,80 @@ export class DropperService implements OnInit, OnStart, OnTick, OnPlayerJoin, On
 
 	/**
 	 *
+	 */
+	public onStart(): void {
+		const lots = this.lotService.getAllLots();
+		for (const lot of lots) {
+			this.lotPositions.set(lot.name, lot.position);
+		}
+	}
+
+	/**
+	 *
+	 * @param dt
+	 */
+	public onTick(dt: number): void {
+		this.updatePlayersInRange(dt);
+
+		this.ownedDroppers.forEach((ownedDroppers) => {
+			ownedDroppers.forEach((simulatingDroppers, pathNumber) => {
+				simulatingDroppers.forEach((dropper) => {
+					const partInfo = PartInfo[dropper.Name as PartInfoType] as DropperKey;
+					if (this.checkIfShouldSpawnDropper(pathNumber, partInfo, dropper)) {
+						this.handleNewDropper(dropper, pathNumber);
+					}
+				});
+			});
+		});
+	}
+
+	/**
+	 *
+	 * @param path
+	 * @param dropper
+	 * @returns
+	 */
+	private awardCashToPlayer(path: PathNumber, dropper: IDropperSimulatingInfo): void {
+		// Currently we're faking the simulation here by applying the cash to the player if they
+		// own an upgrader at the point of the dropper despawning. TODO: Can this be done better?
+		const entity_opt = this.playerService.getEntity(dropper.Owner);
+		if (entity_opt.isNone()) {
+			this.logger.Error(`Could not find entity for player ${dropper.Owner.Name}`);
+			return;
+		}
+
+		let value = dropper.Value;
+
+		const ownedUpgraders = this.ownedUpgraders.get(dropper.Owner)?.get(path);
+		if (ownedUpgraders) {
+			ownedUpgraders.forEach((info) => {
+				value += info.Additive;
+				value *= info.Multiplier;
+			});
+		}
+
+		const playerEntity = entity_opt.unwrap();
+		const multiplier =
+			(1 + playerEntity.data.rebirths / 5) * (playerEntity.data.gamePasses.doubleMoneyGamepass ? 2 : 1);
+
+		value *= multiplier;
+
+		this.moneyService.givePlayerMoney(dropper.Owner, value);
+	}
+
+	private checkIfShouldSpawnDropper(
+		pathNumber: PathNumber,
+		partInfo: DropperKey,
+		dropper: IDropperSimulatingInfo,
+	): boolean {
+		const lastDropTime = this.lastDrop.get(dropper.Owner)!.get(pathNumber)!;
+		const nextPotentialDropTime = lastDropTime + 2 / this.ownedDroppers.get(dropper.Owner)!.get(pathNumber)!.size();
+
+		return os.clock() - dropper.LastDrop >= partInfo.DropTime && os.clock() >= nextPotentialDropTime;
+	}
+
+	/**
+	 *
 	 * @param owner
 	 * @returns
 	 */
@@ -279,6 +293,85 @@ export class DropperService implements OnInit, OnStart, OnTick, OnPlayerJoin, On
 		}
 
 		return Option.some(lot);
+	}
+
+	/**
+	 *
+	 * @param dropper
+	 * @param pathNumber
+	 * @returns
+	 */
+	private handleNewDropper(dropper: IDropperSimulatingInfo, pathNumber: PathNumber): void {
+		const lotName_opt = this.getLotFromDropperOwner(dropper.Owner);
+		if (lotName_opt.isNone()) {
+			return;
+		}
+
+		const lotName = lotName_opt.unwrap();
+		const newDropper = this.spawnDropper(lotName, pathNumber, dropper);
+		if (newDropper) {
+			this.replicateDropper(lotName, pathNumber, newDropper);
+		}
+	}
+
+	/**
+	 *
+	 * @param lot
+	 * @param pathNumber
+	 * @param dropperInfo
+	 */
+	private replicateDropper(lot: LotName, pathNumber: PathNumber, dropperInfo: IDropperSimulating): void {
+		const encodedDropperSimulating = new Vector2int16(
+			pathNumber,
+			encoderPartIdentifiers[dropperInfo.Dropper.Name as keyof EncodePartIdentifier],
+		);
+
+		this.lotToReplicateTo.forEach((lotName, player) => {
+			if (lotName === lot) {
+				Events.dropperSpawned.fire(player, encodedDropperSimulating);
+			}
+		});
+	}
+
+	/**
+	 *
+	 * @param lot
+	 * @param pathNumber
+	 * @param dropper
+	 * @returns
+	 */
+	private spawnDropper(lot: LotName, pathNumber: PathNumber, dropper: IDropperSimulatingInfo): IDropperSimulating {
+		const progress = 0;
+
+		this.logger.Debug(`Spawning dropper ${dropper.Name} for ${dropper.Owner.Name}`);
+
+		dropper.LastDrop = os.clock();
+		this.lastDrop.get(dropper.Owner)!.set(pathNumber, os.clock());
+
+		const dropperInfo: IDropperSimulating = {
+			Dropper: table.clone(dropper),
+			Progress: progress,
+		};
+
+		this.simulatedDroppers.get(lot)?.get(pathNumber)?.push(dropperInfo);
+
+		// Calculate the time it takes to reach the end of the path
+		const time =
+			PATH_INFO[pathNumber]!.TotalTime * (1 - dropper.StartProgress / PATH_INFO[pathNumber]!.TotalProgress);
+
+		const thread: Promise<void | number> = Promise.delay(time).andThen(() => {
+			this.awardCashToPlayer(pathNumber, dropper);
+			this.connections.get(dropper.Owner)?.delete(thread);
+
+			const index = this.simulatedDroppers.get(lot)?.get(pathNumber)?.indexOf(dropperInfo);
+			if (index !== undefined && index !== -1) {
+				this.simulatedDroppers.get(lot)?.get(pathNumber)?.unorderedRemove(index);
+			}
+		});
+
+		this.connections.get(dropper.Owner)?.add(thread);
+
+		return dropperInfo;
 	}
 
 	/**
@@ -341,99 +434,5 @@ export class DropperService implements OnInit, OnStart, OnTick, OnPlayerJoin, On
 				Events.playerOutOfRangeOfLot.fire(player);
 			}
 		});
-	}
-
-	/**
-	 *
-	 * @param lot
-	 * @param pathNumber
-	 * @param dropper
-	 * @returns
-	 */
-	private spawnDropper(lot: LotName, pathNumber: PathNumber, dropper: IDropperSimulatingInfo): IDropperSimulating {
-		const progress = 0;
-
-		this.logger.Debug(`Spawning dropper ${dropper.Name} for ${dropper.Owner.Name}`);
-
-		dropper.LastDrop = os.clock();
-		this.lastDrop.get(dropper.Owner)!.set(pathNumber, os.clock());
-
-		const dropperInfo: IDropperSimulating = {
-			Dropper: table.clone(dropper),
-			Progress: progress,
-		};
-
-		this.simulatedDroppers.get(lot)?.get(pathNumber)?.push(dropperInfo);
-
-		// Calculate the time it takes to reach the end of the path
-		const time =
-			PATH_INFO[pathNumber]!.TotalTime * (1 - dropper.StartProgress / PATH_INFO[pathNumber]!.TotalProgress);
-
-		const thread: Promise<void | number> = Promise.delay(time).andThen(() => {
-			this.awardCashToPlayer(pathNumber, dropper);
-			this.connections.get(dropper.Owner)?.delete(thread);
-
-			const index = this.simulatedDroppers.get(lot)?.get(pathNumber)?.indexOf(dropperInfo);
-			if (index !== undefined && index !== -1) {
-				this.simulatedDroppers.get(lot)?.get(pathNumber)?.unorderedRemove(index);
-			}
-		});
-
-		this.connections.get(dropper.Owner)?.add(thread);
-
-		return dropperInfo;
-	}
-
-	/**
-	 *
-	 * @param lot
-	 * @param pathNumber
-	 * @param dropperInfo
-	 */
-	private replicateDropper(lot: LotName, pathNumber: PathNumber, dropperInfo: IDropperSimulating): void {
-		const encodedDropperSimulating = new Vector2int16(
-			pathNumber,
-			encoderPartIdentifiers[dropperInfo.Dropper.Name as keyof EncodePartIdentifier],
-		);
-
-		this.lotToReplicateTo.forEach((lotName, player) => {
-			if (lotName === lot) {
-				Events.dropperSpawned.fire(player, encodedDropperSimulating);
-			}
-		});
-	}
-
-	/**
-	 *
-	 * @param path
-	 * @param dropper
-	 * @returns
-	 */
-	private awardCashToPlayer(path: PathNumber, dropper: IDropperSimulatingInfo): void {
-		// Currently we're faking the simulation here by applying the cash to the player if they
-		// own an upgrader at the point of the dropper despawning. TODO: Can this be done better?
-		const entity_opt = this.playerService.getEntity(dropper.Owner);
-		if (entity_opt.isNone()) {
-			this.logger.Error(`Could not find entity for player ${dropper.Owner.Name}`);
-			return;
-		}
-
-		let value = dropper.Value;
-
-		const ownedUpgraders = this.ownedUpgraders.get(dropper.Owner)?.get(path);
-		if (ownedUpgraders) {
-			ownedUpgraders.forEach((info) => {
-				value += info.Additive;
-				value *= info.Multiplier;
-			});
-		}
-
-		const playerEntity = entity_opt.unwrap();
-		const multiplier =
-			(1 + playerEntity.data.rebirths / 5) * (playerEntity.data.gamePasses.doubleMoneyGamepass ? 2 : 1);
-
-		value *= multiplier;
-
-		this.moneyService.givePlayerMoney(dropper.Owner, value);
 	}
 }

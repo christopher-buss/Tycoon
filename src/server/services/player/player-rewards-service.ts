@@ -1,4 +1,6 @@
 import { OnInit, Service } from "@flamework/core";
+import { Logger } from "@rbxts/log";
+import { HttpService } from "@rbxts/services";
 import { default as PlayerEntity, default as playerEntity } from "server/modules/classes/player-entity";
 import withPlayerEntity from "server/modules/with-player-entity";
 import { Events } from "server/network";
@@ -14,6 +16,7 @@ const CASH_AWARDED_FOR_FRIENDS_IN_GAME = 500;
 @Service({})
 export class PlayerRewardsService implements OnInit, OnPlayerJoin {
 	constructor(
+		private readonly logger: Logger,
 		private readonly moneyService: MoneyService,
 		private readonly notificationService: NotificationService,
 	) {}
@@ -26,9 +29,11 @@ export class PlayerRewardsService implements OnInit, OnPlayerJoin {
 		);
 	}
 
-	public onPlayerJoin(playerEntity: playerEntity): void {
+	public async onPlayerJoin(playerEntity: playerEntity): Promise<void> {
 		this.checkIfPlayerAwardedCash(playerEntity);
-		this.checkIfPlayerHasFriendsInGame(playerEntity.player);
+		Promise.retryWithDelay(async () => this.checkIfPlayerWasInvited(playerEntity), 5, 0.5).catch((err) => {
+			this.logger.Error(err);
+		});
 	}
 
 	private checkIfPlayerAwardedCash(playerEntity: PlayerEntity): void {
@@ -49,5 +54,20 @@ export class PlayerRewardsService implements OnInit, OnPlayerJoin {
 		}
 	}
 
-	private checkIfPlayerHasFriendsInGame(_player: Player): void {}
+	private checkIfPlayerWasInvited(playerEntity: PlayerEntity): Promise<void> {
+		return new Promise((resolve, reject) => {
+			const joinData = playerEntity.player.GetJoinData().TeleportData as string | undefined;
+			if (joinData !== undefined) {
+				const [success, result] = pcall(() => HttpService.JSONDecode(joinData));
+				if (!success) {
+					this.logger.Warn(`Failed to decode join data for player ${playerEntity.player.Name}`);
+					return reject();
+				}
+
+				// handle data
+				print("TODO: handle join data");
+				resolve();
+			}
+		});
+	}
 }

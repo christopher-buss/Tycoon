@@ -1,5 +1,5 @@
 import { Controller, OnStart } from "@flamework/core";
-import { Players, SocialService } from "@rbxts/services";
+import { HttpService, Players, SocialService } from "@rbxts/services";
 import Icon from "@rbxts/topbar-plus";
 import { Events } from "client/network";
 import { ClientStore } from "client/rodux/rodux";
@@ -13,6 +13,34 @@ export class TopbarController implements OnStart {
 	public onStart(): void {
 		this.setupMusicButton();
 		this.setupInviteFriendsButton();
+	}
+
+	private setupInviteFriendsButton(): void {
+		const launchData = HttpService.JSONEncode({
+			senderUserId: Players.LocalPlayer.UserId,
+		});
+
+		const inviteOptions = new Instance("ExperienceInviteOptions");
+		inviteOptions.PromptMessage = "💄Invite your friends for a cash bonus!💄";
+		inviteOptions.InviteMessageId = "b86d5d75-62b2-fc4a-b354-8f5f5a0a822e";
+		inviteOptions.LaunchData = launchData;
+
+		const inviteFriends = new Icon();
+		inviteFriends.setImage(7343626130, "deselected");
+		inviteFriends.setCornerRadius(0, 8);
+		inviteFriends.setRight();
+		inviteFriends.setTip("Invite your friends!");
+		inviteFriends.selected.Connect(async () => {
+			inviteFriends.deselect();
+
+			const [_, result] = pcall(() => SocialService.CanSendGameInviteAsync(Players.LocalPlayer));
+
+			if (result === true) {
+				pcall(() => {
+					SocialService.PromptGameInvite(Players.LocalPlayer, inviteOptions);
+				});
+			}
+		});
 	}
 
 	private setupMusicButton(): void {
@@ -49,25 +77,6 @@ export class TopbarController implements OnStart {
 				if (muteMusic.getToggleState() === "selected") {
 					muteMusic.deselect();
 				}
-			}
-		});
-	}
-
-	private setupInviteFriendsButton(): void {
-		const inviteFriends = new Icon();
-		inviteFriends.setImage(7343626130, "deselected");
-		inviteFriends.setCornerRadius(0, 8);
-		inviteFriends.setRight();
-		inviteFriends.setTip("Invite your friends!");
-		inviteFriends.selected.Connect(async () => {
-			inviteFriends.deselect();
-
-			const [_, result_1] = pcall(() => SocialService.CanSendGameInviteAsync(Players.LocalPlayer));
-
-			if (result_1 === true) {
-				pcall(() => {
-					SocialService.PromptGameInvite(Players.LocalPlayer);
-				});
 			}
 		});
 	}
