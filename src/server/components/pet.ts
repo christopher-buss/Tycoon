@@ -10,7 +10,7 @@ interface Attributes {
 	PettingID: number;
 }
 
-interface IPetModel extends Model {
+export interface IPetModel extends Model {
 	Head: MeshPart & {
 		Hearts: ParticleEmitter;
 	};

@@ -4,18 +4,21 @@ interface ReplicatedStorage extends Instance {
 	};
 	TS: Folder & {
 		flags: ModuleScript;
-		["shared-constants"]: ModuleScript;
+		components: Folder;
 		network: ModuleScript;
 		functions: Folder & {
 			["setup-logger"]: ModuleScript;
 		};
-		meta: Folder & {
-			gamepasses: ModuleScript;
-			["default-player-data"]: ModuleScript;
-			["part-identifiers"]: ModuleScript;
-			["part-info"]: ModuleScript;
+		ui: Folder & {
+			world: Folder & {
+				["purchase-button"]: ModuleScript;
+				["rebirth-button"]: ModuleScript;
+				gamepass: ModuleScript;
+				["timer-button"]: ModuleScript;
+				["player-head"]: ModuleScript;
+			};
 		};
-		components: Folder;
+		["shared-constants"]: ModuleScript;
 		util: Folder & {
 			["flamework-utils"]: ModuleScript;
 			["tween-utils"]: ModuleScript;
@@ -25,12 +28,11 @@ interface ReplicatedStorage extends Instance {
 			["player-util"]: ModuleScript;
 			networking: ModuleScript;
 		};
-		ui: Folder & {
-			world: Folder & {
-				["purchase-button"]: ModuleScript;
-				["timer-button"]: ModuleScript;
-				["player-head"]: ModuleScript;
-			};
+		meta: Folder & {
+			gamepasses: ModuleScript;
+			["default-player-data"]: ModuleScript;
+			["part-identifiers"]: ModuleScript;
+			["part-info"]: ModuleScript;
 		};
 	};
 	Accessories: Folder & {
@@ -42,6 +44,7 @@ interface ReplicatedStorage extends Instance {
 			};
 		};
 	};
+	Jellyfish: Folder;
 	BloxbizConfig: ModuleScript;
 	PartInfo: Folder & {
 		Shampoo: Model & {

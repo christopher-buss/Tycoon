@@ -11,6 +11,7 @@ import { OnPlayerJoin, PlayerService } from "../player/player-service";
  */
 @Service({})
 export class MoneyService implements OnPlayerJoin, OnTick {
+	private frenzyMultiplier: Map<Player, number>;
 	private moneyToAwardEachSecond: Map<PlayerEntity, number>;
 	private timeSinceLastUpdate: number;
 
@@ -21,6 +22,7 @@ export class MoneyService implements OnPlayerJoin, OnTick {
 	) {
 		this.moneyToAwardEachSecond = new Map();
 		this.timeSinceLastUpdate = 0;
+		this.frenzyMultiplier = new Map();
 	}
 
 	public onPlayerJoin(playerEntity: PlayerEntity): void {
@@ -50,6 +52,8 @@ export class MoneyService implements OnPlayerJoin, OnTick {
 			}
 		});
 	}
+
+	public setFrenzyMultiplier(player: Player, multiplier: number, time: number): void {}
 
 	/**
 	 *
