@@ -41,33 +41,36 @@ export class FindNextItemController implements OnStart {
 		let cheapestItem: IPurchaseButtonModel | undefined;
 		let itemsRemaining = 0;
 
-		purchaseItems?.forEach((object) => {
-			if (!CollectionService.HasTag(object, "PurchaseButton")) {
-				return;
-			}
+		if (purchaseItems !== undefined) {
+			for (const object of purchaseItems) {
+				// purchaseItems?.forEach((object) => {
+				if (!CollectionService.HasTag(object, "PurchaseButton")) {
+					continue;
+				}
 
-			if (!(object.FindFirstChild("TouchPart") as BasePart)?.CanTouch) {
-				return;
-			}
+				if (!(object.FindFirstChild("TouchPart") as BasePart)?.CanTouch) {
+					continue;
+				}
 
-			const gamepassId = object.GetAttribute("GamepassId") as number;
-			if (gamepassId !== undefined && gamepassId > 0) {
-				return;
-			}
+				const gamepassId = object.GetAttribute("GamepassId") as number;
+				if (gamepassId !== undefined && gamepassId > 0) {
+					continue;
+				}
 
-			const rebirths = object.GetAttribute("Rebirths") as number;
-			if (rebirths !== undefined && rebirths > ClientStore.getState().playerData.rebirths) {
-				return;
-			}
+				const rebirths = object.GetAttribute("Rebirths") as number;
+				if (rebirths !== undefined && rebirths > ClientStore.getState().playerData.rebirths) {
+					continue;
+				}
 
-			const cost = object.GetAttribute("Price") as number;
-			if (cost !== undefined && cost < lowestCost) {
-				lowestCost = cost;
-				cheapestItem = object as IPurchaseButtonModel;
-			}
+				const cost = object.GetAttribute("Price") as number;
+				if (cost !== undefined && cost < lowestCost) {
+					lowestCost = cost;
+					cheapestItem = object as IPurchaseButtonModel;
+				}
 
-			itemsRemaining += 1;
-		});
+				itemsRemaining += 1;
+			}
+		}
 
 		return $tuple(cheapestItem, itemsRemaining);
 	}

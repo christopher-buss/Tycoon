@@ -1,6 +1,7 @@
 import { Janitor } from "@rbxts/janitor";
 import Roact from "@rbxts/roact";
 import { lerpNumber } from "shared/util/math-util";
+import { TimeUtil } from "shared/util/time-util";
 
 export interface IProps {
 	Adornee: BasePart;
@@ -8,12 +9,6 @@ export interface IProps {
 	DisplayName?: string;
 	Janitor: Janitor;
 	Timer: number;
-}
-
-function convertToTime(seconds: number): string {
-	const minutes = math.floor(seconds / 60);
-	const second = seconds - minutes * 60;
-	return `${string.format("%02i", minutes)}:${string.format("%02i", second)}`;
 }
 
 function TimerButtonBillboard({ Adornee, DisplayName, Color, Timer, Janitor }: IProps): Roact.Element {
@@ -75,7 +70,7 @@ function TimerButtonBillboard({ Adornee, DisplayName, Color, Timer, Janitor }: I
 				Font={Enum.Font.GothamBlack}
 				Position={new UDim2(0.5, 0, 0.6, 0)}
 				Size={new UDim2(0.5, 0, 0.4, 0)}
-				Text={timer.map(convertToTime)}
+				Text={timer.map(TimeUtil.convertToTime)}
 				TextColor3={Color3.fromRGB(12, 3, 3)}
 				TextTransparency={binding}
 				TextScaled={true}
@@ -88,7 +83,7 @@ function TimerButtonBillboard({ Adornee, DisplayName, Color, Timer, Janitor }: I
 					Font={Enum.Font.GothamBlack}
 					Position={new UDim2(0.5, -1, 0.5, -2)}
 					Size={new UDim2(1, 0, 1, 0)}
-					Text={timer.map(convertToTime)}
+					Text={timer.map(TimeUtil.convertToTime)}
 					TextColor3={Color}
 					// TextColor3={Color3.fromRGB(203, 46, 46)}
 					TextScaled={true}

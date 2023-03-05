@@ -6,12 +6,27 @@ import PlayerEntity from "server/modules/classes/player-entity";
 import { LeaderstatsService } from "../leaderstats-service";
 import { OnPlayerJoin, PlayerService } from "../player/player-service";
 
+type FrenzyStorage = {
+	frenzyMultiplier: number;
+	frenzyTimeLeft: number;
+};
+
+export function calculateFrenzyMultiplier(playerEntity: PlayerEntity): number {
+	let frenzyMultiplier = 1;
+	if (playerEntity.data.frenzyTimeLeft > 0) {
+		// multiply by 2 if they have vip
+		frenzyMultiplier = 2 * (playerEntity.data.gamePasses.vipGamepass ? 2 : 1);
+	}
+
+	return frenzyMultiplier;
+}
+
 /**
  * A wrapper for accessing the player's money.
  */
 @Service({})
 export class MoneyService implements OnPlayerJoin, OnTick {
-	private frenzyMultiplier: Map<Player, number>;
+	private frenzyMultiplier: Map<Player, FrenzyStorage>;
 	private moneyToAwardEachSecond: Map<PlayerEntity, number>;
 	private timeSinceLastUpdate: number;
 
@@ -27,6 +42,21 @@ export class MoneyService implements OnPlayerJoin, OnTick {
 
 	public onPlayerJoin(playerEntity: PlayerEntity): void {
 		this.moneyToAwardEachSecond.set(playerEntity, 0);
+
+		this.frenzyMultiplier.set(playerEntity.player, {
+			frenzyMultiplier: calculateFrenzyMultiplier(playerEntity),
+			frenzyTimeLeft: playerEntity.data.frenzyTimeLeft,
+		});
+
+		playerEntity.playerRemoving.Add(() => {
+			playerEntity.updateData((data) => {
+				data.frenzyTimeLeft = this.frenzyMultiplier.get(playerEntity.player)?.frenzyTimeLeft ?? 0;
+				return data;
+			});
+
+			this.moneyToAwardEachSecond.delete(playerEntity);
+			this.frenzyMultiplier.delete(playerEntity.player);
+		});
 
 		// if (playerEntity.player.Name === "iSentinels") {
 		// 	// this.updatePlayerMoney(true, playerEntity, 100000000);
@@ -51,9 +81,44 @@ export class MoneyService implements OnPlayerJoin, OnTick {
 				this.updatePlayerMoney(true, playerEntity, money);
 			}
 		});
+
+		// handle frenzy multiplier
+		for (const [player, frenzy] of this.frenzyMultiplier) {
+			if (frenzy.frenzyTimeLeft > 0) {
+				// TODO: this needs optimization
+				const playerEntity_opt = this.playerService.getEntity(player);
+				if (playerEntity_opt.isNone()) {
+					this.logger.Error(`Player entity for ${player} could not be found`);
+					return;
+				}
+
+				const playerEntity = playerEntity_opt.unwrap();
+
+				frenzy.frenzyTimeLeft -= 1;
+
+				playerEntity.updateData((data) => {
+					data.frenzyTimeLeft = frenzy.frenzyTimeLeft;
+					return data;
+				});
+
+				if (frenzy.frenzyTimeLeft <= 0) {
+					this.frenzyMultiplier.set(player, {
+						frenzyMultiplier: 1,
+						frenzyTimeLeft: 0,
+					});
+				}
+			}
+		}
 	}
 
-	public setFrenzyMultiplier(player: Player, multiplier: number, time: number): void {}
+	public setFrenzyMultiplier(player: Player, multiplier: number, time: number): void {
+		const timeRemaining = this.frenzyMultiplier.get(player)?.frenzyTimeLeft ?? 0;
+
+		this.frenzyMultiplier.set(player, {
+			frenzyMultiplier: multiplier * (player.GetAttribute("VIP") === true ? 2 : 1),
+			frenzyTimeLeft: timeRemaining + time,
+		});
+	}
 
 	/**
 	 *

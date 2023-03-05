@@ -14,7 +14,8 @@ interface IModel extends BasePart {}
 export class RainbowComponent extends BaseComponent<Attributes, IModel> implements OnStart {
 	public onStart(): void {
 		while (true) {
-			for (let i = 0; i < 1; i += 0.001 * this.attributes.Speed) {
+			for (const i of $range(0, 1, 0.001 * this.attributes.Speed)) {
+				// for (let i = 0; i < 1; i += 0.001 * this.attributes.Speed) {
 				this.instance.Color = Color3.fromHSV(i, 1, 1);
 				task.wait();
 			}

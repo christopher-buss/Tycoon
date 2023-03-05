@@ -5,6 +5,7 @@ const DefaultPlayerData = {
 	inGroup: false,
 	rebirths: 0,
 	moneySpent: 0,
+	frenzyTimeLeft: 0,
 
 	purchased: [] as Array<number>, // uses the part-identifiers rather than strings.
 
@@ -16,6 +17,7 @@ const DefaultPlayerData = {
 		// speedCoilGamepass: false,
 
 		doubleMoneyGamepass: false,
+		vipGamepass: false,
 
 		// sparkleEffectGamepass: false,
 		// fireEffectGamepass: false,
