@@ -4,7 +4,7 @@ export const GROUP_ID = 16308537;
 export const BASE_REBIRTH_PRICE = 1000000;
 export const REBIRTH_ADDITIONAL_PRICE = 200000;
 
-export const REPLICATION_DISTANCE = 64;
+export const REPLICATION_DISTANCE = 128;
 
 export const PATH_INFO = [
 	{

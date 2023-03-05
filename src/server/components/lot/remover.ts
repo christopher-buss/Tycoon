@@ -65,7 +65,7 @@ export class Remover extends BaseComponent<Attributes> implements OnStart, IOnPu
 			return;
 		}
 
-		this.toRemove.Parent = this.owner.Objects;
+		this.reset();
 	}
 
 	public reset(): void {

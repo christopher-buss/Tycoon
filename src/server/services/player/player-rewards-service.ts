@@ -64,8 +64,7 @@ export class PlayerRewardsService implements OnInit, OnPlayerJoin {
 					return reject();
 				}
 
-				// handle data
-				print("TODO: handle join data");
+				// TODO: Handle join data
 				resolve();
 			}
 		});

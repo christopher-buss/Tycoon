@@ -1,6 +1,5 @@
 import { Flamework, Modding } from "@flamework/core";
 import Log, { Logger } from "@rbxts/log";
-import { ZirconClient } from "@rbxts/zircon";
 import { setupLogger } from "shared/functions/setup-logger";
 import { GAME_NAME } from "shared/shared-constants";
 
@@ -15,7 +14,5 @@ Flamework.addPaths("src/client/apps");
 Flamework.addPaths("src/client/components");
 Flamework.addPaths("src/client/controllers");
 Flamework.addPaths("src/shared/components");
-
-ZirconClient.Init({});
 
 Flamework.ignite();

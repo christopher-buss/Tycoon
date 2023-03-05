@@ -2,7 +2,6 @@ import Log, { Logger, LogLevel } from "@rbxts/log";
 import { ILogEventSink, LogEvent } from "@rbxts/log/out/Core";
 import { MessageTemplateParser, PlainTextMessageTemplateRenderer } from "@rbxts/message-templates";
 import { RunService } from "@rbxts/services";
-import Zircon from "@rbxts/zircon";
 import { $package } from "rbxts-transform-debug";
 
 const IsClient = RunService.IsClient() ? "Client" : "Server";
@@ -54,7 +53,6 @@ export function setupLogger(): void {
 			.EnrichWithProperty("Version", $package.version)
 			// .WriteTo(Log.RobloxOutput({ TagFormat: "full" }))
 			.WriteTo(new LogEventSFTOutputSink())
-			.WriteTo(Zircon.Log.Console())
 			.Create(),
 	);
 }

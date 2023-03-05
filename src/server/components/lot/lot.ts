@@ -2,7 +2,7 @@ import { BaseComponent, Component, Components } from "@flamework/components";
 import { Dependency, OnStart } from "@flamework/core";
 import { Logger } from "@rbxts/log";
 import { Option, Result } from "@rbxts/rust-classes";
-import { CollectionService, Players, ServerStorage, Teams } from "@rbxts/services";
+import { CollectionService, Players, Teams } from "@rbxts/services";
 import { default as PlayerEntity } from "server/modules/classes/player-entity";
 import { LotService } from "server/services/tycoon/lot-service";
 import {
@@ -34,10 +34,14 @@ export class Lot extends BaseComponent<ILotAttributes, ILotModel> implements OnS
 
 	private readonly team: Team;
 
+	private signs: Array<ILotSignModel>;
+
 	constructor(private readonly logger: Logger, private readonly lotService: LotService) {
 		super();
 
 		// this.position = this.instance.Spawn.Position;
+
+		this.signs = new Array();
 
 		this.purchaseableItemsForOwner = 0;
 		this.itemsOwnedByOwner = 0;
@@ -97,7 +101,9 @@ export class Lot extends BaseComponent<ILotAttributes, ILotModel> implements OnS
 		return this.getOwner().match(
 			() => {
 				this.attributes.OwnerId = undefined;
-				// this.setupGui();
+				this.setupGui().catch((err) => {
+					this.logger.Error(`Error setting up GUI: ${err}`);
+				});
 				task.spawn(() => this.clearOwnedButtons());
 				return Result.ok<true, LotErrors>(true);
 			},
@@ -137,7 +143,9 @@ export class Lot extends BaseComponent<ILotAttributes, ILotModel> implements OnS
 		player.RespawnLocation = this.instance.Spawn;
 		player.Team = this.team;
 		player.SetAttribute("Lot", this.team.Name);
-		this.setupGui(player);
+		this.setupGui(player).catch((err) => {
+			this.logger.Error(`Error setting up GUI: ${err}`);
+		});
 		this.storePossiblePurchaseObjects(playerEntity);
 		this.loadPurchaseButtons(playerEntity);
 		player.LoadCharacter();
@@ -164,18 +172,31 @@ export class Lot extends BaseComponent<ILotAttributes, ILotModel> implements OnS
 	 * Sets up the GUI for the lot.
 	 *
 	 * If the player is not provided, then the GUI will be set as "Unclaimed".
-	 * @param playerName The potential name of the player.
+	 *
+	 * @param player The player
 	 */
-	private setupGui(player?: Player): void {
-		const signs = (ServerStorage.Upgraders[this.team.Name as never] as Folder)
-			.GetDescendants()
-			.filter((model): model is ILotSignModel => {
-				return model.IsA("Model") && CollectionService.HasTag(model, Tag.LotSign);
-			});
+	private async setupGui(player?: Player): Promise<void> {
+		if (this.signs.size() === 0) {
+			for (const sign of CollectionService.GetTagged(Tag.LotSign) as Array<ILotSignModel>) {
+				if (sign.FindFirstChild("Claim") === undefined) {
+					continue;
+				}
 
-		signs.push(this.instance.Objects.OutdoorSign);
+				let parent = sign.Parent;
+				while (parent !== undefined) {
+					if (parent.Name === this.team.Name) {
+						this.signs.push(sign);
+						break;
+					}
 
-		signs.forEach((sign) => {
+					parent = parent.Parent;
+				}
+			}
+
+			this.signs.push(this.instance.Objects.OutdoorSign);
+		}
+
+		for (const sign of this.signs) {
 			const claimPart = sign.Claim;
 			if (player !== undefined) {
 				claimPart.Unclaimed.Enabled = false;
@@ -186,7 +207,7 @@ export class Lot extends BaseComponent<ILotAttributes, ILotModel> implements OnS
 				claimPart.Unclaimed.Enabled = true;
 				claimPart.Claimed.Enabled = false;
 			}
-		});
+		}
 	}
 
 	public storePossiblePurchaseObjects(playerEntity: PlayerEntity): void {

@@ -22,6 +22,7 @@ export class SpinComponent extends BaseComponent<IAttributes, IModel> implements
 	constructor() {
 		super();
 		this.janitor = new Janitor();
+		assert(this.instance.ModelStreamingMode === Enum.ModelStreamingMode.Atomic);
 	}
 
 	public onStart(): void {

@@ -152,6 +152,6 @@ export class RebirthButton extends BaseComponent<IRebirthButtonAttributes, IRebi
 		}
 
 		const lot = lot_opt.unwrap();
-		return lot.purchaseableItemsForOwner === lot.itemsOwnedByOwner;
+		return lot.purchaseableItemsForOwner <= lot.itemsOwnedByOwner;
 	}
 }

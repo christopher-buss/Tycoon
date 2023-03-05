@@ -6,13 +6,15 @@ import DefaultPlayerData, { IPlayerData } from "shared/meta/default-player-data"
 
 import { OnPlayerJoin } from "./player/player-service";
 
+type ILeaderstats = "Rebirths" | "Cash";
+
 interface ILeaderstatValueTypes {
 	IntValue: number;
 	StringValue: string;
 }
 
 interface ILeaderstatEntry<T extends keyof ILeaderstatValueTypes = keyof ILeaderstatValueTypes> {
-	Name: string;
+	Name: ILeaderstats;
 	ValueType: T;
 	DefaultValue: ILeaderstatValueTypes[T];
 	PlayerDataKey?: string;
@@ -99,7 +101,7 @@ export class LeaderstatsService implements OnInit, OnPlayerJoin {
 	 * @param playerDataKey An optional key for persistent data that binds to the stat.
 	 */
 	private registerStat<N extends keyof ILeaderstatValueTypes>(
-		statName: string,
+		statName: ILeaderstats,
 		valueType: N,
 		defaultValue: ILeaderstatValueTypes[N],
 		playerDataKey?: string,
@@ -128,7 +130,7 @@ export class LeaderstatsService implements OnInit, OnPlayerJoin {
 	 */
 	public getStatObject<N extends keyof ILeaderstatValueTypes>(
 		player: Player,
-		statName: string,
+		statName: ILeaderstats,
 	): Option<Instances[N]> {
 		const valueMap = this.playerToValueMap.get(player);
 		if (!valueMap) {
@@ -136,10 +138,12 @@ export class LeaderstatsService implements OnInit, OnPlayerJoin {
 		}
 
 		const entry = this.leaderstats.find((entry) => entry.Name === statName);
+		print("LEADERSTATS: ", entry);
 		if (!entry) {
 			return Option.none<Instances[N]>();
 		}
 
+		print("LEADERSTATS: ", valueMap.get(entry.Name));
 		return Option.wrap<Instances[N]>(valueMap.get(entry.Name) as Instances[N]);
 	}
 }

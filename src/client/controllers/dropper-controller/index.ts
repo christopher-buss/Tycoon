@@ -7,6 +7,7 @@ import { Players, ReplicatedStorage, TweenService, Workspace } from "@rbxts/serv
 import { Events } from "client/network";
 import { ClientStore } from "client/rodux/rodux";
 import { IUpgraderInfo } from "server/components/lot/upgrader";
+import { calculateMultiplier } from "shared/functions/calculate-multiplier";
 import { decoderPartIdentifiers } from "shared/meta/part-identifiers";
 import { PartInfo, PartInfoKey, PartInfoType, Progress, ProgressKey, UpgraderKey } from "shared/meta/part-info";
 import { DropperInfo } from "shared/network";
@@ -158,12 +159,7 @@ export class DropperController implements OnStart, OnInit {
 	 * @returns
 	 */
 	private calculatePartPrice(partType: PartInfoType): number {
-		const data = ClientStore.getState().playerData;
-		return (
-			(PartInfo[partType] as PartInfoKey).Value *
-			(1 + data.rebirths / 5) *
-			(data.gamePasses.doubleMoneyGamepass ? 2 : 1)
-		);
+		return (PartInfo[partType] as PartInfoKey).Value * calculateMultiplier(ClientStore.getState().playerData);
 	}
 
 	/**

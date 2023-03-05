@@ -382,6 +382,16 @@ export const PartInfo = {
 		Value: 0,
 	} as ItemKey,
 
+	["Bull"]: {
+		Price: 0,
+		Value: 0,
+	},
+
+	["Dragon"]: {
+		Price: 0,
+		Value: 0,
+	},
+
 	["Bunny"]: {
 		Price: 0,
 		Value: 0,
@@ -455,7 +465,7 @@ export const Progress = {
 	// Conveyor 3
 	["Basic Upgrader3"]: {
 		Path: 2,
-		Progress: 56,
+		Progress: 55,
 		Audio: "0",
 	},
 

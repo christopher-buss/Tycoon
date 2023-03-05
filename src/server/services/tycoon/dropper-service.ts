@@ -18,10 +18,6 @@ import { OnPlayerJoin, PlayerService } from "../player/player-service";
 import { MoneyService } from "../stores/money-service";
 import { LotService, OnLotOwned, OnPlayerRebirthed } from "./lot-service";
 
-type Mutable<T> = {
-	-readonly [P in keyof T]: T[P];
-};
-
 type LotName = string;
 
 interface IDropperSimulatingInfo {
@@ -247,29 +243,29 @@ export class DropperService implements OnInit, OnStart, OnTick, OnPlayerJoin, On
 	 * @param dropper
 	 * @returns
 	 */
-	private awardCashToPlayer(path: PathNumber, dropper: IDropperSimulatingInfo): void {
+	private awardCashToPlayer(dropper: IDropperSimulatingInfo, value: number): void {
 		// Currently we're faking the simulation here by applying the cash to the player if they
 		// own an upgrader at the point of the dropper despawning. TODO: Can this be done better?
-		const entity_opt = this.playerService.getEntity(dropper.Owner);
-		if (entity_opt.isNone()) {
-			this.logger.Error(`Could not find entity for player ${dropper.Owner.Name}`);
-			return;
-		}
+		// const entity_opt = this.playerService.getEntity(dropper.Owner);
+		// if (entity_opt.isNone()) {
+		// 	this.logger.Error(`Could not find entity for player ${dropper.Owner.Name}`);
+		// 	return;
+		// }
 
-		let value = dropper.Value;
+		// let value = dropper.Value;
 
-		const ownedUpgraders = this.ownedUpgraders.get(dropper.Owner)?.get(path);
-		if (ownedUpgraders) {
-			ownedUpgraders.forEach((info) => {
-				value += info.Additive;
-				value *= info.Multiplier;
-			});
-		}
+		// const ownedUpgraders = this.ownedUpgraders.get(dropper.Owner)?.get(path);
+		// if (ownedUpgraders) {
+		// 	ownedUpgraders.forEach((info) => {
+		// 		value += info.Additive;
+		// 		value *= info.Multiplier;
+		// 	});
+		// }
 
-		const playerEntity = entity_opt.unwrap();
-		const multiplier = calculateMultiplier(playerEntity.data as IPlayerData);
+		// const playerEntity = entity_opt.unwrap();
+		// const multiplier = calculateMultiplier(playerEntity.data as IPlayerData);
 
-		value *= multiplier;
+		// value *= multiplier;
 
 		this.moneyService.givePlayerMoney(dropper.Owner, value);
 	}
@@ -338,6 +334,31 @@ export class DropperService implements OnInit, OnStart, OnTick, OnPlayerJoin, On
 		});
 	}
 
+	private calculateDropperValue(path: PathNumber, dropper: IDropperSimulatingInfo): number {
+		const entity_opt = this.playerService.getEntity(dropper.Owner);
+		if (entity_opt.isNone()) {
+			this.logger.Error(`Could not find entity for player ${dropper.Owner.Name}`);
+			return 0;
+		}
+
+		let value = dropper.Value;
+
+		const ownedUpgraders = this.ownedUpgraders.get(dropper.Owner)?.get(path);
+		if (ownedUpgraders) {
+			ownedUpgraders.forEach((info) => {
+				value += info.Additive;
+				value *= info.Multiplier;
+			});
+		}
+
+		const playerEntity = entity_opt.unwrap();
+		const multiplier = calculateMultiplier(playerEntity.data as IPlayerData);
+
+		value *= multiplier;
+
+		return value;
+	}
+
 	/**
 	 *
 	 * @param lot
@@ -351,6 +372,8 @@ export class DropperService implements OnInit, OnStart, OnTick, OnPlayerJoin, On
 		this.logger.Debug(`Spawning dropper ${dropper.Name} for ${dropper.Owner.Name}`);
 
 		dropper.LastDrop = os.clock();
+		// dropper.Value = this.calculateDropperValue(pathNumber, dropper);
+
 		this.lastDrop.get(dropper.Owner)!.set(pathNumber, os.clock());
 
 		const dropperInfo: IDropperSimulating = {
@@ -364,8 +387,10 @@ export class DropperService implements OnInit, OnStart, OnTick, OnPlayerJoin, On
 		const time =
 			PATH_INFO[pathNumber]!.TotalTime * (1 - dropper.StartProgress / PATH_INFO[pathNumber]!.TotalProgress);
 
+		const dropperValue = this.calculateDropperValue(pathNumber, dropper);
+
 		const thread: Promise<void | number> = Promise.delay(time).andThen(() => {
-			this.awardCashToPlayer(pathNumber, dropper);
+			this.awardCashToPlayer(dropper, dropperValue);
 			this.connections.get(dropper.Owner)?.delete(thread);
 
 			const index = this.simulatedDroppers.get(lot)?.get(pathNumber)?.indexOf(dropperInfo);

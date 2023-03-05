@@ -25,6 +25,8 @@ export class FriendModelService implements OnLotOwned {
 	}
 
 	public onLotOwned(lot: Lot, newOwner: Player): void {
+		return;
+
 		this.janitors.set(lot, new Janitor());
 
 		this.getFriends(newOwner)

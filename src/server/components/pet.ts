@@ -1,5 +1,4 @@
 import { BaseComponent, Component } from "@flamework/components";
-import { OnStart } from "@flamework/core";
 import { Janitor } from "@rbxts/janitor";
 import { Logger } from "@rbxts/log";
 import { CollectionService } from "@rbxts/services";
@@ -20,7 +19,7 @@ export interface IPetModel extends Model {
 @Component({
 	tag: Tag.Pet,
 })
-export class Pet extends BaseComponent<Attributes, IPetModel> implements OnStart {
+export class Pet extends BaseComponent<Attributes, IPetModel> {
 	private debounce;
 
 	private readonly janitor: Janitor;
@@ -36,9 +35,7 @@ export class Pet extends BaseComponent<Attributes, IPetModel> implements OnStart
 		this.animationId = RobloxUtil.assetUrlWithId(this.attributes.PettingID);
 
 		this.animationLength = RobloxUtil.initializeAnimation(this.animationId, this.instance.Humanoid).Length;
-	}
 
-	public onStart(): void {
 		const proximityPrompt = new Instance("ProximityPrompt");
 		this.proximityPrompt = proximityPrompt;
 		proximityPrompt.ActionText = "Pet";

@@ -1,5 +1,6 @@
 import { BaseComponent, Component } from "@flamework/components";
 import { OnStart } from "@flamework/core";
+import { Janitor } from "@rbxts/janitor";
 import { Logger } from "@rbxts/log";
 import { CollectionService, ServerStorage } from "@rbxts/services";
 import { AnimationUtil } from "server/functions/animate-item";
@@ -68,8 +69,9 @@ export class Item extends BaseComponent<IItemAttributes> implements OnStart, IOn
 	 *
 	 * @param owner The player who purchased the button.
 	 */
-	public onPurchaseButtonBought(owner: PlayerEntity): void {
+	public onPurchaseButtonBought(owner: PlayerEntity, janitor: Janitor): void {
 		this.logger.Info(`Item ${this.instance.Name} was bought by ${owner.name}`);
+		janitor.Add(() => this.reset());
 
 		this.item.Parent = this.owner.Objects;
 
@@ -84,5 +86,10 @@ export class Item extends BaseComponent<IItemAttributes> implements OnStart, IOn
 
 		const value = (PartInfo[this.instance.Name as PartInfoType] as ItemKey).Value;
 		this.moneyService.addMoneyConnection(owner, value);
+	}
+
+	public reset(): void {
+		this.logger.Debug(`Resetting item ${this.instance.Name}`);
+		this.item.Parent = ServerStorage.Upgraders.FindFirstChild(this.owner.Name);
 	}
 }

@@ -5,6 +5,7 @@ import PlayerEntity from "server/modules/classes/player-entity";
 
 import { LeaderstatsService } from "../leaderstats-service";
 import { OnPlayerJoin, PlayerService } from "../player/player-service";
+import { OnPlayerRebirthed } from "../tycoon/lot-service";
 
 type FrenzyStorage = {
 	frenzyMultiplier: number;
@@ -25,7 +26,7 @@ export function calculateFrenzyMultiplier(playerEntity: PlayerEntity): number {
  * A wrapper for accessing the player's money.
  */
 @Service({})
-export class MoneyService implements OnPlayerJoin, OnTick {
+export class MoneyService implements OnPlayerJoin, OnTick, OnPlayerRebirthed {
 	private frenzyMultiplier: Map<Player, FrenzyStorage>;
 	private moneyToAwardEachSecond: Map<PlayerEntity, number>;
 	private timeSinceLastUpdate: number;
@@ -59,11 +60,11 @@ export class MoneyService implements OnPlayerJoin, OnTick {
 		});
 
 		// if (playerEntity.player.Name === "iSentinels") {
-		// 	// this.updatePlayerMoney(true, playerEntity, 100000000);
-		// 	// playerEntity.updateData((data) => {
-		// 	// 	data.purchased = [5, 13, 28];
-		// 	// 	return data;
-		// 	// });
+		// 	this.updatePlayerMoney(true, playerEntity, 100000000);
+		// 	playerEntity.updateData((data) => {
+		// 		data.purchased = []; // [5, 13, 28];
+		// 		return data;
+		// 	});
 		// 	(playerEntity.player.Character?.WaitForChild("Humanoid") as Humanoid).WalkSpeed = 50;
 		// }
 	}
@@ -109,6 +110,10 @@ export class MoneyService implements OnPlayerJoin, OnTick {
 				}
 			}
 		}
+	}
+
+	public onPlayerRebirthed(playerEntity: PlayerEntity): void {
+		this.moneyToAwardEachSecond.set(playerEntity, 0);
 	}
 
 	public setFrenzyMultiplier(player: Player, multiplier: number, time: number): void {
@@ -191,7 +196,7 @@ export class MoneyService implements OnPlayerJoin, OnTick {
 		entity.player.SetAttribute("Cash", entity.data.cash);
 
 		// Update the leaderboard with the new value
-		this.leaderstatsService.getStatObject(entity.player, "Yen").match(
+		this.leaderstatsService.getStatObject(entity.player, "Cash").match(
 			(stat) => {
 				stat.Value = entity.data.cash;
 			},

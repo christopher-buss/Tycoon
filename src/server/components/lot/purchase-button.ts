@@ -123,7 +123,7 @@ export class PurchaseButton extends BaseComponent<IPurchaseButtonAttributes, IPu
 	 * @param force
 	 */
 	public bindButtonTouched(force: boolean): void {
-		// TODO :this would probably be better as a buyJanitor and a removeJanitor for easier understanding
+		// TODO: this would probably be better as a buyJanitor and a removeJanitor for easier understanding
 		this.janitor.Cleanup();
 		this.logger.Verbose(`Binding button touched for ${this.instance.Name}`);
 		this.purchased = false;

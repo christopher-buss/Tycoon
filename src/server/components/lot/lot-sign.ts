@@ -31,6 +31,8 @@ export class LotSign extends BaseComponent<Attributes, ILotSignModel> implements
 	}
 
 	public onPurchaseButtonBought(playerEntity: PlayerEntity, janitor: Janitor): void {
+		janitor.Add(() => this.reset(claimPart));
+
 		const owner = this.instance.Parent?.Parent as ILotModel;
 		if (!owner) {
 			this.logger.Error(`Owner is undefined for ${this.instance.Name}`);
@@ -45,12 +47,12 @@ export class LotSign extends BaseComponent<Attributes, ILotSignModel> implements
 		claimPart.Claimed.Enabled = true;
 		claimPart.Claimed.TextBox.Username.Text = `${playerEntity.name}'s`;
 		claimPart.Claimed.IconBox.PlayerIcon.Image = `rbxthumb://type=AvatarHeadShot&id=${playerEntity.player.UserId}&w=420&h=420`;
-
-		janitor.Add(() => this.reset(claimPart));
 	}
 
 	public reset(claimPart: ILotSignModel["Claim"]): void {
 		claimPart.Unclaimed.Enabled = true;
 		claimPart.Claimed.Enabled = false;
+		claimPart.Claimed.TextBox.Username.Text = "";
+		claimPart.Claimed.IconBox.PlayerIcon.Image = "";
 	}
 }
