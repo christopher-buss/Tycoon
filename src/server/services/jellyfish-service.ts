@@ -7,7 +7,7 @@ import { MoneyService } from "./stores/money-service";
 
 const SPAWN_TIMER = 1;
 const MAX_JELLYFISH = 10;
-const FRENZY_TIME = 30;
+const FRENZY_TIME = 20;
 const FRENZY_MULTIPLIER = 2;
 
 @Service({})

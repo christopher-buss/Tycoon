@@ -1,3 +1,5 @@
+import { ContentProvider } from "@rbxts/services";
+
 export interface ModelWithPrimaryPart extends Model {
 	PrimaryPart: BasePart;
 }
@@ -9,6 +11,21 @@ export namespace RobloxUtil {
 	 */
 	export function assetUrlWithId(id: number): string {
 		return `rbxassetid://${id}`;
+	}
+
+	export function initializeAnimation<T extends Instance>(animationId: string, parent: T): AnimationTrack {
+		let animator = parent.FindFirstChildWhichIsA("Animator");
+		if (animator === undefined) {
+			animator = new Instance("Animator");
+			animator.Parent = parent;
+		}
+
+		const animation = new Instance("Animation");
+		animation.AnimationId = animationId;
+
+		const track = animator.LoadAnimation(animation);
+		ContentProvider.PreloadAsync([animation]);
+		return track;
 	}
 
 	/**

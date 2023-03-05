@@ -1,11 +1,14 @@
 import Roact from "@rbxts/roact";
 import { App } from "client/controllers/ui";
 import { IClientStore } from "client/rodux/rodux";
+import { calculateMultiplier } from "shared/functions/calculate-multiplier";
 
+import { EarningsBar } from "./components/earning";
 import { Frenzy } from "./components/frenzy";
 
 interface ITopbarProps {
 	frenzyTimeLeft: number;
+	multiplier: number;
 }
 
 @App({
@@ -15,6 +18,7 @@ interface ITopbarProps {
 	mapStateToProps: (state: IClientStore) => {
 		return identity<ITopbarProps>({
 			frenzyTimeLeft: state.playerData.frenzyTimeLeft,
+			multiplier: calculateMultiplier(state.playerData),
 		});
 	},
 })
@@ -31,6 +35,7 @@ class TopbarApp extends Roact.PureComponent<ITopbarProps> {
 			>
 				<uiaspectratioconstraint AspectRatio={1.347} />
 				<Frenzy frenzyTimeLeft={this.props.frenzyTimeLeft} />
+				<EarningsBar multiplier={this.props.multiplier} />
 			</frame>
 		);
 	}

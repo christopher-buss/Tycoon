@@ -7,6 +7,8 @@ import { Lot } from "server/components/lot/lot";
 import { IUpgraderInfo } from "server/components/lot/upgrader";
 import playerEntity from "server/modules/classes/player-entity";
 import { Events } from "server/network";
+import { calculateMultiplier } from "shared/functions/calculate-multiplier";
+import { IPlayerData } from "shared/meta/default-player-data";
 import { EncodePartIdentifier, encoderPartIdentifiers } from "shared/meta/part-identifiers";
 import { DropperKey, PartInfo, PartInfoKey, PartInfoType } from "shared/meta/part-info";
 import { NUMBER_OF_PATHS, PATH_INFO, REPLICATION_DISTANCE } from "shared/shared-constants";
@@ -15,6 +17,10 @@ import { PathNumber } from "types/interfaces/droppers";
 import { OnPlayerJoin, PlayerService } from "../player/player-service";
 import { MoneyService } from "../stores/money-service";
 import { LotService, OnLotOwned, OnPlayerRebirthed } from "./lot-service";
+
+type Mutable<T> = {
+	-readonly [P in keyof T]: T[P];
+};
 
 type LotName = string;
 
@@ -261,8 +267,7 @@ export class DropperService implements OnInit, OnStart, OnTick, OnPlayerJoin, On
 		}
 
 		const playerEntity = entity_opt.unwrap();
-		const multiplier =
-			(1 + playerEntity.data.rebirths / 5) * (playerEntity.data.gamePasses.doubleMoneyGamepass ? 2 : 1);
+		const multiplier = calculateMultiplier(playerEntity.data as IPlayerData);
 
 		value *= multiplier;
 

@@ -2,12 +2,16 @@ import { BaseComponent, Component } from "@flamework/components";
 import { OnStart } from "@flamework/core";
 import { Janitor } from "@rbxts/janitor";
 import { JellyfishService } from "server/services/jellyfish-service";
+import { FlameworkUtil } from "shared/util/flamework-utils";
 import { PlayerUtil } from "shared/util/player-util";
 import { Tag } from "types/enum/tags";
+
+import { IPetModel, Pet } from "./pet";
 
 interface Attributes {}
 
 interface IJellyfishModel extends Model {
+	Pet: IPetModel;
 	TouchPart: MeshPart;
 }
 
@@ -17,6 +21,7 @@ interface IJellyfishModel extends Model {
 export class Jellyfish extends BaseComponent<Attributes, IJellyfishModel> implements OnStart {
 	private readonly janitor: Janitor;
 
+	private model!: Pet;
 	private debounce: boolean;
 
 	constructor(private readonly jellyfishService: JellyfishService) {
@@ -25,11 +30,15 @@ export class Jellyfish extends BaseComponent<Attributes, IJellyfishModel> implem
 		this.janitor.LinkToInstance(this.instance, false);
 
 		this.debounce = false;
-
-		print("CONSTRUCTING JELLYFISH");
 	}
 
-	public onStart(): void {
+	public async onStart(): Promise<void> {
+		await FlameworkUtil.waitForComponentOnInstance<Pet>(this.instance.Pet).andThen((pet) => {
+			this.model = pet;
+		});
+
+		this.model.proximityPrompt.Destroy();
+
 		this.instance.TouchPart.CanTouch = true;
 
 		this.janitor.Add(
@@ -47,10 +56,14 @@ export class Jellyfish extends BaseComponent<Attributes, IJellyfishModel> implem
 	}
 
 	private onTouched(player: Player): void {
-		print("TOUCHED");
 		this.debounce = true;
 		this.jellyfishService.collectJellyfish(player);
+
+		this.model.petTheDamnDog();
+		task.wait(this.model.animationLength);
+
 		this.instance.Destroy();
+
 		// this.destroy();
 	}
 

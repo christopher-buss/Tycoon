@@ -22,16 +22,20 @@ export interface IPetModel extends Model {
 })
 export class Pet extends BaseComponent<Attributes, IPetModel> implements OnStart {
 	private debounce;
-	private proximityPrompt!: ProximityPrompt;
 
 	private readonly janitor: Janitor;
 	private readonly animationId: string;
+
+	public animationLength: number;
+	public proximityPrompt!: ProximityPrompt;
 
 	constructor(private readonly logger: Logger) {
 		super();
 		this.debounce = false;
 		this.janitor = new Janitor();
 		this.animationId = RobloxUtil.assetUrlWithId(this.attributes.PettingID);
+
+		this.animationLength = RobloxUtil.initializeAnimation(this.animationId, this.instance.Humanoid).Length;
 	}
 
 	public onStart(): void {
