@@ -72,7 +72,7 @@ export class Teleport extends BaseComponent<ITeleportAttributes, ITeleportModel>
 
 		Events.playerTeleported.fire(player, new Vector3(0, math.rad(otherPortal.Orientation.Y - 90), 0));
 
-		player.RequestStreamAroundAsync(otherPortal.Position);
+		player.RequestStreamAroundAsync(otherPortal.Position, 1);
 
 		player.Character?.PivotTo(otherPortal.CFrame);
 	}

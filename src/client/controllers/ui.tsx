@@ -108,16 +108,16 @@ export class UserInterfaceController implements OnInit {
 			return;
 		}
 
-		CollectionService.GetTagged(tag).forEach((i) => {
-			return this.onTagAdded(tag, i);
+		for (const instance of CollectionService.GetTagged(tag)) {
+			return this.onTagAdded(tag, instance);
+		}
+
+		CollectionService.GetInstanceAddedSignal(tag).Connect((instance) => {
+			return this.onTagAdded(tag, instance);
 		});
 
-		CollectionService.GetInstanceAddedSignal(tag).Connect((i) => {
-			return this.onTagAdded(tag, i);
-		});
-
-		CollectionService.GetInstanceRemovedSignal(tag).Connect((i) => {
-			return this.onTagRemoved(tag, i);
+		CollectionService.GetInstanceRemovedSignal(tag).Connect((instance) => {
+			return this.onTagRemoved(tag, instance);
 		});
 
 		this.logger.Debug(`Added connections for tag "{Tag}"`, tag);

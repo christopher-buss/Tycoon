@@ -1,7 +1,6 @@
 import { BaseComponent, Component } from "@flamework/components";
 import { OnStart } from "@flamework/core";
 import { Janitor } from "@rbxts/janitor";
-import { observeChild } from "@rbxts/streamable";
 import { ModelWithPrimaryPart, RobloxUtil } from "shared/util/roblox";
 import { TweenUtil } from "shared/util/tween-utils";
 import { Tag } from "types/enum/tags";
@@ -26,14 +25,9 @@ export class SpinComponent extends BaseComponent<IAttributes, IModel> implements
 	}
 
 	public onStart(): void {
-		this.janitor.Add(
-			observeChild(this.instance, "Root", (_primary) => {
-				if (RobloxUtil.hasPrimaryPart(this.instance)) {
-					this.spinModel(this.instance).catch((err) => warn(err));
-				}
-				return () => {};
-			}),
-		);
+		if (RobloxUtil.hasPrimaryPart(this.instance)) {
+			this.spinModel(this.instance).catch((err) => warn(err));
+		}
 	}
 
 	private async spinModel(model: ModelWithPrimaryPart): Promise<void> {

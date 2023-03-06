@@ -14,6 +14,18 @@ export namespace PlayerUtil {
 			return Option.none<Player>();
 		}
 
+		// // This is a workaround for Players.GetPlayerFromCharacter() returning nil
+		// // due to atomic streaming mode.
+		// for (const player of Players.GetChildren()) {
+		// 	if (player.IsA("Player")) {
+		// 		if (player.Name === character.Name) {
+		// 			return Option.some<Player>(player);
+		// 		}
+		// 	}
+		// }
+
+		// return Option.none<Player>();
+
 		return Option.wrap<Player>(Players.GetPlayerFromCharacter(character));
 	}
 }

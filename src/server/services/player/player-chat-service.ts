@@ -116,7 +116,7 @@ export class PlayerChatService implements OnInit, OnPlayerJoin {
 			}
 		}
 
-		this.tags.forEach((entry) => {
+		for (const entry of this.tags) {
 			if (entry.requirement(playerEntity.player)) {
 				this.logger.Info(`Adding tag ${entry.tagInfo.TagText} to ${playerEntity.player.Name}`);
 				playerTags.push(entry.tagInfo);
@@ -124,7 +124,7 @@ export class PlayerChatService implements OnInit, OnPlayerJoin {
 				this.logger.Verbose(`Adding connection for ${playerEntity.player.Name} to ${entry.tagInfo.TagText}`);
 				playerEntity.playerRemoving.Add(entry.setupConnection(playerEntity.player));
 			}
-		});
+		}
 
 		speaker?.SetExtraData("Tags", playerTags);
 	}

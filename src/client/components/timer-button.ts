@@ -5,7 +5,6 @@ import { Logger } from "@rbxts/log";
 import Roact from "@rbxts/roact";
 import { Option } from "@rbxts/rust-classes";
 import { Players } from "@rbxts/services";
-import { observeChild } from "@rbxts/streamable";
 import timerButtonBillboard from "shared/ui/world/timer-button";
 import { Tag } from "types/enum/tags";
 import { IPurchaseButtonAttributes, IPurchaseButtonModel } from "types/interfaces/buttons";
@@ -33,6 +32,7 @@ export class TimerButton extends BaseComponent<Attributes, IPurchaseButtonModel>
 		super();
 		this.janitor = new Janitor();
 		this.tree_opt = Option.none<Roact.Tree>();
+		assert(this.instance.ModelStreamingMode === Enum.ModelStreamingMode.Atomic);
 	}
 
 	public async onStart(): Promise<void> {
@@ -41,12 +41,8 @@ export class TimerButton extends BaseComponent<Attributes, IPurchaseButtonModel>
 			return;
 		}
 
-		this.janitor.Add(
-			observeChild(this.instance, "TouchPart", () => {
-				this.onStreamIn();
-				return noop;
-			}),
-		);
+		const billboard = this.createInterface();
+		this.setupInterface(billboard);
 	}
 
 	private async instantiationCheck(): Promise<boolean> {
@@ -66,16 +62,6 @@ export class TimerButton extends BaseComponent<Attributes, IPurchaseButtonModel>
 				}),
 			);
 		});
-	}
-
-	/**
-	 * Called internally when the purchase button is streamed in.
-	 *
-	 * @hidden
-	 */
-	private onStreamIn(): void {
-		const billboard = this.createInterface();
-		this.setupInterface(billboard);
 	}
 
 	/**

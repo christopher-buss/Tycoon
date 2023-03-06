@@ -77,11 +77,11 @@ export class MoneyService implements OnPlayerJoin, OnTick, OnPlayerRebirthed {
 
 		this.timeSinceLastUpdate -= 1 - dt;
 
-		this.moneyToAwardEachSecond.forEach((money, playerEntity) => {
+		for (const [playerEntity, money] of this.moneyToAwardEachSecond) {
 			if (money > 0) {
 				this.updatePlayerMoney(true, playerEntity, money);
 			}
-		});
+		}
 
 		// handle frenzy multiplier
 		for (const [player, frenzy] of this.frenzyMultiplier) {

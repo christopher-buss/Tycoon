@@ -5,11 +5,11 @@ import { TweenService } from "@rbxts/services";
 
 function getDescendantsWhichAreA<T extends keyof Instances>(ancestor: Instance, className: T): Array<Instance> {
 	const result: Array<Instance> = [];
-	ancestor.GetDescendants().forEach((descendant) => {
+	for (const descendant of ancestor.GetDescendants()) {
 		if (descendant.IsA(className)) {
 			result.push(descendant);
 		}
-	});
+	}
 	return result;
 }
 
@@ -18,12 +18,13 @@ function instanceListToPropertyMap<T extends BasePart, K extends keyof Partial<W
 	propertyList: Array<K>,
 ): Map<BasePart, Map<K, T[K]>> {
 	const result = new Map<BasePart, Map<K, T[K]>>();
-	instances.forEach((instance) => {
+	for (const instance of instances) {
 		result.set(instance, new Map<K, T[K]>());
-		propertyList.forEach((property) => {
+		for (const property of propertyList) {
 			result.get(instance)?.set(property, instance[property]);
-		});
-	});
+		}
+	}
+
 	return result;
 }
 
@@ -31,7 +32,7 @@ export async function animateModelIn(model: Model, tweenInfo: TweenInfo): Promis
 	const parts = getDescendantsWhichAreA(model, "BasePart") as Array<BasePart>;
 	const originalProperties = instanceListToPropertyMap(parts, ["Transparency", "CFrame", "Color", "Size"]);
 
-	parts.forEach((part) => {
+	for (const part of parts) {
 		part.Transparency = 1;
 		part.Color = Color3.fromRGB(255, 255, 255);
 		part.Size = new Vector3();
@@ -44,10 +45,10 @@ export async function animateModelIn(model: Model, tweenInfo: TweenInfo): Promis
 		// 	RNG.NextNumber(-math.pi, math.pi),
 		// );
 		// part.CFrame = new CFrame(positionOffset).mul(rotationOffset);
-	});
+	}
 
 	return new Promise<void>((resolve) => {
-		parts.forEach((part) => {
+		for (const part of parts) {
 			const properties = originalProperties.get(part) as unknown as Partial<ExtractMembers<BasePart, Tweenable>>;
 			const tween = TweenService.Create(part, tweenInfo, properties);
 
@@ -59,6 +60,6 @@ export async function animateModelIn(model: Model, tweenInfo: TweenInfo): Promis
 
 			tween.Play();
 			// task.wait();
-		});
+		}
 	});
 }

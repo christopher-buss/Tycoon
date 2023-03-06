@@ -74,15 +74,17 @@ export class RebirthButton extends BaseComponent<IRebirthButtonAttributes, IRebi
 				return data;
 			});
 
-			this.lotService.onPlayerRebirthedEvents.forEach((event, id) => {
+			for (const [id, event] of this.lotService.onPlayerRebirthedEvents) {
 				debug.profilebegin(id);
-				Promise.try(() => {
-					event.onPlayerRebirthed(playerEntity);
-				}).catch((err) => {
-					this.logger.Error(`Error in onPlayerRebirthed event ${id}: ${err}`);
-				});
+				{
+					Promise.try(() => {
+						event.onPlayerRebirthed(playerEntity);
+					}).catch((err) => {
+						this.logger.Error(`Error in onPlayerRebirthed event ${id}: ${err}`);
+					});
+				}
 				debug.profilebegin(id);
-			});
+			}
 
 			// TODO: Convert this into an overhead ui
 			this.playerChatService.sendSystemMessage(

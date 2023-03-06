@@ -57,7 +57,7 @@ export class LeaderstatsService implements OnInit, OnPlayerJoin {
 
 		const valueMap = new Map<string, Instances[keyof ILeaderstatValueTypes]>();
 
-		this.leaderstats.forEach((entry) => {
+		for (const entry of this.leaderstats) {
 			const value = new Instance(entry.ValueType);
 
 			if (entry.PlayerDataKey !== undefined) {
@@ -70,7 +70,7 @@ export class LeaderstatsService implements OnInit, OnPlayerJoin {
 			value.Parent = leaderstats;
 
 			valueMap.set(entry.Name, value);
-		});
+		}
 
 		this.playerToValueMap.set(playerEntity.player, valueMap);
 
@@ -81,7 +81,9 @@ export class LeaderstatsService implements OnInit, OnPlayerJoin {
 	private onPlayerRemoving(player: Player): void {
 		const valueMap = this.playerToValueMap.get(player);
 		if (valueMap !== undefined) {
-			valueMap.forEach((val) => val.Destroy());
+			for (const [, val] of valueMap) {
+				val.Destroy();
+			}
 		}
 		this.playerToValueMap.delete(player);
 
@@ -138,12 +140,10 @@ export class LeaderstatsService implements OnInit, OnPlayerJoin {
 		}
 
 		const entry = this.leaderstats.find((entry) => entry.Name === statName);
-		print("LEADERSTATS: ", entry);
 		if (!entry) {
 			return Option.none<Instances[N]>();
 		}
 
-		print("LEADERSTATS: ", valueMap.get(entry.Name));
 		return Option.wrap<Instances[N]>(valueMap.get(entry.Name) as Instances[N]);
 	}
 }

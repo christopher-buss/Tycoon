@@ -36,12 +36,12 @@ export class PlayerCharacterService implements OnStart, OnPlayerJoin {
 
 		if (rigType === "R15") {
 			const rig15 = await promiseR15(_c);
-			this.characterR15(rig15);
 			this.characterShared(player, rig15);
+			this.characterR15(rig15);
 		} else if (rigType === "R6") {
 			const rig6 = await promiseR6(_c);
-			this.characterR6(rig6);
 			this.characterShared(player, rig6);
+			this.characterR6(rig6);
 		} else {
 			throw error(`${_c.Name} has an unknown rig type! ${rigType}`);
 		}
@@ -52,6 +52,8 @@ export class PlayerCharacterService implements OnStart, OnPlayerJoin {
 	private characterR15(_rig15: CharacterRigR15): void {}
 
 	private characterShared(player: Player, rig: CharacterRigR6 | CharacterRigR15): void {
+		// rig.ModelStreamingMode = Enum.ModelStreamingMode.Atomic;
+
 		task.defer(() => {
 			rig.Humanoid.DisplayDistanceType = Enum.HumanoidDisplayDistanceType.None;
 			CollectionService.AddTag(rig.Head, Tag.PlayerHead);

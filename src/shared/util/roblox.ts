@@ -13,7 +13,10 @@ export namespace RobloxUtil {
 		return `rbxassetid://${id}`;
 	}
 
-	export function initializeAnimation<T extends Instance>(animationId: string, parent: T): AnimationTrack {
+	export async function initializeAnimation<T extends Instance>(
+		animationId: string,
+		parent: T,
+	): Promise<AnimationTrack> {
 		let animator = parent.FindFirstChildWhichIsA("Animator");
 		if (animator === undefined) {
 			animator = new Instance("Animator");

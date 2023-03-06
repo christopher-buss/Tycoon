@@ -6,7 +6,6 @@ import { Logger } from "@rbxts/log";
 import Roact from "@rbxts/roact";
 import { Option } from "@rbxts/rust-classes";
 import { Players } from "@rbxts/services";
-import { observeChild } from "@rbxts/streamable";
 import { PlayerHeadUi } from "shared/ui/world/player-head";
 import { PlayerUtil } from "shared/util/player-util";
 import { Tag } from "types/enum/tags";
@@ -32,34 +31,26 @@ export class PlayerHead extends BaseComponent<{}, IPlayerHeadModel> implements O
 		this.playerGui = Players.LocalPlayer.WaitForChild("PlayerGui") as PlayerGui;
 
 		PlayerUtil.getPlayerFromDescendant(this.instance).match(
-			(player) => (this.player = player),
+			(player) => {
+				print("character:", player);
+				this.player = player;
+			},
 			() => this.destroy(),
 		);
+
+		// assert(this.instance.ModelStreamingMode === Enum.ModelStreamingMode.Atomic);
 	}
 
 	public onStart(): void {
-		this.janitor.Add(
-			observeChild(this.instance, "Head", () => {
-				this.onStreamIn();
-				return (): void => {};
-			}),
-		);
-	}
-
-	/**
-	 * Called internally when a head is streamed in.
-	 *
-	 * @hidden
-	 */
-	private onStreamIn(): void {
 		const billboard = this.createInterface();
 		this.setupInterface(billboard);
 	}
 
 	private createInterface(): Roact.Element {
+		print("character: ", this.player);
 		return PlayerHeadUi({
-			Cash: "$" + FormatCompact(this.player.GetAttribute("Cash") as number, 2),
-			Rebirths: (this.player.GetAttribute("Rebirths") as number) + " rebirths",
+			Cash: "$" + FormatCompact((this.player.GetAttribute("Cash") as number) ?? 0, 2),
+			Rebirths: ((this.player.GetAttribute("Rebirths") as number) ?? 0) + " rebirths",
 			Instance: this.instance,
 			Player: this.player,
 		});
@@ -78,6 +69,7 @@ export class PlayerHead extends BaseComponent<{}, IPlayerHeadModel> implements O
 	}
 
 	public destroy(): void {
+		print("destroying player head");
 		super.destroy();
 		this.janitor.Destroy();
 	}

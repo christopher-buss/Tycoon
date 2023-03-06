@@ -84,9 +84,9 @@ export class PlayerService implements OnInit, OnStart {
 			}
 		});
 
-		Players.GetPlayers().forEach((player) => {
+		for (const player of Players.GetPlayers()) {
 			task.spawn(() => this.onPlayerJoin(player));
-		});
+		}
 
 		this.setupOnPlayerJoinLifecycle();
 	}

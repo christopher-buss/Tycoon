@@ -106,7 +106,7 @@ export class DropperService implements OnInit, OnStart, OnTick, OnPlayerJoin, On
 	public onInit(): void {
 		for (const team of Teams.GetTeams()) {
 			this.simulatedDroppers.set(team.Name, new Map<PathNumber, Array<IDropperSimulating>>());
-			for (let path = 0; path < NUMBER_OF_PATHS + 1; path++) {
+			for (const path of $range(0, NUMBER_OF_PATHS + 1)) {
 				this.simulatedDroppers.get(team.Name)?.set(path, []);
 			}
 		}
@@ -122,7 +122,7 @@ export class DropperService implements OnInit, OnStart, OnTick, OnPlayerJoin, On
 		this.playersWithLot.push(newOwner);
 
 		this.ownedUpgraders.set(newOwner, new Map<PathNumber, Array<IOwnedUpgrader>>());
-		for (let path = 0; path < NUMBER_OF_PATHS; path++) {
+		for (const path of $range(0, NUMBER_OF_PATHS + 1)) {
 			this.ownedUpgraders.get(newOwner)?.set(path, []);
 		}
 
@@ -137,11 +137,11 @@ export class DropperService implements OnInit, OnStart, OnTick, OnPlayerJoin, On
 		playerEntity.playerRemoving.Add(() => {
 			const lotRemoving = playerEntity.player.GetAttribute("Lot") as LotName;
 
-			this.lotToReplicateTo.forEach((lot, player) => {
+			for (const [player, lot] of this.lotToReplicateTo) {
 				if (lot === lotRemoving) {
 					Events.playerOutOfRangeOfLot.fire(player);
 				}
-			});
+			}
 
 			const index = this.playersWithLot.indexOf(newOwner);
 			if (index !== -1) {
@@ -150,7 +150,7 @@ export class DropperService implements OnInit, OnStart, OnTick, OnPlayerJoin, On
 		});
 
 		this.lastDrop.set(newOwner, new Map<PathNumber, number>());
-		for (let path = 0; path < NUMBER_OF_PATHS; path++) {
+		for (const path of $range(0, NUMBER_OF_PATHS + 1)) {
 			this.lastDrop.get(newOwner)?.set(path, os.clock());
 		}
 	}
@@ -162,16 +162,18 @@ export class DropperService implements OnInit, OnStart, OnTick, OnPlayerJoin, On
 	public onPlayerJoin(playerEntity: playerEntity): void {
 		this.ownedDroppers.set(playerEntity.player, new Map<PathNumber, Array<IDropperSimulatingInfo>>());
 
-		for (let path = 0; path < NUMBER_OF_PATHS + 1; path++) {
+		for (const path of $range(0, NUMBER_OF_PATHS + 1)) {
 			this.ownedDroppers.get(playerEntity.player)?.set(path, []);
 		}
 
 		playerEntity.playerRemoving.Add(() => {
 			this.ownedDroppers.delete(playerEntity.player);
 
-			this.connections.get(playerEntity.player)?.forEach((thread) => {
-				thread.cancel();
-			});
+			if (this.connections.has(playerEntity.player)) {
+				for (const thread of this.connections.get(playerEntity.player)!) {
+					thread.cancel();
+				}
+			}
 		});
 	}
 
@@ -181,19 +183,26 @@ export class DropperService implements OnInit, OnStart, OnTick, OnPlayerJoin, On
 	 * @returns
 	 */
 	public onPlayerRebirthed(playerEntity: playerEntity): void {
-		this.connections.get(playerEntity.player)?.forEach((thread) => {
-			thread.cancel();
-		});
+		const connections = this.connections.get(playerEntity.player);
+		if (connections !== undefined) {
+			for (const thread of connections) {
+				thread.cancel();
+			}
+		}
 
 		this.connections.set(playerEntity.player, new Set());
 
-		for (let path = 0; path < NUMBER_OF_PATHS + 1; path++) {
+		for (const path of $range(0, NUMBER_OF_PATHS + 1)) {
+			// for (let path = 0; path < NUMBER_OF_PATHS + 1; path++) {
 			this.ownedDroppers.get(playerEntity.player)?.set(path, []);
 		}
 
-		this.ownedUpgraders.get(playerEntity.player)?.forEach((_, pathType) => {
-			this.ownedUpgraders.get(playerEntity.player)?.set(pathType, []);
-		});
+		const ownedUpgraders = this.ownedUpgraders.get(playerEntity.player);
+		if (ownedUpgraders !== undefined) {
+			for (const [pathType] of ownedUpgraders) {
+				this.ownedUpgraders.get(playerEntity.player)!.set(pathType, []);
+			}
+		}
 
 		this.ownedUpgraders.set(playerEntity.player, new Map<PathNumber, Array<IOwnedUpgrader>>());
 
@@ -203,9 +212,12 @@ export class DropperService implements OnInit, OnStart, OnTick, OnPlayerJoin, On
 		}
 
 		const playerLot = playerLot_opt.unwrap();
-		this.simulatedDroppers.get(playerLot)?.forEach((_, pathType) => {
-			this.simulatedDroppers.get(playerLot)?.set(pathType, []);
-		});
+		const simulatedDroppers = this.simulatedDroppers.get(playerLot);
+		if (simulatedDroppers !== undefined) {
+			for (const [pathType] of simulatedDroppers) {
+				this.simulatedDroppers.get(playerLot)!.set(pathType, []);
+			}
+		}
 	}
 
 	/**
@@ -225,16 +237,16 @@ export class DropperService implements OnInit, OnStart, OnTick, OnPlayerJoin, On
 	public onTick(dt: number): void {
 		this.updatePlayersInRange(dt);
 
-		this.ownedDroppers.forEach((ownedDroppers) => {
-			ownedDroppers.forEach((simulatingDroppers, pathNumber) => {
-				simulatingDroppers.forEach((dropper) => {
+		for (const [, ownedDroppers] of this.ownedDroppers) {
+			for (const [pathNumber, simulatingDroppers] of ownedDroppers) {
+				for (const dropper of simulatingDroppers) {
 					const partInfo = PartInfo[dropper.Name as PartInfoType] as DropperKey;
 					if (this.checkIfShouldSpawnDropper(pathNumber, partInfo, dropper)) {
 						this.handleNewDropper(dropper, pathNumber);
 					}
-				});
-			});
-		});
+				}
+			}
+		}
 	}
 
 	/**
@@ -327,11 +339,11 @@ export class DropperService implements OnInit, OnStart, OnTick, OnPlayerJoin, On
 			encoderPartIdentifiers[dropperInfo.Dropper.Name as keyof EncodePartIdentifier],
 		);
 
-		this.lotToReplicateTo.forEach((lotName, player) => {
+		for (const [player, lotName] of this.lotToReplicateTo) {
 			if (lotName === lot) {
 				Events.dropperSpawned.fire(player, encodedDropperSimulating);
 			}
-		});
+		}
 	}
 
 	private calculateDropperValue(path: PathNumber, dropper: IDropperSimulatingInfo): number {
@@ -345,10 +357,10 @@ export class DropperService implements OnInit, OnStart, OnTick, OnPlayerJoin, On
 
 		const ownedUpgraders = this.ownedUpgraders.get(dropper.Owner)?.get(path);
 		if (ownedUpgraders) {
-			ownedUpgraders.forEach((info) => {
+			for (const info of ownedUpgraders) {
 				value += info.Additive;
 				value *= info.Multiplier;
-			});
+			}
 		}
 
 		const playerEntity = entity_opt.unwrap();
@@ -417,7 +429,7 @@ export class DropperService implements OnInit, OnStart, OnTick, OnPlayerJoin, On
 
 		this.timeSinceLastPlayerInRangeUpdate -= 1 - dt;
 
-		this.playersWithLot.forEach((player) => {
+		for (const player of this.playersWithLot) {
 			let tycoonSet = false;
 			for (const [lotName, lotPosition] of this.lotPositions) {
 				const humanoidRootPart = player.Character?.FindFirstChild("HumanoidRootPart") as BasePart;
@@ -439,21 +451,23 @@ export class DropperService implements OnInit, OnStart, OnTick, OnPlayerJoin, On
 				tycoonSet = true;
 
 				const dataToSend: Array<Vector3int16> = [];
-				this.simulatedDroppers.get(lotName)?.forEach((droppers, pathNumber) => {
-					for (const dropper of droppers) {
-						const time = os.clock() - dropper.Dropper.LastDrop;
-						const currentProgress =
-							(time / PATH_INFO[pathNumber]!.TotalTime) * PATH_INFO[pathNumber]!.TotalProgress;
+				if (this.simulatedDroppers.has(lotName)) {
+					for (const [pathNumber, droppers] of this.simulatedDroppers.get(lotName)!) {
+						for (const dropper of droppers) {
+							const time = os.clock() - dropper.Dropper.LastDrop;
+							const currentProgress =
+								(time / PATH_INFO[pathNumber]!.TotalTime) * PATH_INFO[pathNumber]!.TotalProgress;
 
-						dataToSend.push(
-							new Vector3int16(
-								encoderPartIdentifiers[dropper.Dropper.Name as keyof EncodePartIdentifier],
-								pathNumber,
-								math.floor(currentProgress),
-							),
-						);
+							dataToSend.push(
+								new Vector3int16(
+									encoderPartIdentifiers[dropper.Dropper.Name as keyof EncodePartIdentifier],
+									pathNumber,
+									math.floor(currentProgress),
+								),
+							);
+						}
 					}
-				});
+				}
 
 				Events.playerInRangeOfLot.fire(player, lotName, dataToSend);
 				break;
@@ -463,6 +477,6 @@ export class DropperService implements OnInit, OnStart, OnTick, OnPlayerJoin, On
 				this.lotToReplicateTo.delete(player);
 				Events.playerOutOfRangeOfLot.fire(player);
 			}
-		});
+		}
 	}
 }

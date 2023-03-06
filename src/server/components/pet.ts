@@ -1,4 +1,5 @@
 import { BaseComponent, Component } from "@flamework/components";
+import { OnStart } from "@flamework/core";
 import { Janitor } from "@rbxts/janitor";
 import { Logger } from "@rbxts/log";
 import { CollectionService } from "@rbxts/services";
@@ -19,13 +20,13 @@ export interface IPetModel extends Model {
 @Component({
 	tag: Tag.Pet,
 })
-export class Pet extends BaseComponent<Attributes, IPetModel> {
+export class Pet extends BaseComponent<Attributes, IPetModel> implements OnStart {
 	private debounce;
 
 	private readonly janitor: Janitor;
 	private readonly animationId: string;
 
-	public animationLength: number;
+	public animationLength: number | undefined;
 	public proximityPrompt!: ProximityPrompt;
 
 	constructor(private readonly logger: Logger) {
@@ -34,13 +35,21 @@ export class Pet extends BaseComponent<Attributes, IPetModel> {
 		this.janitor = new Janitor();
 		this.animationId = RobloxUtil.assetUrlWithId(this.attributes.PettingID);
 
-		this.animationLength = RobloxUtil.initializeAnimation(this.animationId, this.instance.Humanoid).Length;
-
 		const proximityPrompt = new Instance("ProximityPrompt");
 		this.proximityPrompt = proximityPrompt;
 		proximityPrompt.ActionText = "Pet";
 		proximityPrompt.TriggerEnded.Connect(() => this.petTheDamnDog());
 		proximityPrompt.Parent = this.instance;
+	}
+
+	public onStart(): void {
+		RobloxUtil.initializeAnimation(this.animationId, this.instance.Humanoid)
+			.andThen((track) => {
+				this.animationLength = track.Length;
+			})
+			.catch((err) => {
+				this.logger.Warn(`Could not get animation length for ${this.instance.Name}: ${err}`);
+			});
 	}
 
 	public petTheDamnDog(): void {

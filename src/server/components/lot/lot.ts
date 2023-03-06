@@ -139,16 +139,26 @@ export class Lot extends BaseComponent<ILotAttributes, ILotModel> implements OnS
 	 */
 	private async setupOwner(playerEntity: PlayerEntity): Promise<void> {
 		const player = playerEntity.player;
-		player.RequestStreamAroundAsync(this.position);
-		player.RespawnLocation = this.instance.Spawn;
-		player.Team = this.team;
-		player.SetAttribute("Lot", this.team.Name);
-		this.setupGui(player).catch((err) => {
-			this.logger.Error(`Error setting up GUI: ${err}`);
+		const requestPromise = Promise.try(() => {
+			player.RequestStreamAroundAsync(this.position, 5);
+			print("streamed in!");
 		});
-		this.storePossiblePurchaseObjects(playerEntity);
-		this.loadPurchaseButtons(playerEntity);
-		player.LoadCharacter();
+
+		const setupPromise = Promise.try(() => {
+			player.RespawnLocation = this.instance.Spawn;
+			player.Team = this.team;
+			player.SetAttribute("Lot", this.team.Name);
+			this.setupGui(player).catch((err) => {
+				this.logger.Error(`Error setting up GUI: ${err}`);
+			});
+			this.storePossiblePurchaseObjects(playerEntity);
+			this.loadPurchaseButtons(playerEntity);
+		});
+
+		await Promise.all([requestPromise, setupPromise]).andThen(() => {
+			print("loading character");
+			player.LoadCharacter();
+		});
 	}
 
 	/**
@@ -157,15 +167,15 @@ export class Lot extends BaseComponent<ILotAttributes, ILotModel> implements OnS
 	private clearOwnedButtons(): void {
 		const buttons = this.instance.Buttons.GetChildren();
 
-		buttons.forEach((button) => {
+		for (const button of buttons) {
 			const buttonComponent = Dependency<Components>().getComponent<PurchaseButton>(button);
 			if (!buttonComponent) {
 				this.logger.Error(`Button ${button} does not have a PurchaseButton component`);
-				return;
+				continue;
 			}
 
 			buttonComponent.unbindButtonTouched(true);
-		});
+		}
 	}
 
 	/**
@@ -214,22 +224,22 @@ export class Lot extends BaseComponent<ILotAttributes, ILotModel> implements OnS
 		this.itemsOwnedByOwner = 0;
 
 		let purchasableButtons = 0;
-		this.instance.Buttons.GetChildren().forEach((object) => {
+		for (const object of this.instance.Buttons.GetChildren()) {
 			if (!CollectionService.HasTag(object, Tag.PurchaseButton)) {
-				return;
+				continue;
 			}
 
 			if (object.GetAttribute("GamepassId") !== undefined && (object.GetAttribute("GamepassId") as number) > 0) {
-				return;
+				continue;
 			}
 
 			const rebirths = object.GetAttribute("Rebirths") as number;
 			if (rebirths !== undefined && (rebirths > 0 || playerEntity.data.rebirths < rebirths)) {
-				return;
+				continue;
 			}
 
 			purchasableButtons += 1;
-		});
+		}
 
 		this.purchaseableItemsForOwner = purchasableButtons;
 		playerEntity.player.SetAttribute("ButtonsToBuy", purchasableButtons);
@@ -245,25 +255,24 @@ export class Lot extends BaseComponent<ILotAttributes, ILotModel> implements OnS
 		const buttons = this.instance.Buttons.GetChildren();
 		const nonOwnedButtons = this.getNonOwnedButtons(buttons, playerEntity);
 		const objectsWithDependencies = this.handleNonOwnedButtons(nonOwnedButtons);
-		objectsWithDependencies.forEach((buttonComponent) => {
+		for (const buttonComponent of objectsWithDependencies) {
 			const dependency = buttonComponent.attributes.Dependency;
 			for (const button of buttons) {
 				if (button.Name === dependency) {
 					const dependencyButton = Dependency<Components>().getComponent<PurchaseButton>(button);
 					if (!dependencyButton) {
 						this.logger.Error(`Could not find purchase button component for ${button}`);
-						return;
+						continue;
 					}
 
 					if (!dependencyButton.purchased) {
 						buttonComponent.unbindButtonTouched(true);
 					}
-
 					dependencyButton.addDependency(buttonComponent);
-					return;
+					break;
 				}
 			}
-		});
+		}
 	}
 
 	/**
@@ -271,22 +280,22 @@ export class Lot extends BaseComponent<ILotAttributes, ILotModel> implements OnS
 	 * @param playerEntity
 	 */
 	private handleOwnedItems(playerEntity: PlayerEntity): void {
-		playerEntity.data.purchased.forEach((encoded) => {
+		for (const encoded of playerEntity.data.purchased) {
 			const decoded = decoderPartIdentifiers[encoded as keyof DecodePartIdentifier];
 			if (decoded === undefined) {
 				this.logger.Error(`Could not decode part identifier ${encoded}`);
-				return;
+				continue;
 			}
 
 			const button = this.instance.Buttons.FindFirstChild(decoded) as BasePart;
 			if (!button) {
-				return;
+				continue;
 			}
 
 			const buttonComponent = Dependency<Components>().getComponent<PurchaseButton>(button);
 			if (!buttonComponent) {
 				this.logger.Error(`Could not find PurchaseButton component for ${button}`);
-				return;
+				continue;
 			}
 
 			buttonComponent.purchased = true;
@@ -300,7 +309,7 @@ export class Lot extends BaseComponent<ILotAttributes, ILotModel> implements OnS
 			}
 
 			buttonComponent.addOwnedItemForOwner(playerEntity.data.rebirths, playerEntity.player);
-		});
+		}
 	}
 
 	/**
@@ -328,11 +337,11 @@ export class Lot extends BaseComponent<ILotAttributes, ILotModel> implements OnS
 	 */
 	private handleNonOwnedButtons(nonOwnedButtons: Array<Instance>): Array<PurchaseButton> {
 		const objectsWithDependencies: Array<PurchaseButton> = [];
-		nonOwnedButtons.forEach((button) => {
+		for (const button of nonOwnedButtons) {
 			const buttonComponent = Dependency<Components>().getComponent<PurchaseButton>(button);
 			if (!buttonComponent) {
 				this.logger.Error(`Could not find purchase button component for ${button}`);
-				return;
+				continue;
 			}
 
 			const dependency = buttonComponent.attributes.Dependency;
@@ -341,7 +350,7 @@ export class Lot extends BaseComponent<ILotAttributes, ILotModel> implements OnS
 			}
 
 			buttonComponent.bindButtonTouched(true);
-		});
+		}
 
 		return objectsWithDependencies;
 	}

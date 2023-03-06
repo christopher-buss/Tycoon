@@ -17,7 +17,7 @@ export class PlayerToolService implements OnPlayerJoin {
 	}
 
 	private addOwnedTools(playerEntity: playerEntity): void {
-		playerEntity.data.acquiredTools.forEach((toolName) => {
+		for (const toolName of playerEntity.data.acquiredTools) {
 			const backpack = playerEntity.player.FindFirstChildOfClass("Backpack");
 			if (backpack) {
 				let newTool = ServerStorage.RebirthItems.FindFirstChild(toolName) as Tool;
@@ -26,6 +26,6 @@ export class PlayerToolService implements OnPlayerJoin {
 					newTool.Parent = backpack;
 				}
 			}
-		});
+		}
 	}
 }

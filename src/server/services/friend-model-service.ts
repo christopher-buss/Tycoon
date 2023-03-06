@@ -82,9 +82,9 @@ export class FriendModelService implements OnLotOwned {
 			return Players.GetFriendsAsync(player.UserId);
 		}).andThen((pages) => {
 			this.friends.set(player, []);
-			pages.GetCurrentPage().forEach((friend) => {
+			for (const friend of pages.GetCurrentPage()) {
 				this.friends.get(player)?.push(friend.Id);
-			});
+			}
 		});
 	}
 
@@ -120,9 +120,9 @@ export class FriendModelService implements OnLotOwned {
 			}),
 		);
 
-		friends.forEach((friend) => {
+		for (const friend of friends) {
 			this.startWatchingInstance(player, friend, lot);
-		});
+		}
 	}
 
 	private onPlayerLeaving(player: Player, lot: Lot): void {
@@ -187,10 +187,10 @@ export class FriendModelService implements OnLotOwned {
 	}
 
 	private disableShadowsOnFriend(friend: Instance): void {
-		friend.GetDescendants().forEach((descendant) => {
+		for (const descendant of friend.GetDescendants()) {
 			if (descendant.IsA("BasePart") || descendant.IsA("UnionOperation") || descendant.IsA("MeshPart")) {
 				descendant.CastShadow = false;
 			}
-		});
+		}
 	}
 }

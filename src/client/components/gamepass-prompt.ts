@@ -5,7 +5,6 @@ import { Logger } from "@rbxts/log";
 import Roact from "@rbxts/roact";
 import { Option } from "@rbxts/rust-classes";
 import { Players } from "@rbxts/services";
-import { observeChild } from "@rbxts/streamable";
 import { IGamepassPromptModel } from "server/components/mtx/gamepass-prompt";
 import GamepassBillboard from "shared/ui/world/gamepass";
 import { Tag } from "types/enum/tags";
@@ -14,8 +13,6 @@ interface Attributes {
 	Color?: Color3;
 	DisplayName?: string;
 }
-
-const noop = (): void => {};
 
 @Component({
 	tag: Tag.GamepassPrompt,
@@ -28,18 +25,10 @@ export class GamepassPrompt extends BaseComponent<Attributes, IGamepassPromptMod
 		super();
 		this.janitor = new Janitor();
 		this.tree_opt = Option.none<Roact.Tree>();
+		assert(this.instance.ModelStreamingMode === Enum.ModelStreamingMode.Atomic);
 	}
 
 	public onStart(): void {
-		this.janitor.Add(
-			observeChild(this.instance, "Root", () => {
-				this.onStreamIn();
-				return noop;
-			}),
-		);
-	}
-
-	private onStreamIn(): void {
 		const billboard = this.createInterface();
 		this.setupInterface(billboard);
 	}

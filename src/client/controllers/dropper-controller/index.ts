@@ -98,12 +98,12 @@ export class DropperController implements OnStart, OnInit {
 	public onStart(): void {
 		this.storeCachedConveyorLocations();
 
-		ReplicatedStorage.PartInfo.GetChildren().forEach((part) => {
+		for (const part of ReplicatedStorage.PartInfo.GetChildren()) {
 			task.spawn(() => {
 				const partCache = new PartCacheModule(part, 5, this.partCacheLocation);
 				this.partCache.set(part.Name, partCache);
 			});
-		});
+		}
 	}
 
 	/**
@@ -339,9 +339,9 @@ export class DropperController implements OnStart, OnInit {
 	 *
 	 */
 	private stopSimulation(): void {
-		this.currentlySimulating.forEach((janitor) => {
+		for (const janitor of this.currentlySimulating) {
 			janitor.Destroy();
-		});
+		}
 
 		this.currentlySimulating.clear();
 	}
@@ -367,10 +367,10 @@ export class DropperController implements OnStart, OnInit {
 		}
 
 		return Promise.defer(() => {
-			data.forEach((encoded) => {
+			for (const encoded of data) {
 				// path number, part type, progress
 				this.dropItem(new Vector2int16(encoded.Y, encoded.X), encoded.Z);
-			});
+			}
 		});
 	}
 }

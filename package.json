@@ -59,7 +59,6 @@
     "@rbxts/services": "^1.5.1",
     "@rbxts/spring": "^1.0.2",
     "@rbxts/stacks-and-queues": "^1.0.5",
-    "@rbxts/streamable": "^0.1.0",
     "@rbxts/t": "^3.1.0",
     "@rbxts/topbar-plus": "^2.0.9",
     "cross-env": "^7.0.3",

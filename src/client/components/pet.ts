@@ -7,7 +7,7 @@ interface Attributes {
 
 // TODO
 @Component({})
-export class pet extends BaseComponent<{}> implements OnStart {
+export class Pet extends BaseComponent<{}> implements OnStart {
 	// private readonly idleAnimation: AnimationTrack;
 	// private readonly petAnimation: AnimationTrack;
 

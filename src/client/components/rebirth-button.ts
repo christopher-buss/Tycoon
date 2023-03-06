@@ -5,7 +5,6 @@ import { Logger } from "@rbxts/log";
 import Roact from "@rbxts/roact";
 import { Option } from "@rbxts/rust-classes";
 import { Players } from "@rbxts/services";
-import { observeChild } from "@rbxts/streamable";
 import { RebirthButtonBillboard } from "shared/ui/world/rebirth-button";
 import { Tag } from "types/enum/tags";
 import { IRebirthButtonAttributes, IRebirthButtonModel } from "types/interfaces/buttons";
@@ -24,18 +23,10 @@ export class RebirthButton extends BaseComponent<IRebirthButtonAttributes, IRebi
 		this.tree_opt = Option.none<Roact.Tree>();
 		this.janitor = new Janitor();
 		this.playerGui = Players.LocalPlayer.WaitForChild("PlayerGui") as PlayerGui;
+		assert(this.instance.ModelStreamingMode === Enum.ModelStreamingMode.Persistent);
 	}
 
 	public onStart(): void {
-		this.janitor.Add(
-			observeChild(this.instance, "TouchPart", () => {
-				this.onStreamIn();
-				return (): void => {};
-			}),
-		);
-	}
-
-	private onStreamIn(): void {
 		const billboard = this.createInterface();
 		this.setupInterface(billboard);
 	}

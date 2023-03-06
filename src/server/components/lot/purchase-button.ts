@@ -82,12 +82,12 @@ export class PurchaseButton extends BaseComponent<IPurchaseButtonAttributes, IPu
 	}
 
 	private storeButtonProperties(): void {
-		this.instance.GetChildren().forEach((child) => {
+		for (const child of this.instance.GetChildren()) {
 			if (child.IsA("BasePart")) {
 				this.canCollideMap.set(child, child.CanCollide);
 				this.transparencyMap.set(child, child.Transparency);
 			}
-		});
+		}
 	}
 
 	/** @hidden */
@@ -239,14 +239,16 @@ export class PurchaseButton extends BaseComponent<IPurchaseButtonAttributes, IPu
 		this.logger.Info(`${this.instance.Name} purchased by ${player}`);
 
 		this.purchased = true;
-		this.dependencies.forEach((dependency) => dependency.bindButtonTouched(false));
+		for (const dependency of this.dependencies) {
+			dependency.bindButtonTouched(false);
+		}
 		this.unbindButtonTouched(false);
 
-		this.listeners.forEach((listener) => {
+		for (const listener of this.listeners) {
 			task.spawn(() => {
 				listener.onPurchaseButtonBought(playerEntity, this.janitor);
 			});
-		});
+		}
 
 		this.addOwnedItemForOwner(playerEntity.data.rebirths, player);
 
@@ -328,13 +330,13 @@ export class PurchaseButton extends BaseComponent<IPurchaseButtonAttributes, IPu
 	private async setButtonVisibility(visible: boolean, force: boolean): Promise<void> {
 		const promises: Array<Promise<void>> = [];
 
-		this.transparencyMap.forEach((originalTransparency, part) => {
+		for (const [part, originalTransparency] of this.transparencyMap) {
 			const goal = visible ? originalTransparency : 1;
 			const base = visible ? 1 : originalTransparency;
 
 			if (force) {
 				part.Transparency = goal;
-				return;
+				continue;
 			}
 
 			const spring = new Spring<number>(base, 5, goal, 1);
@@ -355,11 +357,11 @@ export class PurchaseButton extends BaseComponent<IPurchaseButtonAttributes, IPu
 					});
 				}),
 			);
-		});
+		}
 
-		this.canCollideMap.forEach((originalCanCollide, part) => {
+		for (const [part, originalCanCollide] of this.canCollideMap) {
 			part.CanCollide = visible ? originalCanCollide : false;
-		});
+		}
 
 		await Promise.all(promises);
 	}
