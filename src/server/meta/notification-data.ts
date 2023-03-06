@@ -5,7 +5,7 @@ export interface INotificationEntry {
 	Duration: number;
 }
 
-const NotificationData: INotificationEntry[] = [
+const NotificationData: Array<INotificationEntry> = [
 	{
 		Title: "Want more updates?",
 		Text: "Join the Paradise Prime group to keep up to date with new features",
