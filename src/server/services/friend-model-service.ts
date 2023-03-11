@@ -25,8 +25,6 @@ export class FriendModelService implements OnLotOwned {
 	}
 
 	public onLotOwned(lot: Lot, newOwner: Player): void {
-		return;
-
 		this.janitors.set(lot, new Janitor());
 
 		this.getFriends(newOwner)
@@ -93,8 +91,6 @@ export class FriendModelService implements OnLotOwned {
 			return friend.Parent?.Name === lot.name || friend.Parent?.Parent === lot.instance;
 		});
 
-		this.friendModels.set(lot, friends);
-
 		this.janitors.get(lot)?.Add(
 			CollectionService.GetInstanceAddedSignal(Tag.Friend).Connect((friend: Instance) => {
 				this.startWatchingInstance(player, friend, lot);
@@ -129,6 +125,7 @@ export class FriendModelService implements OnLotOwned {
 		this.janitors.get(lot)?.Cleanup();
 		this.friends.delete(player);
 		this.friendModels.delete(lot);
+		this.friendsInUse.delete(player);
 	}
 
 	private async onFriendAdded(player: Player, friend: Instance): Promise<unknown> {
