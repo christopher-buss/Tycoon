@@ -31,7 +31,10 @@ export class FindNextItemController implements OnStart {
 
 	private setupConnection(): void {
 		Players.LocalPlayer.CharacterAdded.Connect(() => {
-			this.displayCheapestButton();
+			const shouldDisplay = ClientStore.getState().playerData.settings.displayNextItem;
+			if (shouldDisplay) {
+				this.displayCheapestButton();
+			}
 		});
 	}
 

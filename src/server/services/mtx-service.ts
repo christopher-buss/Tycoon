@@ -45,7 +45,7 @@ export class MtxService implements OnInit, OnPlayerJoin {
 
 			const lot = lot_opt.unwrap();
 			for (const child of lot.instance.Buttons.GetChildren()) {
-				if (child.GetAttribute("Pet") === undefined) {
+				if (child.GetAttribute("Pet") === undefined || child.GetAttribute("Pet") === false) {
 					continue;
 				}
 
@@ -54,13 +54,13 @@ export class MtxService implements OnInit, OnPlayerJoin {
 					continue;
 				}
 
+				purchaseButton.unbindButtonTouched(false);
+
 				for (const listener of purchaseButton.listeners) {
 					task.spawn(() => {
 						listener.onPurchaseButtonBought(playerEntity, purchaseButton.janitor);
 					});
 				}
-
-				purchaseButton.unbindButtonTouched(false);
 			}
 			// Dog, Cat, Lizard, Frog, Bull, Dragon
 			// data.purchased.push(51, 50, 48, 46, 71, 70);

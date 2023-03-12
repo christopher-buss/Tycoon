@@ -25,6 +25,12 @@ export interface OnPlayerJoin {
 	onPlayerJoin(playerEntity: PlayerEntity): void;
 }
 
+type PlayerJoinData = {
+	id: string;
+	event: OnPlayerJoin;
+	loadOrder: number;
+};
+
 /**
  * A service that handles functionality related to player data and life cycle
  * events.
@@ -33,7 +39,7 @@ export interface OnPlayerJoin {
 	loadOrder: 0,
 })
 export class PlayerService implements OnInit, OnStart {
-	private playerJoinEvents = new Map<string, OnPlayerJoin>();
+	private playerJoinEvents = new Array<PlayerJoinData>();
 	private playerEntities = new Map<Player, PlayerEntity>();
 	private onEntityRemoving = new Signal<void>();
 
@@ -78,6 +84,7 @@ export class PlayerService implements OnInit, OnStart {
 						background: settings.background ?? data.settings.background,
 						effects: settings.effects ?? data.settings.effects,
 						music: settings.music ?? data.settings.music,
+						displayNextItem: settings.displayNextItem ?? data.settings.displayNextItem,
 					};
 					return data;
 				});
@@ -103,9 +110,17 @@ export class PlayerService implements OnInit, OnStart {
 
 			const dependency = Flamework.resolveDependency(id);
 			if (Flamework.implements<OnPlayerJoin>(dependency)) {
-				this.playerJoinEvents.set(id, dependency);
+				this.playerJoinEvents.push({
+					id,
+					event: dependency,
+					loadOrder: Reflect.getMetadata(object, "flamework:loadOrder") ?? 1,
+				});
 			}
 		}
+
+		this.playerJoinEvents.sort((a, b) => {
+			return a.loadOrder > b.loadOrder;
+		});
 	}
 
 	/**
@@ -162,13 +177,15 @@ export class PlayerService implements OnInit, OnStart {
 
 		// Call all connected lifecycle events
 		debug.profilebegin("Lifecycle_Player_Join");
-		for (const [id, event] of this.playerJoinEvents) {
-			debug.profilebegin(id);
-			Promise.defer(() => {
-				event.onPlayerJoin(playerEntity);
-			}).catch((err) => {
-				this.logger.Error(err);
-			});
+		for (const event of this.playerJoinEvents) {
+			debug.profilebegin(event.id);
+			{
+				Promise.defer(() => {
+					event.event.onPlayerJoin(playerEntity);
+				}).catch((err) => {
+					this.logger.Error(err);
+				});
+			}
 			debug.profileend();
 		}
 		debug.profileend();

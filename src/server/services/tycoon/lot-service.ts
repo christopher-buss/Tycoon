@@ -33,7 +33,9 @@ const rng = new Random();
 /**
  * A service which handles any functionality related to lots.
  */
-@Service({})
+@Service({
+	loadOrder: math.huge,
+})
 export class LotService implements OnStart, OnPlayerJoin, OnPlayerRebirthed {
 	public onPlayerRebirthedEvents: Map<string, OnPlayerRebirthed>;
 	public numberOfPurchaseableItems: number;

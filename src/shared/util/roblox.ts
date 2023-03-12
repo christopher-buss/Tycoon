@@ -1,5 +1,3 @@
-import { ContentProvider } from "@rbxts/services";
-
 export interface ModelWithPrimaryPart extends Model {
 	PrimaryPart: BasePart;
 }
@@ -13,22 +11,35 @@ export namespace RobloxUtil {
 		return `rbxassetid://${id}`;
 	}
 
-	export async function initializeAnimation<T extends Instance>(
-		animationId: string,
-		parent: T,
-	): Promise<AnimationTrack> {
-		let animator = parent.FindFirstChildWhichIsA("Animator");
-		if (animator === undefined) {
-			animator = new Instance("Animator");
-			animator.Parent = parent;
-		}
-
+	export async function preloadAnimation(animationId: string): Promise<Animation> {
 		const animation = new Instance("Animation");
 		animation.AnimationId = animationId;
+		//TODO: Why can't I preload animations?
+		// if (RunService.IsClient()) {
+		// 	ContentProvider.PreloadAsync([animation]);
+		// }
+		return animation;
+	}
 
-		const track = animator.LoadAnimation(animation);
-		ContentProvider.PreloadAsync([animation]);
-		return track;
+	export async function retryLoadAnimation(
+		animator: Animator,
+		animation: Animation,
+	): Promise<AnimationTrack | undefined> {
+		const load = (): Promise<AnimationTrack> => {
+			return new Promise((resolve, reject) => {
+				const [success, track] = pcall(() => animator.LoadAnimation(animation)) as LuaTuple<
+					[boolean, AnimationTrack]
+				>;
+
+				if (!success) {
+					reject();
+				}
+
+				return resolve(track);
+			});
+		};
+
+		return Promise.retryWithDelay(load, 5, 1);
 	}
 
 	/**
@@ -36,18 +47,18 @@ export namespace RobloxUtil {
 	 * @param humanoid The humanoid of the model
 	 * @param animationId The animation id to play
 	 */
-	export function playAnimationOnHumanoid(humanoid: Humanoid, animationId: string): AnimationTrack {
+	export async function playAnimationOnHumanoid(humanoid: Humanoid, animation: Animation): Promise<AnimationTrack> {
 		let animator = humanoid.FindFirstChildWhichIsA("Animator");
 		if (animator === undefined) {
 			animator = new Instance("Animator");
 			animator.Parent = humanoid;
 		}
 
-		const animation = new Instance("Animation");
-		animation.AnimationId = animationId;
+		const track = await retryLoadAnimation(animator, animation);
+		assert(track, "Could not load animation");
 
-		const track = animator.LoadAnimation(animation);
 		track.Play();
+
 		return track;
 	}
 

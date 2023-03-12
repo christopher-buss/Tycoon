@@ -60,7 +60,7 @@ export class Jellyfish extends BaseComponent<Attributes, IJellyfishModel> implem
 		this.jellyfishService.collectJellyfish(player);
 
 		this.model.petTheDamnDog();
-		task.wait(this.model.animationLength);
+		task.wait(3); // TODO: get the animation length somehow
 
 		this.instance.Destroy();
 

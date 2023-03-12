@@ -1,49 +1,50 @@
 import Roact from "@rbxts/roact";
 import Hooks from "@rbxts/roact-hooks";
+import { easings, useSpring } from "@rbxts/roact-spring";
+import { RunService } from "@rbxts/services";
+import Oklab from "shared/modules/oklab";
 import { TimeUtil } from "shared/util/time-util";
-
-// class Frenzy extends Roact.PureComponent {
-// 	public render(): Roact.Element {
-// 		return <frame Key="Frenzy" />;
-// 	}
-// }
 
 interface IFrenzyProps {
 	frenzyTimeLeft: number;
 }
 
-const InnerFrenzy: Hooks.FC<IFrenzyProps> = (props) => {
-	// const [binding, setBinding] = Roact.createBinding<Color3>(new Color3());
+const InnerFrenzy: Hooks.FC<IFrenzyProps> = (props, hooks) => {
+	const [transparency, setTransparency] = hooks.useBinding<number>(0);
+	const [countdown, setCountdown] = hooks.useBinding(0);
 
-	const [transparency, setTransparency] = Roact.createBinding<number>(0);
+	setTransparency(0);
 
-	if (props.frenzyTimeLeft <= 0) {
-		setTransparency(1);
-	} else {
-		setTransparency(0);
-	}
+	const styles = useSpring(hooks, {
+		reset: true,
+		from: { alpha: 0 },
+		to: { alpha: 1 },
+		loop: () => {
+			return countdown.getValue() > 0;
+		},
+		config: {
+			duration: 5,
+			clamp: true,
+			easing: easings.linear,
+		},
+	});
 
-	// task.spawn(() => {
-	// 	print("FRENZY: Spawned");
-	// 	while (true) {
-	// 		if (props.frenzyTimeLeft <= 0) {
-	// 			setTransparency(1);
-	// 			task.wait();
-	// 			return;
-	// 		}
+	hooks.useEffect(() => {
+		const startedAt = os.clock() + props.frenzyTimeLeft;
+		const connection = RunService.Heartbeat.Connect(() => {
+			const timeLeft = startedAt - os.clock();
+			if (timeLeft > 0) {
+				setCountdown(timeLeft);
+				return;
+			}
 
-	// 		if (transparency.getValue() === 1) {
-	// 			setTransparency(0);
-	// 		}
+			setCountdown(0);
+			setTransparency(1);
+			connection.Disconnect();
+		});
 
-	// 		for (const i of $range(0, 1, 0.003)) {
-	// 			// for (let i = 0; i < 1; i += 0.001 * this.attributes.Speed) {
-	// 			print(i);
-	// 			setBinding(Color3.fromHSV(i, 1, 1));
-	// 			task.wait();
-	// 		}
-	// 	}
-	// });
+		return () => connection.Disconnect();
+	}, [props.frenzyTimeLeft]);
 
 	return (
 		<textlabel
@@ -52,8 +53,10 @@ const InnerFrenzy: Hooks.FC<IFrenzyProps> = (props) => {
 			Font={Enum.Font.LuckiestGuy}
 			Position={new UDim2(0.498, 0, 0.393, 0)}
 			Size={new UDim2(1.004, 0, 0.145, 0)}
-			Text={`FRENZY: ${TimeUtil.convertToTime(props.frenzyTimeLeft)}`}
-			TextColor3={Color3.fromRGB(245, 75, 75)}
+			Text={countdown.map((value) => {
+				return `FRENZY: ${TimeUtil.convertToTime(value)}`;
+			})}
+			TextColor3={styles.alpha.map((alpha) => Oklab.from(Oklab.to(Color3.fromHSV(alpha, 0.1, 1)), false))}
 			TextScaled={true}
 			TextSize={14}
 			TextTransparency={transparency}

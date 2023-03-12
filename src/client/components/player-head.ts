@@ -32,7 +32,6 @@ export class PlayerHead extends BaseComponent<{}, IPlayerHeadModel> implements O
 
 		PlayerUtil.getPlayerFromDescendant(this.instance).match(
 			(player) => {
-				print("character:", player);
 				this.player = player;
 			},
 			() => this.destroy(),
@@ -47,7 +46,6 @@ export class PlayerHead extends BaseComponent<{}, IPlayerHeadModel> implements O
 	}
 
 	private createInterface(): Roact.Element {
-		print("character: ", this.player);
 		return PlayerHeadUi({
 			Cash: "$" + FormatCompact((this.player.GetAttribute("Cash") as number) ?? 0, 2),
 			Rebirths: ((this.player.GetAttribute("Rebirths") as number) ?? 0) + " rebirths",
@@ -69,7 +67,6 @@ export class PlayerHead extends BaseComponent<{}, IPlayerHeadModel> implements O
 	}
 
 	public destroy(): void {
-		print("destroying player head");
 		super.destroy();
 		this.janitor.Destroy();
 	}

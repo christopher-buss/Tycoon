@@ -85,7 +85,7 @@ export class DropperService implements OnInit, OnStart, OnTick, OnPlayerJoin, On
 			Value: (PartInfo[info.DropperType as PartInfoType] as PartInfoKey).Value,
 		};
 
-		this.ownedDroppers.get(info.Owner)?.get(info.Path)?.push(simulatingInfo);
+		this.ownedDroppers.get(info.Owner)!.get(info.Path)!.push(simulatingInfo);
 	}
 
 	/**
@@ -94,7 +94,7 @@ export class DropperService implements OnInit, OnStart, OnTick, OnPlayerJoin, On
 	 */
 	public addOwnedUpgrader(upgraderInfo: IUpgraderInfo): void {
 		this.logger.Info(`Adding owned upgrader for ${upgraderInfo.Owner.Name}`);
-		this.ownedUpgraders.get(upgraderInfo.Owner)?.get(upgraderInfo.Path)?.push({
+		this.ownedUpgraders.get(upgraderInfo.Owner)!.get(upgraderInfo.Path)!.push({
 			Additive: upgraderInfo.Additive,
 			Multiplier: upgraderInfo.Multiplier,
 		});
@@ -106,7 +106,7 @@ export class DropperService implements OnInit, OnStart, OnTick, OnPlayerJoin, On
 	public onInit(): void {
 		for (const team of Teams.GetTeams()) {
 			this.simulatedDroppers.set(team.Name, new Map<PathNumber, Array<IDropperSimulating>>());
-			for (const path of $range(0, NUMBER_OF_PATHS + 1)) {
+			for (const path of $range(0, NUMBER_OF_PATHS - 1)) {
 				this.simulatedDroppers.get(team.Name)?.set(path, []);
 			}
 		}
@@ -122,7 +122,7 @@ export class DropperService implements OnInit, OnStart, OnTick, OnPlayerJoin, On
 		this.playersWithLot.push(newOwner);
 
 		this.ownedUpgraders.set(newOwner, new Map<PathNumber, Array<IOwnedUpgrader>>());
-		for (const path of $range(0, NUMBER_OF_PATHS + 1)) {
+		for (const path of $range(0, NUMBER_OF_PATHS - 1)) {
 			this.ownedUpgraders.get(newOwner)?.set(path, []);
 		}
 
@@ -150,7 +150,7 @@ export class DropperService implements OnInit, OnStart, OnTick, OnPlayerJoin, On
 		});
 
 		this.lastDrop.set(newOwner, new Map<PathNumber, number>());
-		for (const path of $range(0, NUMBER_OF_PATHS + 1)) {
+		for (const path of $range(0, NUMBER_OF_PATHS - 1)) {
 			this.lastDrop.get(newOwner)?.set(path, os.clock());
 		}
 	}
@@ -162,7 +162,7 @@ export class DropperService implements OnInit, OnStart, OnTick, OnPlayerJoin, On
 	public onPlayerJoin(playerEntity: playerEntity): void {
 		this.ownedDroppers.set(playerEntity.player, new Map<PathNumber, Array<IDropperSimulatingInfo>>());
 
-		for (const path of $range(0, NUMBER_OF_PATHS + 1)) {
+		for (const path of $range(0, NUMBER_OF_PATHS - 1)) {
 			this.ownedDroppers.get(playerEntity.player)?.set(path, []);
 		}
 
@@ -192,7 +192,7 @@ export class DropperService implements OnInit, OnStart, OnTick, OnPlayerJoin, On
 
 		this.connections.set(playerEntity.player, new Set());
 
-		for (const path of $range(0, NUMBER_OF_PATHS + 1)) {
+		for (const path of $range(0, NUMBER_OF_PATHS - 1)) {
 			// for (let path = 0; path < NUMBER_OF_PATHS + 1; path++) {
 			this.ownedDroppers.get(playerEntity.player)?.set(path, []);
 		}

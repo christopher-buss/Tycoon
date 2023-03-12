@@ -25,7 +25,9 @@ export function calculateFrenzyMultiplier(playerEntity: PlayerEntity): number {
 /**
  * A wrapper for accessing the player's money.
  */
-@Service({})
+@Service({
+	loadOrder: 0,
+})
 export class MoneyService implements OnPlayerJoin, OnTick, OnPlayerRebirthed {
 	private frenzyMultiplier: Map<Player, FrenzyStorage>;
 	private moneyToAwardEachSecond: Map<PlayerEntity, number>;
@@ -50,6 +52,8 @@ export class MoneyService implements OnPlayerJoin, OnTick, OnPlayerRebirthed {
 		});
 
 		playerEntity.playerRemoving.Add(() => {
+			print(this.frenzyMultiplier.get(playerEntity.player)?.frenzyTimeLeft);
+
 			playerEntity.updateData((data) => {
 				data.frenzyTimeLeft = this.frenzyMultiplier.get(playerEntity.player)?.frenzyTimeLeft ?? 0;
 				return data;
@@ -87,20 +91,20 @@ export class MoneyService implements OnPlayerJoin, OnTick, OnPlayerRebirthed {
 		for (const [player, frenzy] of this.frenzyMultiplier) {
 			if (frenzy.frenzyTimeLeft > 0) {
 				// TODO: this needs optimization
-				const playerEntity_opt = this.playerService.getEntity(player);
-				if (playerEntity_opt.isNone()) {
-					this.logger.Error(`Player entity for ${player} could not be found`);
-					return;
-				}
+				// const playerEntity_opt = this.playerService.getEntity(player);
+				// if (playerEntity_opt.isNone()) {
+				// 	this.logger.Error(`Player entity for ${player} could not be found`);
+				// 	return;
+				// }
 
-				const playerEntity = playerEntity_opt.unwrap();
+				// const playerEntity = playerEntity_opt.unwrap();
 
 				frenzy.frenzyTimeLeft -= 1;
 
-				playerEntity.updateData((data) => {
-					data.frenzyTimeLeft = frenzy.frenzyTimeLeft;
-					return data;
-				});
+				// playerEntity.updateData((data) => {
+				// 	data.frenzyTimeLeft = frenzy.frenzyTimeLeft;
+				// 	return data;
+				// });
 
 				if (frenzy.frenzyTimeLeft <= 0) {
 					this.frenzyMultiplier.set(player, {
@@ -118,6 +122,19 @@ export class MoneyService implements OnPlayerJoin, OnTick, OnPlayerRebirthed {
 
 	public setFrenzyMultiplier(player: Player, multiplier: number, time: number): void {
 		const timeRemaining = this.frenzyMultiplier.get(player)?.frenzyTimeLeft ?? 0;
+
+		const playerEntity_opt = this.playerService.getEntity(player);
+		if (playerEntity_opt.isNone()) {
+			this.logger.Error(`Player entity for ${player} could not be found`);
+			return;
+		}
+
+		const playerEntity = playerEntity_opt.unwrap();
+
+		playerEntity.updateData((data) => {
+			data.frenzyTimeLeft = timeRemaining + time;
+			return data;
+		});
 
 		this.frenzyMultiplier.set(player, {
 			frenzyMultiplier: multiplier * (player.GetAttribute("VIP") === true ? 2 : 1),

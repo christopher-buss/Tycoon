@@ -73,7 +73,7 @@ export class DropperController implements OnStart, OnInit {
 
 		for (const lotName of LOT_NAMES) {
 			this.upgradersOwned.set(lotName, new Map());
-			for (let path = 0; path < NUMBER_OF_PATHS + 1; path++) {
+			for (const path of $range(0, NUMBER_OF_PATHS - 1)) {
 				this.upgradersOwned.get(lotName)!.set(path, new Map());
 			}
 		}

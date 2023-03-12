@@ -141,7 +141,6 @@ export class Lot extends BaseComponent<ILotAttributes, ILotModel> implements OnS
 		const player = playerEntity.player;
 		const requestPromise = Promise.try(() => {
 			player.RequestStreamAroundAsync(this.position, 5);
-			print("streamed in!");
 		});
 
 		const setupPromise = Promise.try(() => {
@@ -156,7 +155,6 @@ export class Lot extends BaseComponent<ILotAttributes, ILotModel> implements OnS
 		});
 
 		await Promise.all([requestPromise, setupPromise]).andThen(() => {
-			print("loading character");
 			player.LoadCharacter();
 		});
 	}
@@ -252,7 +250,12 @@ export class Lot extends BaseComponent<ILotAttributes, ILotModel> implements OnS
 	public loadPurchaseButtons(playerEntity: PlayerEntity): void {
 		this.handleOwnedItems(playerEntity);
 
-		const buttons = this.instance.Buttons.GetChildren();
+		const buttons = this.instance.Buttons.GetChildren() as Array<Model>;
+
+		for (const button of buttons) {
+			button.AddPersistentPlayer(playerEntity.player);
+		}
+
 		const nonOwnedButtons = this.getNonOwnedButtons(buttons, playerEntity);
 		const objectsWithDependencies = this.handleNonOwnedButtons(nonOwnedButtons);
 		for (const buttonComponent of objectsWithDependencies) {

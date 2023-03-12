@@ -10,8 +10,6 @@ import { Tag } from "types/enum/tags";
 import { IPurchaseButtonAttributes, IPurchaseButtonModel } from "types/interfaces/buttons";
 import { ILotModel } from "types/interfaces/lots";
 
-const noop = (): void => {};
-
 /**
  * A component that players in the game can touch to purchase corresponding
  * objects in the game. This client component is responsible for rendering ui

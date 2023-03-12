@@ -2,12 +2,13 @@ import { BaseComponent, Component } from "@flamework/components";
 import { OnStart } from "@flamework/core";
 import { Janitor } from "@rbxts/janitor";
 import { Logger } from "@rbxts/log";
-import { CollectionService } from "@rbxts/services";
 import { RobloxUtil } from "shared/util/roblox";
 import { Tag } from "types/enum/tags";
 
 interface Attributes {
 	PettingID: number;
+	PettingLength?: number;
+	ShouldPet?: boolean;
 }
 
 export interface IPetModel extends Model {
@@ -24,16 +25,16 @@ export class Pet extends BaseComponent<Attributes, IPetModel> implements OnStart
 	private debounce;
 
 	private readonly janitor: Janitor;
-	private readonly animationId: string;
 
-	public animationLength: number | undefined;
+	public pettingAnimation!: Animation;
 	public proximityPrompt!: ProximityPrompt;
 
 	constructor(private readonly logger: Logger) {
 		super();
+		assert(this.instance.ModelStreamingMode === Enum.ModelStreamingMode.Atomic);
+
 		this.debounce = false;
 		this.janitor = new Janitor();
-		this.animationId = RobloxUtil.assetUrlWithId(this.attributes.PettingID);
 
 		const proximityPrompt = new Instance("ProximityPrompt");
 		this.proximityPrompt = proximityPrompt;
@@ -43,12 +44,12 @@ export class Pet extends BaseComponent<Attributes, IPetModel> implements OnStart
 	}
 
 	public onStart(): void {
-		RobloxUtil.initializeAnimation(this.animationId, this.instance.Humanoid)
-			.andThen((track) => {
-				this.animationLength = track.Length;
+		RobloxUtil.preloadAnimation(RobloxUtil.assetUrlWithId(this.attributes.PettingID))
+			.andThen((animation) => {
+				this.pettingAnimation = animation;
 			})
 			.catch((err) => {
-				this.logger.Warn(`Could not get animation length for ${this.instance.Name}: ${err}`);
+				this.logger.Warn(`Could not get animation for ${this.instance.Name}: ${err}`);
 			});
 	}
 
@@ -61,15 +62,8 @@ export class Pet extends BaseComponent<Attributes, IPetModel> implements OnStart
 
 		this.logger.Debug(`Petting ${this.instance.Name}...`);
 
-		if (CollectionService.HasTag(this.instance, Tag.Animate)) {
-			CollectionService.RemoveTag(this.instance, Tag.Animate);
-		}
-
+		this.animatePet();
 		this.playEffects();
-
-		// We want to ensure that the Animate collection tag has been removed
-		// before we start the petting animation.
-		task.defer(() => this.animatePet());
 	}
 
 	private playEffects(): void {
@@ -82,13 +76,16 @@ export class Pet extends BaseComponent<Attributes, IPetModel> implements OnStart
 
 	private animatePet(): void {
 		this.proximityPrompt.Enabled = false;
-		const track = RobloxUtil.playAnimationOnHumanoid(this.instance.Humanoid, this.animationId);
-		track.Ended.Once(() => {
+		// Tell the client to play the petting animation
+		this.attributes.ShouldPet = true;
+
+		const waitTime = this.attributes.PettingLength ?? 3;
+		task.delay(waitTime, () => {
+			//this.attributes.PettingLength, () => {
 			this.logger.Debug(`Finished petting ${this.instance.Name}...`);
-			CollectionService.AddTag(this.instance, Tag.Animate);
-			task.wait(0.5);
-			this.debounce = false;
+			this.attributes.ShouldPet = false;
 			this.proximityPrompt.Enabled = true;
+			this.debounce = false;
 		});
 	}
 

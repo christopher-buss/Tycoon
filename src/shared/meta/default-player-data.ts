@@ -25,6 +25,7 @@ const DefaultPlayerData = {
 
 	settings: {
 		background: true,
+		displayNextItem: true,
 		effects: true,
 		music: true,
 	},
