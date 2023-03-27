@@ -23,6 +23,9 @@ const DefaultPlayerData = {
 		// fireEffectGamepass: false,
 	},
 
+	// Any codes that the player has redeemed.
+	codes: new Set<string>(),
+
 	settings: {
 		background: true,
 		displayNextItem: true,
